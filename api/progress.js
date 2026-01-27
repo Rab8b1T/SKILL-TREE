@@ -14,6 +14,11 @@ function getId(req, origin) {
   return url.searchParams.get('id') || 'default';
 }
 
+function shouldForceSeed(req, origin) {
+  const url = new URL(req.url, origin);
+  return url.searchParams.get('seed') === '1' || url.searchParams.get('forceSeed') === '1';
+}
+
 function withDefaults(data) {
   if (!data || typeof data !== 'object' || !Array.isArray(data.zones)) return null;
   if (!data.settings || typeof data.settings !== 'object') {
@@ -104,16 +109,39 @@ export default async function handler(req, res) {
   const key = `skilltree:progress:${id}`;
 
   if (method === 'GET') {
+    const forceSeed = shouldForceSeed(req, origin);
     const existing = await redis.get(key);
     if (typeof existing === 'string') {
       try {
-        return sendJson(res, 200, JSON.parse(existing));
+        const parsed = withDefaults(JSON.parse(existing));
+        if (parsed && !forceSeed) {
+          // If we previously seeded a minimal/empty payload, and the repo has a real seed file,
+          // prefer the real seed so the UI isn't blank.
+          if (Array.isArray(parsed.zones) && parsed.zones.length === 0) {
+            const seed = await readSeedFromStatic(origin);
+            if (seed && Array.isArray(seed.zones) && seed.zones.length > 0) {
+              await redis.set(key, JSON.stringify(seed));
+              return sendJson(res, 200, seed);
+            }
+          }
+          return sendJson(res, 200, parsed);
+        }
       } catch {
         // fall through to reseed
       }
     } else if (existing && typeof existing === 'object') {
       // If KV returns JSON directly, support it.
-      return sendJson(res, 200, existing);
+      const parsed = withDefaults(existing);
+      if (parsed && !forceSeed) {
+        if (Array.isArray(parsed.zones) && parsed.zones.length === 0) {
+          const seed = await readSeedFromStatic(origin);
+          if (seed && Array.isArray(seed.zones) && seed.zones.length > 0) {
+            await redis.set(key, JSON.stringify(seed));
+            return sendJson(res, 200, seed);
+          }
+        }
+        return sendJson(res, 200, parsed);
+      }
     }
 
     const seed = await readSeedFromStatic(origin);
