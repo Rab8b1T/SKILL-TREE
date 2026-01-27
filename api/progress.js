@@ -1,39 +1,55 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { Redis } from '@upstash/redis';
 
 const redis = Redis.fromEnv();
 
-function getKey(req) {
-  // Optional: allow multiple progress “files” via ?id=
-  const url = new URL(req.url);
-  const id = url.searchParams.get('id') || 'default';
-  return `skilltree:progress:${id}`;
+function getOrigin(req) {
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  return `${proto}://${host}`;
 }
 
-async function readSeedFile() {
-  // Prefer progress.json if present, else fall back to the exported seed.
-  const root = process.cwd();
-  const candidates = [
-    path.join(root, 'progress.json'),
-    path.join(root, 'skilltree-progress-2025-11-26.json'),
-  ];
+function getId(req, origin) {
+  // Optional: allow multiple progress “files” via ?id=
+  const url = new URL(req.url, origin);
+  return url.searchParams.get('id') || 'default';
+}
 
-  for (const p of candidates) {
+function withDefaults(data) {
+  if (!data || typeof data !== 'object' || !Array.isArray(data.zones)) return null;
+  if (!data.settings || typeof data.settings !== 'object') {
+    data.settings = { shortcutsEnabled: true, view: 'grid' };
+  }
+  if (!data.user || typeof data.user !== 'object') {
+    data.user = {
+      current_xp: 0,
+      level: 1,
+      badges: [],
+      notes: {},
+      journal: {},
+      lastVisit: null,
+      streakDays: 0,
+    };
+  }
+  return data;
+}
+
+async function readSeedFromStatic(origin) {
+  // Prefer progress.json if present, else fall back to the exported seed.
+  const candidates = [`${origin}/progress.json`, `${origin}/skilltree-progress-2025-11-26.json`];
+
+  for (const url of candidates) {
     try {
-      const raw = await readFile(p, 'utf8');
-      const data = JSON.parse(raw);
-      if (!data || typeof data !== 'object' || !Array.isArray(data.zones)) continue;
-      if (!data.settings || typeof data.settings !== 'object') {
-        data.settings = { shortcutsEnabled: true, view: 'grid' };
-      }
-      return data;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const normalized = withDefaults(data);
+      if (normalized) return normalized;
     } catch {
       // try next
     }
   }
 
-  return {
+  return withDefaults({
     version: '1.0',
     updatedAt: new Date().toISOString(),
     zones: [],
@@ -47,58 +63,77 @@ async function readSeedFile() {
       streakDays: 0,
     },
     settings: { shortcutsEnabled: true, view: 'grid' },
-  };
-}
-
-function json(status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-    },
   });
 }
 
-export default async function handler(req) {
+function sendJson(res, status, body) {
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.end(JSON.stringify(body));
+}
+
+async function readJsonBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch {
+      return null;
+    }
+  }
+
+  const raw = await new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', (chunk) => (data += chunk));
+    req.on('end', () => resolve(data));
+    req.on('error', reject);
+  });
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export default async function handler(req, res) {
   const method = req.method || 'GET';
-  const key = getKey(req);
+  const origin = getOrigin(req);
+  const id = getId(req, origin);
+  const key = `skilltree:progress:${id}`;
 
   if (method === 'GET') {
     const existing = await redis.get(key);
     if (typeof existing === 'string') {
       try {
-        return json(200, JSON.parse(existing));
+        return sendJson(res, 200, JSON.parse(existing));
       } catch {
         // fall through to reseed
       }
     } else if (existing && typeof existing === 'object') {
       // If KV returns JSON directly, support it.
-      return json(200, existing);
+      return sendJson(res, 200, existing);
     }
 
-    const seed = await readSeedFile();
+    const seed = await readSeedFromStatic(origin);
     await redis.set(key, JSON.stringify(seed));
-    return json(200, seed);
+    return sendJson(res, 200, seed);
   }
 
   if (method === 'POST') {
-    let payload;
-    try {
-      payload = await req.json();
-    } catch {
-      return json(400, { error: 'Invalid JSON' });
-    }
+    const payload = await readJsonBody(req);
+    if (!payload) return sendJson(res, 400, { error: 'Invalid JSON' });
 
     if (!payload || typeof payload !== 'object' || !Array.isArray(payload.zones)) {
-      return json(400, { error: 'Invalid payload (expected object with zones: [])' });
+      return sendJson(res, 400, { error: 'Invalid payload (expected object with zones: [])' });
     }
 
     // Match your current semantics: overwrite the “single file”.
     await redis.set(key, JSON.stringify(payload));
-    return json(200, { ok: true });
+    return sendJson(res, 200, { ok: true });
   }
 
-  return json(405, { error: 'Method Not Allowed' });
+  return sendJson(res, 405, { error: 'Method Not Allowed' });
 }
 
