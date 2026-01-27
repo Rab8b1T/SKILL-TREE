@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive Skill Tree Dashboard - Track your learning journey">
+    <meta name="theme-color" content="#6366f1">
+    <title>Skill Tree Dashboard</title>
+    <link rel="stylesheet" href="styles.css?v=20260127-1">
+</head>
+<body>
+    <!-- Skip Links for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <a href="#zones-section" class="skip-link">Skip to zones</a>
+
+    <!-- Main App Container -->
+    <div id="app" class="app-container">
+        <!-- Header -->
+        <header class="header" role="banner">
+            <div class="header-content">
+                <div class="brand">
+                    <div class="brand-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <div class="brand-text">
+                        <h1>Skill Tree</h1>
+                        <span class="brand-tagline">Master Your Journey</span>
+                    </div>
+                </div>
+
+                <!-- XP & Level Display -->
+                <div class="user-stats" role="region" aria-label="User Statistics">
+                    <div class="level-badge" aria-label="Current Level">
+                        <span class="level-number" id="user-level">1</span>
+                        <span class="level-label">LEVEL</span>
+                    </div>
+                    <div class="xp-display">
+                        <div class="xp-text">
+                            <span id="current-xp">0</span> / <span id="next-level-xp">1000</span> XP
+                        </div>
+                        <div class="xp-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="XP Progress">
+                            <div class="xp-fill" id="xp-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="header-actions">
+                    <button class="btn btn-icon" id="shortcuts-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <rect x="2" y="4" width="20" height="16" rx="2"/>
+                            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M6 16h12"/>
+                        </svg>
+                    </button>
+                    <button class="btn btn-icon" id="toggle-view-btn" aria-label="Toggle view" title="Toggle view (V)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="icon-grid">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="icon-list" style="display:none">
+                            <line x1="8" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="12" x2="21" y2="12"/>
+                            <line x1="8" y1="18" x2="21" y2="18"/>
+                            <line x1="3" y1="6" x2="3.01" y2="6"/>
+                            <line x1="3" y1="12" x2="3.01" y2="12"/>
+                            <line x1="3" y1="18" x2="3.01" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Global Progress -->
+            <div class="global-progress" role="region" aria-label="Overall Progress">
+                <div class="progress-info">
+                    <span class="progress-label">Overall Progress</span>
+                    <span class="progress-percentage" id="global-percentage">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-fill" id="global-progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search & Filters -->
+            <div class="search-filters" role="search">
+                <div class="search-box">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="search" id="search-input" placeholder="Search levels..." aria-label="Search levels">
+                    <kbd class="search-shortcut" aria-hidden="true">/</kbd>
+                </div>
+                <div class="filter-group">
+                    <label for="status-filter" class="visually-hidden">Filter by status</label>
+                    <select id="status-filter" class="filter-select" aria-label="Filter by status">
+                        <option value="all">All Levels</option>
+                        <option value="complete">✓ Completed</option>
+                        <option value="in-progress">◐ In Progress</option>
+                        <option value="unlocked">○ Unlocked</option>
+                        <option value="locked">🔒 Locked</option>
+                    </select>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="import-btn" aria-label="Import progress">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <span>Import</span>
+                    </button>
+                    <button class="btn btn-secondary" id="export-btn" aria-label="Export progress (Ctrl+E)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        <span>Export</span>
+                    </button>
+                    <button class="btn btn-secondary" id="reset-all-btn" aria-label="Reset all progress">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M21 12a9 9 0 1 1-3-6.7"/>
+                            <polyline points="21 3 21 9 15 9"/>
+                        </svg>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Badges Bar -->
+        <section class="badges-bar" role="region" aria-label="Earned Badges">
+            <div class="badges-container" id="badges-container">
+                <span class="badges-label">Badges:</span>
+                <div class="badges-list" id="badges-list">
+                    <!-- Badges will be rendered here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content" role="main">
+            <!-- Zones Section -->
+            <section id="zones-section" class="zones-section" aria-label="Learning Zones">
+                <div id="zones-container" class="zones-container">
+                    <!-- Zones will be rendered here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer" role="contentinfo">
+            <div class="footer-content">
+                <div class="streak-counter" id="streak-counter">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M12 23c-5.5 0-10-4.5-10-10C2 7.5 6.5 3 12 3c.5 0 1 .05 1.5.15C9.5 5 7 8 7 11.5c0 2.5 1 4.8 2.8 6.4C8.8 16.5 8 14.6 8 12.5c0-2.5 1.2-4.8 3.2-6.2C11.1 6.2 11 6.4 11 6.5c0 1.4.8 2.7 2 3.3.3.2.6.3 1 .4V9c0-.6.4-1 1-1s1 .4 1 1v2c.5.3 1 .7 1.4 1.1C18.4 13.6 19 15 19 16.5c0 3.6-3.1 6.5-7 6.5z"/>
+                    </svg>
+                    <span id="streak-days">0</span> day streak
+                </div>
+                <div class="footer-stats">
+                    <span><span id="completed-count">0</span> completed</span>
+                    <span><span id="total-count">0</span> total</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Level Detail Panel (Slide-over) -->
+    <div id="level-panel" class="level-panel" role="dialog" aria-modal="true" aria-labelledby="panel-title" hidden>
+        <div class="panel-backdrop" id="panel-backdrop"></div>
+        <div class="panel-content" role="document">
+            <header class="panel-header">
+                <div class="panel-title-group">
+                    <span class="panel-zone-badge" id="panel-zone-badge"></span>
+                    <h2 class="panel-title" id="panel-title"></h2>
+                </div>
+                <button class="btn btn-icon panel-close" id="panel-close" aria-label="Close panel (Escape)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="panel-body">
+                <div class="panel-meta">
+                    <div class="meta-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                        <span id="panel-xp">0 XP</span>
+                    </div>
+                    <div class="meta-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span id="panel-hours">~0 hours</span>
+                    </div>
+                    <div class="meta-item status-badge" id="panel-status-badge">
+                        <span id="panel-status">Locked</span>
+                    </div>
+                </div>
+
+                <div class="panel-prereqs" id="panel-prereqs-section" hidden>
+                    <h3>Prerequisites</h3>
+                    <ul class="prereqs-list" id="panel-prereqs"></ul>
+                </div>
+
+                <div class="panel-details">
+                    <h3>Details</h3>
+                    <div class="details-content" id="panel-details"></div>
+                </div>
+
+                <div class="panel-notes">
+                    <h3>Your Notes</h3>
+                    <textarea id="panel-notes-input" placeholder="Add your notes here..." aria-label="Personal notes"></textarea>
+                </div>
+
+                <div class="panel-journal">
+                    <h3>Journal Entries</h3>
+                    <div class="journal-entries" id="journal-entries">
+                        <!-- Journal entries will be rendered here -->
+                    </div>
+                    <div class="journal-add">
+                        <input type="text" id="journal-input" placeholder="Add a journal entry..." aria-label="New journal entry">
+                        <button class="btn btn-secondary" id="add-journal-btn" aria-label="Add journal entry">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="panel-footer">
+                <button class="btn btn-secondary" id="btn-start" aria-label="Start level">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Start
+                </button>
+                <button class="btn btn-primary" id="btn-complete" aria-label="Mark complete (M)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Mark Complete
+                </button>
+                <button class="btn btn-secondary" id="btn-reset-level" aria-label="Reset this level">
+                    Reset Level
+                </button>
+                <button class="btn btn-secondary" id="btn-reset-zone" aria-label="Reset this zone">
+                    Reset Zone
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="shortcuts-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" hidden>
+        <div class="modal-backdrop" id="shortcuts-backdrop"></div>
+        <div class="modal-content" role="document">
+            <header class="modal-header">
+                <h2 id="shortcuts-title">Keyboard Shortcuts</h2>
+                <button class="btn btn-icon modal-close" id="shortcuts-close" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </header>
+            <div class="modal-body">
+                <div class="shortcut-group">
+                    <h3>Navigation</h3>
+                    <div class="shortcut-item">
+                        <kbd>/</kbd>
+                        <span>Focus search</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>Esc</kbd>
+                        <span>Close panel/modal</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>Enter</kbd> / <kbd>Space</kbd>
+                        <span>Open level card</span>
+                    </div>
+                </div>
+                <div class="shortcut-group">
+                    <h3>Actions</h3>
+                    <div class="shortcut-item">
+                        <kbd>M</kbd>
+                        <span>Mark level complete</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>V</kbd>
+                        <span>Toggle view (Grid/List)</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>Ctrl</kbd> + <kbd>E</kbd>
+                        <span>Export progress</span>
+                    </div>
+                </div>
+                <div class="shortcut-group">
+                    <h3>Other</h3>
+                    <div class="shortcut-item">
+                        <kbd>?</kbd>
+                        <span>Show this help</span>
+                    </div>
+                </div>
+            </div>
+            <footer class="modal-footer">
+                <label class="toggle-label">
+                    <input type="checkbox" id="disable-shortcuts" aria-describedby="shortcut-toggle-desc">
+                    <span>Disable keyboard shortcuts</span>
+                </label>
+                <span id="shortcut-toggle-desc" class="visually-hidden">Toggle to disable all keyboard shortcuts</span>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="import-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="import-title" hidden>
+        <div class="modal-backdrop" id="import-backdrop"></div>
+        <div class="modal-content" role="document">
+            <header class="modal-header">
+                <h2 id="import-title">Import Progress</h2>
+                <button class="btn btn-icon modal-close" id="import-close" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </header>
+            <div class="modal-body">
+                <div class="import-options">
+                    <label class="file-input-label" for="import-file">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="12" y1="18" x2="12" y2="12"/>
+                            <line x1="9" y1="15" x2="15" y2="15"/>
+                        </svg>
+                        <span>Choose file or drag & drop</span>
+                        <input type="file" id="import-file" accept=".json" class="visually-hidden">
+                    </label>
+                    <div class="import-preview" id="import-preview" hidden>
+                        <h3>Preview</h3>
+                        <div class="preview-stats" id="preview-stats"></div>
+                        <div class="conflict-resolution" id="conflict-resolution" hidden>
+                            <h4>Conflict Resolution</h4>
+                            <div class="conflict-options">
+                                <label>
+                                    <input type="radio" name="conflict" value="merge" checked>
+                                    <span>Merge (keep highest progress)</span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="conflict" value="overwrite">
+                                    <span>Overwrite (replace all)</span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="conflict" value="skip">
+                                    <span>Skip conflicts</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="modal-footer">
+                <button class="btn btn-secondary" id="import-cancel">Cancel</button>
+                <button class="btn btn-primary" id="import-confirm" disabled>Import</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Badge Unlocked Toast -->
+    <div id="badge-toast" class="toast" role="alert" aria-live="polite" hidden>
+        <div class="toast-icon">🏆</div>
+        <div class="toast-content">
+            <strong>Badge Unlocked!</strong>
+            <span id="badge-toast-name"></span>
+        </div>
+    </div>
+
+    <!-- Level Up Animation Container -->
+    <div id="levelup-container" class="levelup-container" hidden aria-live="assertive">
+        <div class="levelup-content">
+            <div class="levelup-icon">⭐</div>
+            <div class="levelup-text">LEVEL UP!</div>
+            <div class="levelup-level" id="levelup-level"></div>
+        </div>
+    </div>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+    <!-- Scripts -->
+    <script src="app.js?v=20260127-1"></script>
+</body>
+</html>
+

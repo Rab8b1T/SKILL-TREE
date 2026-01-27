@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/progress", "destination": "/api/progress" }
+  ]
+}
+
