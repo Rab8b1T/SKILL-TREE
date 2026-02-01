@@ -578,6 +578,20 @@ body {
     border-color: var(--accent-primary);
 }
 
+.btn-accent {
+    background: linear-gradient(135deg, #1a73e8 0%, #06b6d4 100%);
+    color: white;
+    border: none;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.btn-accent:hover:not(:disabled) {
+    background: linear-gradient(135deg, #1557b0 0%, #0891b2 100%);
+    box-shadow: 0 0 16px rgba(26, 115, 232, 0.4);
+    transform: translateY(-1px);
+}
+
 .btn-icon {
     width: 40px;
     height: 40px;

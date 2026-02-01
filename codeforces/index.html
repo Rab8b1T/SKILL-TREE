@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codeforces Problem Picker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="../" class="back-link" aria-label="Back to Skill Tree">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to Skill Tree
+            </a>
+            <h1>Codeforces Problem Picker</h1>
+            <p class="subtitle">Select unsolved problems by rating segments and analyze tag distribution</p>
+        </header>
+
+        <!-- Privacy Notice -->
+        <div class="privacy-notice" id="privacyNotice">
+            <span class="privacy-icon">🔒</span>
+            <span>Your handle is used only to fetch public submissions. No data is stored unless you opt in.</span>
+            <button class="close-btn" onclick="dismissPrivacyNotice()" aria-label="Dismiss notice">&times;</button>
+        </div>
+
+        <!-- Handle Input Section -->
+        <section class="card" id="handleSection">
+            <h2>Step 1: Enter Your Handle</h2>
+            <div class="form-group">
+                <label for="handleInput">Codeforces Handle</label>
+                <div class="input-row">
+                    <input type="text" id="handleInput" placeholder="e.g., tourist" autocomplete="off" required>
+                    <button id="fetchBtn" class="btn btn-primary" onclick="fetchData()">
+                        <span class="btn-text">Fetch Data</span>
+                        <span class="spinner hidden"></span>
+                    </button>
+                </div>
+            </div>
+            <div class="cache-info" id="cacheInfo"></div>
+        </section>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay hidden" id="loadingOverlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p id="loadingMessage">Fetching problemset...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Messages -->
+        <div class="message-area hidden" id="messageArea">
+            <div class="message" id="messageContent"></div>
+        </div>
+
+        <!-- Selection Section (visible after fetch) -->
+        <section class="card hidden" id="selectionSection">
+            <h2>Step 2: Configure Selection</h2>
+            
+            <div class="stats-bar" id="statsBar">
+                <div class="stat">
+                    <span class="stat-value" id="totalProblems">0</span>
+                    <span class="stat-label">Total Problems</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="solvedProblems">0</span>
+                    <span class="stat-label">Solved</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="unsolvedProblems">0</span>
+                    <span class="stat-label">Unsolved</span>
+                </div>
+            </div>
+
+            <!-- Rating Segments -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3>Rating Segments</h3>
+                    <button class="btn btn-secondary btn-sm" onclick="addSegment()">+ Add Segment</button>
+                </div>
+                <div id="segmentsContainer">
+                    <!-- Segments will be added here dynamically -->
+                </div>
+                <div class="segment-presets">
+                    <span>Presets:</span>
+                    <button class="btn btn-outline btn-xs" onclick="loadPreset('beginner')">Beginner</button>
+                    <button class="btn btn-outline btn-xs" onclick="loadPreset('intermediate')">Intermediate</button>
+                    <button class="btn btn-outline btn-xs" onclick="loadPreset('advanced')">Advanced</button>
+                    <button class="btn btn-outline btn-xs" onclick="loadPreset('mixed')">Mixed</button>
+                </div>
+            </div>
+
+            <!-- Tag Filters -->
+            <div class="form-section">
+                <h3>Tag Filters (Optional)</h3>
+                <p class="filter-hint">Check tags to filter problems. Leave both empty to include all tags.</p>
+                
+                <div class="tag-filter-row">
+                    <!-- Include Tags -->
+                    <div class="tag-filter-box">
+                        <div class="tag-filter-header">
+                            <span class="tag-filter-title">Include Tags</span>
+                            <span class="tag-filter-count" id="includeCount">(0 selected)</span>
+                            <button class="btn btn-xs btn-outline" onclick="clearTagFilter('include')">Clear</button>
+                        </div>
+                        <p class="tag-filter-desc">Only pick problems that have at least one of these tags</p>
+                        <div class="tag-checkbox-container" id="includeTagsContainer">
+                            <!-- Checkboxes populated dynamically -->
+                        </div>
+                    </div>
+                    
+                    <!-- Exclude Tags -->
+                    <div class="tag-filter-box">
+                        <div class="tag-filter-header">
+                            <span class="tag-filter-title">Exclude Tags</span>
+                            <span class="tag-filter-count" id="excludeCount">(0 selected)</span>
+                            <button class="btn btn-xs btn-outline" onclick="clearTagFilter('exclude')">Clear</button>
+                        </div>
+                        <p class="tag-filter-desc">Skip problems that have any of these tags</p>
+                        <div class="tag-checkbox-container" id="excludeTagsContainer">
+                            <!-- Checkboxes populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Options -->
+            <div class="form-section options-row">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="randomizeCheck" checked>
+                    <span>Randomize selection</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="includeUnrated">
+                    <span>Include unrated problems</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="fillFromAdjacent" checked>
+                    <span>Fill from adjacent segments if needed</span>
+                </label>
+            </div>
+
+            <button id="pickBtn" class="btn btn-primary btn-lg" onclick="pickProblems()">
+                Pick Problems & Show Tags
+            </button>
+        </section>
+
+        <!-- Results Section -->
+        <section class="card hidden" id="resultsSection">
+            <h2>Results</h2>
+            
+            <!-- Summary -->
+            <div class="results-summary" id="resultsSummary">
+                <h3>Selection Summary</h3>
+                <div id="segmentSummary"></div>
+            </div>
+
+            <!-- Selected Problems -->
+            <div class="results-problems">
+                <h3>Selected Problems <span class="problem-count" id="problemCount">(0)</span></h3>
+                <div class="problems-grid" id="problemsGrid">
+                    <!-- Problem IDs will be listed here -->
+                </div>
+            </div>
+
+            <!-- Tags Frequency -->
+            <div class="results-tags">
+                <h3>Tag Distribution</h3>
+                <div class="tags-chart" id="tagsChart">
+                    <!-- Tag frequency bars will be rendered here -->
+                </div>
+                <table class="tags-table" id="tagsTable">
+                    <thead>
+                        <tr>
+                            <th>Tag</th>
+                            <th>Count</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tagsTableBody">
+                        <!-- Rows populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Export Options -->
+            <div class="export-section">
+                <h3>Export</h3>
+                <div class="export-buttons">
+                    <button class="btn btn-secondary" onclick="copyAsJSON()">Copy JSON</button>
+                    <button class="btn btn-secondary" onclick="copyAsCSV()">Copy CSV</button>
+                    <button class="btn btn-secondary" onclick="copyAsText()">Copy Plain Text</button>
+                    <button class="btn btn-secondary" onclick="downloadJSON()">Download .json</button>
+                </div>
+                <div class="copy-feedback hidden" id="copyFeedback">Copied to clipboard!</div>
+            </div>
+
+            <!-- Toggle Problem Links -->
+            <div class="extra-options">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="showLinksCheck" onchange="toggleProblemLinks()">
+                    <span>Show problem links</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>Built with vanilla JS. Data from <a href="https://codeforces.com/api/help" target="_blank" rel="noopener">Codeforces API</a>.</p>
+            <p class="footer-note">Problemset cached locally for 24 hours to reduce API calls.</p>
+        </footer>
+    </div>
+
+    <!-- CORS Help Modal -->
+    <div class="modal hidden" id="corsModal">
+        <div class="modal-content">
+            <h2>CORS Issue Detected</h2>
+            <p>The browser blocked the request to Codeforces API due to CORS restrictions.</p>
+            <h3>Solutions:</h3>
+            <ul>
+                <li><strong>Use a CORS proxy:</strong> The app will automatically try a public CORS proxy.</li>
+                <li><strong>Browser extension:</strong> Install a CORS-unblock extension (Chrome/Firefox).</li>
+                <li><strong>Local server:</strong> Run the app through a local HTTP server.</li>
+            </ul>
+            <button class="btn btn-primary" onclick="retryWithProxy()">Try with CORS Proxy</button>
+            <button class="btn btn-secondary" onclick="closeCorsModal()">Close</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
