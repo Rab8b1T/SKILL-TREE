@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codeforces Profile Analyzer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <h1>CF Analyzer</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Search Section -->
+            <section class="search-section">
+                <div class="search-card">
+                    <h2>Analyze Codeforces Profile</h2>
+                    <p class="search-subtitle">Enter a Codeforces username to get comprehensive analysis</p>
+                    <div class="search-form">
+                        <div class="input-wrapper">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="usernameInput" placeholder="Enter Codeforces username..." autocomplete="off">
+                        </div>
+                        <button class="analyze-btn" id="analyzeBtn">
+                            <span>Analyze</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="loading-indicator" id="loadingIndicator">
+                        <div class="spinner"></div>
+                        <span>Fetching data from Codeforces API...</span>
+                    </div>
+                    <div class="error-message" id="errorMessage"></div>
+                </div>
+            </section>
+
+            <!-- Profile Overview -->
+            <section class="section profile-section hidden" id="profileSection">
+                <div class="section-header">
+                    <h2>Profile Overview</h2>
+                </div>
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <img id="userAvatar" src="" alt="User Avatar">
+                    </div>
+                    <div class="profile-info">
+                        <h3 id="userHandle"></h3>
+                        <div class="profile-rank" id="userRank"></div>
+                        <div class="profile-stats">
+                            <div class="stat-item">
+                                <span class="stat-value" id="userRating">-</span>
+                                <span class="stat-label">Current Rating</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="userMaxRating">-</span>
+                                <span class="stat-label">Max Rating</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="totalSolved">-</span>
+                                <span class="stat-label">Problems Solved</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="totalContests">-</span>
+                                <span class="stat-label">Contests</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Daily Problems Section -->
+            <section class="section hidden" id="dailyProblemsSection">
+                <div class="section-header">
+                    <h2>Daily Problem Solving Activity</h2>
+                    <p class="section-subtitle">Problems solved each day grouped by rating</p>
+                </div>
+                <div class="daily-problems-container">
+                    <div class="daily-filter">
+                        <input type="date" id="dailyStartDate" class="date-input">
+                        <span class="date-separator">to</span>
+                        <input type="date" id="dailyEndDate" class="date-input">
+                        <button class="filter-btn" id="dailyFilterBtn">Apply Filter</button>
+                        <button class="reset-btn" id="dailyResetBtn">Reset</button>
+                    </div>
+                    <div class="daily-problems-list" id="dailyProblemsList"></div>
+                </div>
+            </section>
+
+            <!-- Topic Distribution Section -->
+            <section class="section hidden" id="topicSection">
+                <div class="section-header">
+                    <h2>Topic-wise Distribution</h2>
+                    <p class="section-subtitle">Problems solved categorized by tags/topics</p>
+                </div>
+                <div class="topic-grid" id="topicGrid"></div>
+                <div class="chart-container topic-chart">
+                    <canvas id="topicChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Analytics Charts Section -->
+            <section class="section hidden" id="analyticsSection">
+                <div class="section-header">
+                    <h2>Analytics & Graphs</h2>
+                    <p class="section-subtitle">Visual representation of your solving patterns</p>
+                </div>
+                
+                <div class="date-filter-section">
+                    <label>Filter Date Range:</label>
+                    <input type="date" id="analyticsStartDate" class="date-input">
+                    <span class="date-separator">to</span>
+                    <input type="date" id="analyticsEndDate" class="date-input">
+                    <button class="filter-btn" id="analyticsFilterBtn">Apply</button>
+                    <button class="reset-btn" id="analyticsResetBtn">Reset</button>
+                </div>
+
+                <div class="charts-grid">
+                    <!-- Problems per Day Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div>
+                                <h3>Problems Solved Per Day</h3>
+                                <p class="chart-description">Daily problem count with gaps shown for inactive days</p>
+                            </div>
+                            <div class="chart-stats-group">
+                                <div class="chart-stat">
+                                    <span class="chart-stat-value" id="avgProblemsPerDay">-</span>
+                                    <span class="chart-stat-label">Avg/Day</span>
+                                </div>
+                                <div class="chart-stat highlight">
+                                    <span class="chart-stat-value" id="maxProblemsPerDay">-</span>
+                                    <span class="chart-stat-label">Best Day</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="problemsPerDayChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Daily Score Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div>
+                                <h3>Daily Score</h3>
+                                <p class="chart-description">Score calculated using weighted formula (γ = 0.90)</p>
+                            </div>
+                            <div class="chart-stats-group">
+                                <div class="chart-stat">
+                                    <span class="chart-stat-value" id="avgDailyScore">-</span>
+                                    <span class="chart-stat-label">Avg Score</span>
+                                </div>
+                                <div class="chart-stat highlight">
+                                    <span class="chart-stat-value" id="maxDailyScore">-</span>
+                                    <span class="chart-stat-label">Best Score</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="formula-display">
+                            <code>DailyScore = Σ (100 × 2^((r-800)/400)) × (count_r)^0.90</code>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="dailyScoreChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Rating Bars Section -->
+            <section class="section hidden" id="ratingBarsSection">
+                <div class="section-header">
+                    <h2>Rating Level Progress</h2>
+                    <p class="section-subtitle">Progress bars for each rating level (target: 200 problems each)</p>
+                </div>
+                <div class="rating-bars-container" id="ratingBarsContainer"></div>
+            </section>
+
+            <!-- Mentoring Section -->
+            <section class="section hidden" id="mentoringSection">
+                <div class="section-header">
+                    <h2>Personalized Mentoring</h2>
+                    <p class="section-subtitle">AI-powered recommendations based on your solving patterns</p>
+                </div>
+                
+                <div class="mentoring-grid">
+                    <!-- Strengths -->
+                    <div class="mentoring-card strengths">
+                        <div class="card-header">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            <h3>Your Strengths</h3>
+                        </div>
+                        <div class="card-content" id="strengthsList"></div>
+                    </div>
+
+                    <!-- Areas to Improve -->
+                    <div class="mentoring-card improvements">
+                        <div class="card-header">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                            </svg>
+                            <h3>Focus Areas</h3>
+                        </div>
+                        <div class="card-content" id="improvementsList"></div>
+                    </div>
+
+                    <!-- Rating-specific Advice -->
+                    <div class="mentoring-card advice">
+                        <div class="card-header">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 16v-4M12 8h.01"/>
+                            </svg>
+                            <h3>Rating-Based Advice</h3>
+                        </div>
+                        <div class="card-content" id="ratingAdvice"></div>
+                    </div>
+
+                    <!-- Topic Priorities -->
+                    <div class="mentoring-card priorities">
+                        <div class="card-header">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            <h3>Topic Priorities</h3>
+                        </div>
+                        <div class="card-content" id="topicPriorities"></div>
+                    </div>
+                </div>
+
+                <!-- Random Problem Suggestions -->
+                <div class="suggestions-section">
+                    <div class="suggestions-header">
+                        <h3>Recommended Problems</h3>
+                        <button class="refresh-btn" id="refreshSuggestions">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6M1 20v-6h6"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            <span>Get 5 New Suggestions</span>
+                        </button>
+                    </div>
+                    <div class="suggestions-list" id="suggestionsList"></div>
+                </div>
+            </section>
+
+            <!-- Verdict Section -->
+            <section class="section hidden" id="verdictSection">
+                <div class="section-header">
+                    <h2>Final Verdict</h2>
+                    <p class="section-subtitle">Your practice-based virtual rank vs actual Codeforces rank</p>
+                </div>
+                
+                <div class="verdict-container">
+                    <div class="verdict-comparison">
+                        <div class="verdict-card virtual-rank">
+                            <div class="verdict-label">Virtual Rank (Based on Practice)</div>
+                            <div class="verdict-rank" id="virtualRank">-</div>
+                            <div class="verdict-details" id="virtualRankDetails"></div>
+                        </div>
+                        
+                        <div class="verdict-vs">VS</div>
+                        
+                        <div class="verdict-card actual-rank">
+                            <div class="verdict-label">Actual Codeforces Rank</div>
+                            <div class="verdict-rank" id="actualRank">-</div>
+                            <div class="verdict-details" id="actualRankDetails"></div>
+                        </div>
+                    </div>
+
+                    <div class="verdict-analysis" id="verdictAnalysis"></div>
+                    
+                    <div class="final-recommendations">
+                        <h3>Final Recommendations</h3>
+                        <div id="finalRecommendations"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>Codeforces Profile Analyzer | Data from Codeforces API</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="api.js"></script>
+    <script src="mentor.js"></script>
+    <script src="analytics.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
