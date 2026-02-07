@@ -3,373 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A2OJ Ladder - Competitive Programming Problem Tracker">
-    <meta name="theme-color" content="#6366f1">
-    <title>A2OJ Ladder</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>A2OJ - Practice Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-tertiary: #f1f5f9; --bg-card: #ffffff;
+            --text-primary: #0f172a; --text-secondary: #475569; --text-tertiary: #64748b; --text-muted: #94a3b8;
+            --border-color: #e2e8f0; --accent: #3b82f6; --accent-2: #6366f1;
+            --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+        [data-theme="dark"] {
+            --bg-primary: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --bg-card: #1e293b;
+            --text-primary: #f8fafc; --text-secondary: #cbd5e1; --text-tertiary: #94a3b8; --text-muted: #64748b;
+            --border-color: #334155;
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -2px rgba(0,0,0,0.3);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.5), 0 10px 10px -5px rgba(0,0,0,0.4);
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary); color: var(--text-primary); min-height: 100vh;
+            display: flex; flex-direction: column; transition: background 0.3s, color 0.3s;
+        }
+        .header {
+            background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
+            padding: 0 24px; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px);
+        }
+        .header-content {
+            max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between;
+            align-items: center; height: 70px;
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .back-link {
+            display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+            border-radius: 50%; color: var(--text-secondary); text-decoration: none; transition: all 0.3s;
+        }
+        .back-link:hover { background: var(--bg-tertiary); color: var(--accent); }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo svg { width: 32px; height: 32px; color: var(--accent); }
+        .logo h1 {
+            font-size: 1.5rem; font-weight: 700;
+            background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .theme-toggle {
+            width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border-color);
+            background: var(--bg-tertiary); cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: all 0.3s;
+        }
+        .theme-toggle:hover { border-color: var(--accent); transform: rotate(15deg); }
+        .theme-toggle svg { width: 22px; height: 22px; color: var(--text-secondary); }
+        [data-theme="light"] .moon-icon { display: none; }
+        [data-theme="dark"] .sun-icon { display: none; }
+
+        .main {
+            flex: 1; display: flex; align-items: center; justify-content: center; padding: 60px 24px;
+        }
+        .hub {
+            max-width: 900px; width: 100%; text-align: center;
+        }
+        .hub-title {
+            font-size: 3rem; font-weight: 700; margin-bottom: 12px;
+            background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .hub-subtitle { font-size: 1.1rem; color: var(--text-tertiary); margin-bottom: 48px; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+        .cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
+
+        .hub-card {
+            position: relative; padding: 40px 32px; background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 24px; text-decoration: none; color: var(--text-primary); transition: all 0.3s;
+            box-shadow: var(--shadow-lg); overflow: hidden;
+        }
+        .hub-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-xl); border-color: var(--accent); }
+        .hub-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+        }
+        .hub-card.card-ladders::before { background: var(--accent-gradient); }
+        .hub-card.card-category::before { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+
+        .card-icon {
+            width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;
+            border-radius: 16px; margin: 0 auto 20px;
+        }
+        .card-ladders .card-icon { background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(99,102,241,0.2)); color: var(--accent); }
+        .card-category .card-icon { background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(167,139,250,0.2)); color: #8b5cf6; }
+
+        .card-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+        .card-desc { font-size: 0.95rem; color: var(--text-tertiary); margin-bottom: 20px; line-height: 1.6; }
+        .card-stats {
+            display: flex; justify-content: center; gap: 24px;
+            padding-top: 20px; border-top: 1px solid var(--border-color);
+        }
+        .card-stat { text-align: center; }
+        .card-stat-value { display: block; font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+        .card-stat-label { font-size: 0.8rem; color: var(--text-muted); }
+        .card-category .card-stat-value { color: #8b5cf6; }
+
+        .card-arrow {
+            display: inline-flex; align-items: center; gap: 6px; margin-top: 16px;
+            font-weight: 600; font-size: 0.9rem; color: var(--accent);
+        }
+        .card-category .card-arrow { color: #8b5cf6; }
+
+        @media (max-width: 768px) {
+            .cards-grid { grid-template-columns: 1fr; gap: 20px; }
+            .hub-title { font-size: 2rem; }
+            .hub-subtitle { font-size: 1rem; }
+            .hub-card { padding: 28px 20px; }
+        }
+    </style>
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="header-left">
-                    <a href="../" class="back-link" title="Back to Skill Tree">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                            <path d="M19 12H5M12 19l-7-7 7-7"/>
-                        </svg>
-                    </a>
-                    <div class="logo">
-                        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
-                        </svg>
-                        <h1>A2OJ Ladder</h1>
-                    </div>
-                </div>
-                <div class="header-actions">
-                    <!-- CF Handle Section -->
-                    <div class="cf-section" id="cfSection">
-                        <div class="cf-input-group" id="cfInputGroup">
-                            <div class="input-wrapper-sm">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                <input type="text" id="cfHandle" placeholder="CF Handle" autocomplete="off" spellcheck="false">
-                            </div>
-                            <button class="btn-connect" id="cfFetchBtn" onclick="App.loginCF()">
-                                <span class="btn-text">Connect</span>
-                                <span class="spinner hidden"></span>
-                            </button>
-                        </div>
-                        <div class="user-badge hidden" id="userBadge">
-                            <span class="user-name" id="userName"></span>
-                            <button class="btn-refresh" onclick="App.refreshCF()" title="Refresh submissions">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-                            </button>
-                            <button class="btn-logout" onclick="App.logoutCF()" title="Disconnect">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <button class="theme-toggle" id="themeToggle" onclick="App.toggleTheme()" title="Toggle Theme">
-                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                        </svg>
-                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-                        </svg>
-                    </button>
+        <div class="header-content">
+            <div class="header-left">
+                <a href="../" class="back-link" title="Back to Skill Tree">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </a>
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+                    </svg>
+                    <h1>A2OJ</h1>
                 </div>
             </div>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+                <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            </button>
         </div>
     </header>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <!-- Navigation -->
-    <nav class="nav-bar">
-        <div class="container">
-            <div class="nav-tabs">
-                <button class="tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    <span>Dashboard</span>
-                </button>
-                <button class="tab" data-tab="categories" onclick="App.switchTab('categories')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-                    <span>Categories</span>
-                </button>
-                <button class="tab" data-tab="problems" onclick="App.switchTab('problems')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    <span>Problems</span>
-                </button>
-                <button class="tab" data-tab="attempted" onclick="App.switchTab('attempted')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                    <span>Attempted</span>
-                </button>
-                <button class="tab" data-tab="playlists" onclick="App.switchTab('playlists')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                    <span>Playlists</span>
-                </button>
-                <button class="tab" data-tab="bookmarks" onclick="App.switchTab('bookmarks')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-                    <span>Bookmarks</span>
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main -->
     <main class="main">
-        <div class="container">
-
-            <!-- ===== DASHBOARD ===== -->
-            <section class="tab-content active" id="tab-dashboard">
-                <!-- Stats -->
-                <div class="stats-row">
-                    <div class="stat-card">
-                        <div class="stat-icon icon-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="totalSolved">0</span>
-                            <span class="stat-label">Solved</span>
-                        </div>
+        <div class="hub">
+            <h1 class="hub-title">A2OJ Practice Hub</h1>
+            <p class="hub-subtitle">Master competitive programming with structured problem sets organized by division, rating, and topic.</p>
+            <div class="cards-grid">
+                <a href="./ladders/" class="hub-card card-ladders">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon icon-yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="totalAttempted">0</span>
-                            <span class="stat-label">Attempted</span>
-                        </div>
+                    <div class="card-title">Ladders</div>
+                    <div class="card-desc">Practice by Codeforces division (Div2 A-E) and rating range. Updated and classic problem sets.</div>
+                    <div class="card-stats">
+                        <div class="card-stat"><span class="card-stat-value">32</span><span class="card-stat-label">Ladders</span></div>
+                        <div class="card-stat"><span class="card-stat-value">4,300</span><span class="card-stat-label">Problems</span></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon icon-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="totalRemaining">0</span>
-                            <span class="stat-label">Remaining</span>
-                        </div>
+                    <div class="card-arrow">
+                        Start Practicing
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon icon-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="totalCategories">0</span>
-                            <span class="stat-label">Categories</span>
-                        </div>
+                </a>
+                <a href="./categorywise/" class="hub-card card-category">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
                     </div>
-                </div>
-
-                <!-- Overall Progress -->
-                <div class="section-card">
-                    <div class="section-card-header">
-                        <div>
-                            <h2>Overall Progress</h2>
-                            <p class="section-subtitle">Track your solving journey across all categories</p>
-                        </div>
-                        <span class="progress-label" id="overallProgressText">0 / 0</span>
+                    <div class="card-title">Category Wise</div>
+                    <div class="card-desc">Practice by topic: DP, Graphs, Greedy, Math, Trees, Strings, and 17 more categories.</div>
+                    <div class="card-stats">
+                        <div class="card-stat"><span class="card-stat-value">23</span><span class="card-stat-label">Categories</span></div>
+                        <div class="card-stat"><span class="card-stat-value">8,438</span><span class="card-stat-label">Problems</span></div>
                     </div>
-                    <div class="progress-bar-xl">
-                        <div class="progress-fill-gradient" id="overallProgressFill" style="width:0%"></div>
+                    <div class="card-arrow">
+                        Start Practicing
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </div>
-                </div>
-
-                <!-- Category Progress -->
-                <div class="section-card">
-                    <div class="section-card-header">
-                        <div>
-                            <h2>Category Progress</h2>
-                            <p class="section-subtitle">Your progress in each problem category</p>
-                        </div>
-                    </div>
-                    <div class="cat-progress-grid" id="categoryProgressGrid"></div>
-                </div>
-
-                <!-- Connect prompt -->
-                <div class="section-card connect-card" id="connectPrompt">
-                    <div class="connect-content">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        <h3>Connect Codeforces</h3>
-                        <p>Enter your Codeforces handle above to automatically import your solved problems and track progress.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ===== CATEGORIES ===== -->
-            <section class="tab-content" id="tab-categories">
-                <div class="section-header">
-                    <div>
-                        <h2>Categories</h2>
-                        <p class="section-subtitle">Browse problem categories and track progress</p>
-                    </div>
-                    <div class="search-box-lg">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <input type="text" id="categorySearch" placeholder="Search categories..." oninput="App.filterCategories()">
-                    </div>
-                </div>
-                <div class="categories-grid" id="categoriesGrid"></div>
-            </section>
-
-            <!-- ===== PROBLEMS ===== -->
-            <section class="tab-content" id="tab-problems">
-                <!-- Toolbar -->
-                <div class="problems-header">
-                    <div class="problems-title-row">
-                        <button class="btn-back hidden" id="backToCategories" onclick="App.showAllCategories()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                        </button>
-                        <div>
-                            <h2 id="problemsTitle">All Problems</h2>
-                            <p class="section-subtitle"><span id="problemsCount">0</span> problems found</p>
-                        </div>
-                    </div>
-                    <div class="progress-inline-lg">
-                        <span id="filteredProgress">0 / 0 solved</span>
-                        <div class="progress-bar-sm">
-                            <div class="progress-fill-gradient" id="filteredProgressFill" style="width:0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filters -->
-                <div class="filters-card">
-                    <div class="filters-row">
-                        <div class="search-box-lg flex-1">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                            <input type="text" id="problemSearch" placeholder="Search problems..." oninput="App.filterProblems()">
-                        </div>
-                        <select id="platformFilter" onchange="App.filterProblems()" class="filter-select">
-                            <option value="all">All Platforms</option>
-                            <option value="Codeforces" selected>Codeforces</option>
-                            <option value="SPOJ">SPOJ</option>
-                            <option value="UVA">UVA</option>
-                            <option value="URI">URI</option>
-                            <option value="other">Other</option>
-                        </select>
-                        <select id="difficultyFilter" onchange="App.filterProblems()" class="filter-select">
-                            <option value="all">All Difficulty</option>
-                            <option value="1">Level 1</option>
-                            <option value="2">Level 2</option>
-                            <option value="3">Level 3</option>
-                            <option value="4">Level 4</option>
-                            <option value="5">Level 5+</option>
-                        </select>
-                        <select id="statusFilter" onchange="App.filterProblems()" class="filter-select">
-                            <option value="all">All Status</option>
-                            <option value="solved">Solved</option>
-                            <option value="attempted">Attempted</option>
-                            <option value="unsolved">Unsolved</option>
-                        </select>
-                        <select id="categoryFilter" onchange="App.filterProblems()" class="filter-select">
-                            <option value="all">All Categories</option>
-                        </select>
-                    </div>
-                    <div class="platform-toggle-row">
-                        <label class="toggle-label">
-                            <input type="checkbox" id="showAllPlatforms" onchange="App.togglePlatforms()">
-                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                            <span>Show all platforms (not just Codeforces)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Table -->
-                <div class="table-wrapper">
-                    <table class="problems-table" id="problemsTable">
-                        <thead>
-                            <tr>
-                                <th class="col-num">#</th>
-                                <th class="col-status">Status</th>
-                                <th class="col-name sortable" onclick="App.sortProblems('name')">Problem</th>
-                                <th class="col-platform">Platform</th>
-                                <th class="col-diff sortable" onclick="App.sortProblems('difficulty')">Diff</th>
-                                <th class="col-contest">Contest</th>
-                                <th class="col-actions">Actions</th>
-                                <th class="col-failed">Failed 1st</th>
-                            </tr>
-                        </thead>
-                        <tbody id="problemsBody"></tbody>
-                    </table>
-                </div>
-                <div class="pagination" id="pagination"></div>
-            </section>
-
-            <!-- ===== ATTEMPTED ===== -->
-            <section class="tab-content" id="tab-attempted">
-                <div class="section-header">
-                    <div>
-                        <h2>Attempted Problems</h2>
-                        <p class="section-subtitle">Problems you've tried but haven't solved yet</p>
-                    </div>
-                    <div class="attempted-stats">
-                        <span class="attempted-count" id="attemptedCount">0</span>
-                        <span class="attempted-label">problems attempted</span>
-                    </div>
-                </div>
-                <div id="attemptedList"></div>
-            </section>
-
-            <!-- ===== PLAYLISTS ===== -->
-            <section class="tab-content" id="tab-playlists">
-                <div class="section-header">
-                    <div>
-                        <h2>Custom Playlists</h2>
-                        <p class="section-subtitle">Create your own problem sets for focused practice</p>
-                    </div>
-                    <button class="btn-gradient" onclick="App.createPlaylist()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        New Playlist
-                    </button>
-                </div>
-                <div class="playlists-grid" id="playlistsGrid"></div>
-            </section>
-
-            <!-- ===== BOOKMARKS ===== -->
-            <section class="tab-content" id="tab-bookmarks">
-                <div class="section-header">
-                    <div>
-                        <h2>Bookmarked Problems</h2>
-                        <p class="section-subtitle">Your saved problems for quick access</p>
-                    </div>
-                </div>
-                <div id="bookmarksList"></div>
-            </section>
+                </a>
+            </div>
         </div>
     </main>
 
-    <!-- Notes Modal -->
-    <div class="modal-overlay hidden" id="notesModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="notesTitle">Notes</h3>
-                <button class="modal-close" onclick="App.closeNotes()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <textarea id="notesTextarea" placeholder="Write your notes here..." rows="8"></textarea>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-outline" onclick="App.closeNotes()">Cancel</button>
-                <button class="btn-gradient" onclick="App.saveNotes()">Save Notes</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Playlist Modal -->
-    <div class="modal-overlay hidden" id="playlistModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="playlistModalTitle">New Playlist</h3>
-                <button class="modal-close" onclick="App.closePlaylistModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <label class="form-label">Playlist Name</label>
-                <input type="text" id="playlistName" class="form-input" placeholder="e.g., DP Practice">
-                <label class="form-label mt-16">Description (optional)</label>
-                <input type="text" id="playlistDesc" class="form-input" placeholder="e.g., Focus on tree DP problems">
-            </div>
-            <div class="modal-footer">
-                <button class="btn-outline" onclick="App.closePlaylistModal()">Cancel</button>
-                <button class="btn-gradient" onclick="App.savePlaylist()">Create</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add to Playlist Modal -->
-    <div class="modal-overlay hidden" id="addToPlaylistModal">
-        <div class="modal modal-sm">
-            <div class="modal-header">
-                <h3>Add to Playlist</h3>
-                <button class="modal-close" onclick="App.closeAddToPlaylist()">&times;</button>
-            </div>
-            <div class="modal-body" id="playlistOptions"></div>
-        </div>
-    </div>
-
-    <!-- Loading -->
-    <div class="loading-overlay hidden" id="loadingOverlay">
-        <div class="loading-box">
-            <div class="spinner-lg"></div>
-            <p id="loadingMessage">Loading...</p>
-        </div>
-    </div>
-
-    <script src="data.js"></script>
-    <script src="app.js"></script>
+    <script>
+        const theme = localStorage.getItem('a2oj_hub_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        function toggleTheme() {
+            const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+            localStorage.setItem('a2oj_hub_theme', t);
+        }
+    </script>
 </body>
 </html>

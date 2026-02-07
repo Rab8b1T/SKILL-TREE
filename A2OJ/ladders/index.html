@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2OJ Ladders</title>
+    <link rel="stylesheet" href="../categorywise/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .rating-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 4px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: 700; color: #fff;
+            min-width: 48px; text-align: center;
+        }
+        .group-btn {
+            padding: 8px 18px; border: 2px solid var(--border-color); border-radius: var(--radius-md);
+            background: transparent; color: var(--text-secondary); font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease; font-family: inherit;
+        }
+        .group-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .group-btn.active { background: var(--accent-gradient); color: #fff; border-color: transparent; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <a href="../" class="back-link" title="Back to A2OJ">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    </a>
+                    <div class="logo">
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        <h1>A2OJ Ladders</h1>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="cf-section" id="cfSection">
+                        <div class="cf-input-group" id="cfInputGroup">
+                            <div class="input-wrapper-sm">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                <input type="text" id="cfHandle" placeholder="CF Handle" autocomplete="off" spellcheck="false">
+                            </div>
+                            <button class="btn-connect" id="cfFetchBtn" onclick="App.loginCF()">
+                                <span class="btn-text">Connect</span>
+                                <span class="spinner hidden"></span>
+                            </button>
+                        </div>
+                        <div class="user-badge hidden" id="userBadge">
+                            <span class="user-name" id="userName"></span>
+                            <button class="btn-refresh" onclick="App.refreshCF()" title="Refresh submissions">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                            </button>
+                            <button class="btn-logout" onclick="App.logoutCF()" title="Disconnect">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="theme-toggle" id="themeToggle" onclick="App.toggleTheme()" title="Toggle Theme">
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <nav class="nav-bar">
+        <div class="container">
+            <div class="nav-tabs">
+                <button class="tab active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Dashboard</span>
+                </button>
+                <button class="tab" data-tab="ladders" onclick="App.switchTab('ladders')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <span>Ladders</span>
+                </button>
+                <button class="tab" data-tab="problems" onclick="App.switchTab('problems')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span>Problems</span>
+                </button>
+                <button class="tab" data-tab="attempted" onclick="App.switchTab('attempted')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                    <span>Attempted</span>
+                </button>
+                <button class="tab" data-tab="bookmarks" onclick="App.switchTab('bookmarks')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+                    <span>Bookmarks</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="container">
+
+            <!-- DASHBOARD -->
+            <section class="tab-content active" id="tab-dashboard">
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                        <div class="stat-info"><span class="stat-value" id="totalSolved">0</span><span class="stat-label">Solved</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></div>
+                        <div class="stat-info"><span class="stat-value" id="totalAttempted">0</span><span class="stat-label">Attempted</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                        <div class="stat-info"><span class="stat-value" id="totalRemaining">0</span><span class="stat-label">Remaining</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                        <div class="stat-info"><span class="stat-value" id="totalLadders">0</span><span class="stat-label">Ladders</span></div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <div><h2>Overall Progress</h2><p class="section-subtitle">Track your progress across all ladders</p></div>
+                        <span class="progress-label" id="overallProgressText">0 / 0</span>
+                    </div>
+                    <div class="progress-bar-xl"><div class="progress-fill-gradient" id="overallProgressFill" style="width:0%"></div></div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-card-header"><div><h2>Ladder Progress</h2><p class="section-subtitle">Your progress in each ladder</p></div></div>
+                    <div class="cat-progress-grid" id="ladderProgressGrid"></div>
+                </div>
+
+                <div class="section-card connect-card" id="connectPrompt">
+                    <div class="connect-content">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <h3>Connect Codeforces</h3>
+                        <p>Enter your Codeforces handle above to automatically import your solved problems and track progress.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LADDERS -->
+            <section class="tab-content" id="tab-ladders">
+                <div class="section-header">
+                    <div><h2>Ladders</h2><p class="section-subtitle">Practice problems organized by division and rating</p></div>
+                    <div class="search-box-lg">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="ladderSearch" placeholder="Search ladders..." oninput="App.filterLadders()">
+                    </div>
+                </div>
+                <!-- Group filter -->
+                <div class="filters-card" style="margin-bottom:20px;">
+                    <div class="filters-row">
+                        <button class="group-btn active" data-group="all" onclick="App.filterGroup('all')">All</button>
+                        <button class="group-btn" data-group="Div (Updated)" onclick="App.filterGroup('Div (Updated)')">Div (Updated)</button>
+                        <button class="group-btn" data-group="Div (Older)" onclick="App.filterGroup('Div (Older)')">Div (Older)</button>
+                        <button class="group-btn" data-group="Rating" onclick="App.filterGroup('Rating')">Rating</button>
+                        <button class="group-btn" data-group="Rating (Extra)" onclick="App.filterGroup('Rating (Extra)')">Rating (Extra)</button>
+                    </div>
+                </div>
+                <div class="categories-grid" id="laddersGrid"></div>
+            </section>
+
+            <!-- PROBLEMS -->
+            <section class="tab-content" id="tab-problems">
+                <div class="problems-header">
+                    <div class="problems-title-row">
+                        <button class="btn-back hidden" id="backToLadders" onclick="App.showAllLadders()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        </button>
+                        <div><h2 id="problemsTitle">All Problems</h2><p class="section-subtitle"><span id="problemsCount">0</span> problems found</p></div>
+                    </div>
+                    <div class="progress-inline-lg">
+                        <span id="filteredProgress">0 / 0 solved</span>
+                        <div class="progress-bar-sm"><div class="progress-fill-gradient" id="filteredProgressFill" style="width:0%"></div></div>
+                    </div>
+                </div>
+                <div class="filters-card">
+                    <div class="filters-row">
+                        <div class="search-box-lg flex-1">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="problemSearch" placeholder="Search problems..." oninput="App.filterProblems()">
+                        </div>
+                        <select id="statusFilter" onchange="App.filterProblems()" class="filter-select">
+                            <option value="all">All Status</option>
+                            <option value="solved">Solved</option>
+                            <option value="attempted">Attempted</option>
+                            <option value="unsolved">Unsolved</option>
+                        </select>
+                        <select id="ladderFilter" onchange="App.filterProblems()" class="filter-select">
+                            <option value="all">All Ladders</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="problems-table" id="problemsTable">
+                        <thead>
+                            <tr>
+                                <th class="col-num">#</th>
+                                <th class="col-status">Status</th>
+                                <th class="col-name sortable" onclick="App.sortProblems('name')">Problem</th>
+                                <th class="col-diff sortable" onclick="App.sortProblems('rating')">Rating</th>
+                                <th class="col-contest">Ladder</th>
+                                <th class="col-actions">Actions</th>
+                                <th class="col-failed">Failed 1st</th>
+                            </tr>
+                        </thead>
+                        <tbody id="problemsBody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pagination"></div>
+            </section>
+
+            <!-- ATTEMPTED -->
+            <section class="tab-content" id="tab-attempted">
+                <div class="section-header">
+                    <div><h2>Attempted Problems</h2><p class="section-subtitle">Problems you've tried but haven't solved yet</p></div>
+                    <div class="attempted-stats"><span class="attempted-count" id="attemptedCount">0</span><span class="attempted-label">problems attempted</span></div>
+                </div>
+                <div id="attemptedList"></div>
+            </section>
+
+            <!-- BOOKMARKS -->
+            <section class="tab-content" id="tab-bookmarks">
+                <div class="section-header"><div><h2>Bookmarked Problems</h2><p class="section-subtitle">Your saved problems for quick access</p></div></div>
+                <div id="bookmarksList"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Notes Modal -->
+    <div class="modal-overlay hidden" id="notesModal">
+        <div class="modal">
+            <div class="modal-header"><h3 id="notesTitle">Notes</h3><button class="modal-close" onclick="App.closeNotes()">&times;</button></div>
+            <div class="modal-body"><textarea id="notesTextarea" placeholder="Write your notes here..." rows="8"></textarea></div>
+            <div class="modal-footer"><button class="btn-outline" onclick="App.closeNotes()">Cancel</button><button class="btn-gradient" onclick="App.saveNotes()">Save Notes</button></div>
+        </div>
+    </div>
+
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-box"><div class="spinner-lg"></div><p id="loadingMessage">Loading...</p></div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
