@@ -653,9 +653,7 @@ const App = {
         
         // Virtual rank
         this.elements.virtualRank.textContent = verdict.virtualRank.rank;
-        this.elements.virtualRank.style.color = this.getRankColor(
-            this.getApproxRating(verdict.virtualRank.rank)
-        );
+        this.elements.virtualRank.style.color = this.getRankColor(verdict.virtualRank.rating);
         this.elements.virtualRankDetails.textContent = verdict.virtualRank.details;
         
         // Actual rank

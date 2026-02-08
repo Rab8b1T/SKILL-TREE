@@ -101,114 +101,166 @@ const MentorSystem = {
     },
     
     /**
-     * Calculate virtual rank based on practice
-     * @param {Object} ratingCount - Problems solved by rating
+     * Calculate virtual rank based on practice using a hybrid algorithm.
+     * 
+     * Combines two approaches:
+     *   - Suggestion 1 (Weighted Performance): Weighted problem score by difficulty,
+     *     exposure bonus for breadth, peak difficulty bonus for ceiling.
+     *   - Suggestion 2 (Stability + Peak): Stability rating (highest level with
+     *     consistent solves) and peak rating (top-K hardest problems average).
+     * 
+     * The final virtual rating blends a stability+peak base with volume and
+     * breadth adjustments derived from the weighted score approach.
+     * 
+     * @param {Object} ratingCount - Problems solved by rating bucket (e.g., {800: 50, 900: 30, ...})
      * @param {number} totalSolved - Total problems solved
-     * @returns {Object} Virtual rank info
+     * @param {Array} allProblems - Array of all solved problem objects (each with .rating)
+     * @returns {Object} Virtual rank info with rank, rating, details, and breakdown
      */
-    calculateVirtualRank(ratingCount, totalSolved) {
-        // Calculate cumulative counts
-        const count2400Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 2400)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count2200Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 2200)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count2000Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 2000)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count1900Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 1900)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count1800Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 1800)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count1700Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 1700)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count1600Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 1600)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count1500Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 1500)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count1400Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 1400)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count1300Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 1300)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count1200Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 1200)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count1100Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 1100)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count1000Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 1000)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        const count800Plus = Object.entries(ratingCount)
-            .filter(([r]) => parseInt(r) >= 800)
-            .reduce((sum, [, c]) => sum + c, 0);
-        
-        // Determine virtual rank
-        let virtualRank = 'Newbie';
-        let details = '';
-        
-        if (totalSolved >= 3000 && count2400Plus >= 100 && count2000Plus >= 300) {
-            virtualRank = 'Legendary Grandmaster';
-            details = `${totalSolved} total, ${count2400Plus} at 2400+, ${count2000Plus} at 2000+`;
-        } else if (totalSolved >= 2500 && count2400Plus >= 50 && count2000Plus >= 200) {
-            virtualRank = 'International Grandmaster';
-            details = `${totalSolved} total, ${count2400Plus} at 2400+, ${count2000Plus} at 2000+`;
-        } else if (totalSolved >= 2000 && count2200Plus >= 50 && count1900Plus >= 200) {
-            virtualRank = 'Grandmaster';
-            details = `${totalSolved} total, ${count2200Plus} at 2200+, ${count1900Plus} at 1900+`;
-        } else if (totalSolved >= 1500 && count2000Plus >= 30 && count1800Plus >= 150) {
-            virtualRank = 'International Master';
-            details = `${totalSolved} total, ${count2000Plus} at 2000+, ${count1800Plus} at 1800+`;
-        } else if (totalSolved >= 1200 && count1900Plus >= 30 && count1600Plus >= 150) {
-            virtualRank = 'Master';
-            details = `${totalSolved} total, ${count1900Plus} at 1900+, ${count1600Plus} at 1600+`;
-        } else if (totalSolved >= 800 && count1700Plus >= 30 && count1400Plus >= 100) {
-            virtualRank = 'Candidate Master';
-            details = `${totalSolved} total, ${count1700Plus} at 1700+, ${count1400Plus} at 1400+`;
-        } else if (totalSolved >= 500 && count1500Plus >= 30 && count1200Plus >= 80) {
-            virtualRank = 'Expert';
-            details = `${totalSolved} total, ${count1500Plus} at 1500+, ${count1200Plus} at 1200+`;
-        } else if (totalSolved >= 300 && count1300Plus >= 20 && count1000Plus >= 60) {
-            virtualRank = 'Specialist';
-            details = `${totalSolved} total, ${count1300Plus} at 1300+, ${count1000Plus} at 1000+`;
-        } else if (totalSolved >= 150 && count1100Plus >= 15 && count800Plus >= 40) {
-            virtualRank = 'Pupil';
-            details = `${totalSolved} total, ${count1100Plus} at 1100+, ${count800Plus} at 800+`;
-        } else {
-            details = `${totalSolved} total problems solved`;
+    calculateVirtualRank(ratingCount, totalSolved, allProblems) {
+        // --- Insufficient data guard ---
+        if (totalSolved < 10 || !allProblems || allProblems.length < 10) {
+            return {
+                rank: 'Newbie',
+                rating: 800,
+                details: `Insufficient data — only ${totalSolved} problem(s) solved`,
+                breakdown: { totalSolved, stabilityRating: 0, peakRating: 0, weightedScore: 0 }
+            };
         }
         
+        // Get all rated problem ratings, sorted descending (highest first)
+        const allRatings = allProblems
+            .map(p => p.rating)
+            .filter(r => r > 0)
+            .sort((a, b) => b - a);
+        
+        if (allRatings.length === 0) {
+            return {
+                rank: 'Newbie',
+                rating: 800,
+                details: 'No rated problems solved',
+                breakdown: { totalSolved, stabilityRating: 0, peakRating: 0, weightedScore: 0 }
+            };
+        }
+        
+        // ================================================================
+        // PILLAR 1: Stability Rating (from Suggestion 2)
+        // The highest difficulty band where the user has cumulatively solved
+        // >= stabilityThreshold problems at that level or higher.
+        // This represents the difficulty level where the user is "comfortable."
+        // ================================================================
+        const stabilityThreshold = 25;
+        const sortedBuckets = Object.keys(ratingCount)
+            .map(Number)
+            .filter(r => r > 0)
+            .sort((a, b) => b - a); // highest first
+        
+        let rStability = 0;
+        let cumulative = 0;
+        for (const r of sortedBuckets) {
+            cumulative += (ratingCount[r] || 0);
+            if (cumulative >= stabilityThreshold) {
+                rStability = r;
+                break;
+            }
+        }
+        // Fallback: if user hasn't hit threshold at any level, use average
+        if (rStability === 0) {
+            rStability = Math.round(allRatings.reduce((a, b) => a + b, 0) / allRatings.length);
+        }
+        
+        // ================================================================
+        // PILLAR 2: Peak Rating — Top-K weighted average (from Suggestion 2)
+        // Average of top 10 hardest problems solved, with heavier weights
+        // on the very hardest to capture true ceiling.
+        // ================================================================
+        const topK = Math.min(10, allRatings.length);
+        let weightedPeakSum = 0;
+        let peakWeightSum = 0;
+        for (let i = 0; i < topK; i++) {
+            const weight = 1.0 - (i * 0.05); // 1.0, 0.95, 0.90, ..., 0.55
+            weightedPeakSum += allRatings[i] * weight;
+            peakWeightSum += weight;
+        }
+        const rPeak = weightedPeakSum / peakWeightSum;
+        
+        // ================================================================
+        // PILLAR 3: Weighted Volume Score (from Suggestion 1)
+        // w(r) = ((r - 700) / 1000)^α — harder problems contribute more.
+        // This rewards quality-weighted practice volume.
+        // ================================================================
+        const alpha = 1.0;
+        let W = 0;
+        for (const [r, count] of Object.entries(ratingCount)) {
+            const rating = parseInt(r);
+            if (rating > 0) {
+                const w = Math.pow((rating - 700) / 1000, alpha);
+                W += count * w;
+            }
+        }
+        
+        // ================================================================
+        // PILLAR 4: Exposure Bonus (from Suggestion 1)
+        // Breadth of difficulty coverage — solving across many rating bands.
+        // E = b_e × ln(1 + bins_solved)
+        // ================================================================
+        const binsSolved = Object.entries(ratingCount)
+            .filter(([r, v]) => parseInt(r) > 0 && v > 0).length;
+        
+        // ================================================================
+        // COMBINE: Base Rating + Adjustments
+        // ================================================================
+        
+        // Base rating: weighted blend of stability and peak (Suggestion 2)
+        //   Stability (65%) — represents consistent, proven ability
+        //   Peak (35%) — captures ceiling potential (lower weight to avoid
+        //                inflating from lucky/tutorial-aided solves)
+        const baseRating = rStability * 0.65 + rPeak * 0.35;
+        
+        // Volume bonus: reward for total quality-weighted work (Suggestion 1)
+        // Uses log to apply diminishing returns and prevent farming spam.
+        // Capped at 100 to prevent volume alone from distorting rating.
+        const volumeBonus = Math.min(100, 25 * Math.log(1 + W / 10));
+        
+        // Exposure bonus: breadth of difficulty bands attempted (Suggestion 1)
+        // Capped at 30 — rewards well-rounded practice but small effect.
+        const exposureBonus = Math.min(30, 10 * Math.log(1 + binsSolved));
+        
+        // Peak difficulty bonus: extra credit for having solved problems
+        // harder than the base rating suggests (Suggestion 1)
+        // Capped at 70 to prevent a single hard solve from inflating rank.
+        const Dmax = allRatings[0];
+        const peakDiffBonus = Math.min(70, Math.max(0, (Dmax - baseRating) * 0.1));
+        
+        // Final virtual rating
+        let virtualRating = Math.round(baseRating + volumeBonus + exposureBonus + peakDiffBonus);
+        
+        // Clamp to valid Codeforces rating range
+        virtualRating = Math.max(800, Math.min(3500, virtualRating));
+        
+        // Map to rank name using standard CF thresholds
+        const rank = this.getRankName(virtualRating);
+        
+        // Build a human-readable details string
+        const details = `Rating: ~${virtualRating} | Stability: ${Math.round(rStability)} | ` +
+                        `Peak(Top${topK}): ${Math.round(rPeak)} | Hardest: ${Dmax} | ` +
+                        `${totalSolved} problems across ${binsSolved} bands`;
+        
         return {
-            rank: virtualRank,
+            rank,
+            rating: virtualRating,
             details,
-            stats: {
-                total: totalSolved,
-                count2400Plus,
-                count2000Plus,
-                count1600Plus,
-                count1200Plus,
-                count800Plus
+            breakdown: {
+                stabilityRating: Math.round(rStability),
+                peakRating: Math.round(rPeak),
+                baseRating: Math.round(baseRating),
+                weightedScore: Math.round(W * 100) / 100,
+                volumeBonus: Math.round(volumeBonus * 10) / 10,
+                exposureBonus: Math.round(exposureBonus * 10) / 10,
+                peakDiffBonus: Math.round(peakDiffBonus * 10) / 10,
+                hardestSolved: Dmax,
+                binsSolved,
+                totalSolved
             }
         };
     },
@@ -541,7 +593,8 @@ const MentorSystem = {
         
         const virtualRankInfo = this.calculateVirtualRank(
             solvedProblems.byRating, 
-            solvedProblems.totalCount
+            solvedProblems.totalCount,
+            solvedProblems.all
         );
         
         const actualRank = this.getRankName(currentRating);
