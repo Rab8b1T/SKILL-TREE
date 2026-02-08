@@ -115,6 +115,31 @@ body {
     height: 70px;
 }
 
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-link,
+.home-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.back-link:hover,
+.home-link:hover {
+    background: var(--bg-tertiary);
+    color: var(--accent-primary);
+}
+
 .logo {
     display: flex;
     align-items: center;

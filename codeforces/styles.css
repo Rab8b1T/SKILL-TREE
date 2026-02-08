@@ -142,6 +142,29 @@ body {
     flex-shrink: 0;
 }
 
+.home-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    color: var(--text-tertiary);
+    text-decoration: none;
+    transition: all var(--transition);
+}
+
+.home-link:hover {
+    color: var(--accent-primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.home-link svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
 .logo {
     display: flex;
     align-items: center;
