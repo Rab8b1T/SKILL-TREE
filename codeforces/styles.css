@@ -1314,6 +1314,26 @@ body {
         height: 56px;
     }
 
+    .header-left {
+        gap: 8px;
+    }
+
+    .back-link {
+        padding: 4px 6px;
+        font-size: 0;
+        gap: 0;
+    }
+
+    .back-link svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .home-link {
+        width: 30px;
+        height: 30px;
+    }
+
     .logo h1 {
         font-size: 1.15rem;
     }
@@ -1321,6 +1341,14 @@ body {
     .card {
         padding: 20px;
         border-radius: var(--radius-lg);
+    }
+
+    .card-title {
+        font-size: 1.3rem;
+    }
+
+    .card-subtitle {
+        font-size: 0.85rem;
     }
 
     .search-form {
@@ -1352,9 +1380,18 @@ body {
         grid-template-columns: 1fr;
     }
 
+    .tag-filter-box {
+        max-height: none;
+    }
+
     .options-row {
         flex-direction: column;
         gap: 14px;
+    }
+
+    .segment-presets {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     .export-buttons {
@@ -1372,9 +1409,72 @@ body {
     .header .container {
         padding: 0 16px;
     }
+
+    .results-summary {
+        padding: 16px;
+    }
+
+    .results-tags {
+        overflow-x: auto;
+    }
+
+    .tags-table {
+        font-size: 0.85rem;
+    }
+
+    .modal-content {
+        padding: 24px 16px;
+        margin: 16px;
+    }
+
+    .modal-content h2 {
+        font-size: 1.3rem;
+    }
 }
 
 @media (max-width: 480px) {
+    .container {
+        padding: 0 12px;
+    }
+
+    .header .container {
+        padding: 0 12px;
+    }
+
+    .header-content {
+        height: 50px;
+    }
+
+    .header-left {
+        gap: 4px;
+    }
+
+    .back-link {
+        padding: 4px;
+    }
+
+    .home-link {
+        width: 28px;
+        height: 28px;
+    }
+
+    .logo h1 {
+        font-size: 1rem;
+    }
+
+    .logo-icon {
+        width: 22px;
+        height: 22px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .card-title {
+        font-size: 1.15rem;
+    }
+
     .segment-row {
         padding: 10px 12px;
     }
@@ -1386,5 +1486,19 @@ body {
     .tag-bar-label {
         min-width: 100px;
         font-size: 0.8rem;
+    }
+
+    .privacy-notice {
+        font-size: 0.8rem;
+        padding: 10px 14px;
+    }
+
+    .btn-gradient.btn-lg {
+        padding: 14px 24px;
+        font-size: 0.95rem;
+    }
+
+    .problems-grid {
+        gap: 8px;
     }
 }

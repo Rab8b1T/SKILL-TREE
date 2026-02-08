@@ -113,10 +113,45 @@
         .card-category .card-arrow { color: #8b5cf6; }
 
         @media (max-width: 768px) {
+            .header { padding: 0 16px; }
+            .header-content { height: 60px; }
+            .header-left { gap: 8px; }
+            .back-link, .home-link { width: 36px; height: 36px; }
+            .logo svg { width: 28px; height: 28px; }
+            .logo h1 { font-size: 1.25rem; }
+            .theme-toggle { width: 38px; height: 38px; }
+            .theme-toggle svg { width: 18px; height: 18px; }
+            .main { padding: 40px 16px; }
             .cards-grid { grid-template-columns: 1fr; gap: 20px; }
             .hub-title { font-size: 2rem; }
-            .hub-subtitle { font-size: 1rem; }
+            .hub-subtitle { font-size: 1rem; margin-bottom: 32px; }
             .hub-card { padding: 28px 20px; }
+            .card-icon { width: 52px; height: 52px; border-radius: 12px; margin-bottom: 16px; }
+            .card-title { font-size: 1.25rem; }
+            .card-desc { font-size: 0.9rem; }
+            .card-stats { gap: 16px; }
+            .card-stat-value { font-size: 1.25rem; }
+        }
+
+        @media (max-width: 480px) {
+            .header { padding: 0 12px; }
+            .header-content { height: 52px; }
+            .header-left { gap: 4px; }
+            .back-link, .home-link { width: 32px; height: 32px; }
+            .back-link svg, .home-link svg { width: 16px; height: 16px; }
+            .logo svg { width: 24px; height: 24px; }
+            .logo h1 { font-size: 1.1rem; }
+            .logo { gap: 8px; }
+            .theme-toggle { width: 34px; height: 34px; }
+            .main { padding: 24px 12px; }
+            .hub-title { font-size: 1.6rem; }
+            .hub-subtitle { font-size: 0.9rem; margin-bottom: 24px; }
+            .hub-card { padding: 24px 16px; border-radius: 16px; }
+            .card-icon { width: 44px; height: 44px; }
+            .card-icon svg { width: 22px; height: 22px; }
+            .card-title { font-size: 1.15rem; }
+            .card-desc { font-size: 0.85rem; margin-bottom: 14px; }
+            .card-stats { flex-wrap: wrap; gap: 12px; }
         }
     </style>
 </head>

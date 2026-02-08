@@ -1035,8 +1035,16 @@ body {
 
 @media (max-width: 768px) {
     .header-content { height: 60px; }
+    .header-left { gap: 8px; }
+    .back-link, .home-link { width: 34px; height: 34px; }
     .logo h1 { font-size: 1.2rem; }
-    .input-wrapper-sm input { width: 100px; }
+    .logo-icon { width: 26px; height: 26px; }
+    .header-actions { gap: 8px; }
+    .input-wrapper-sm input { width: 90px; }
+    .input-wrapper-sm { padding: 6px 10px; gap: 6px; }
+    .btn-connect { padding: 6px 12px; font-size: 0.8rem; }
+    .theme-toggle { width: 36px; height: 36px; }
+    .theme-toggle svg { width: 18px; height: 18px; }
     .tab span { display: none; }
     .tab { padding: 10px 12px; }
     .main { padding: 20px 0; }
@@ -1053,11 +1061,31 @@ body {
     .problems-table td:nth-child(6) { display: none; }
     .cat-progress-grid { grid-template-columns: 1fr; }
     .search-box-lg { min-width: 100%; }
+    .user-badge { gap: 6px; }
+    .user-name { font-size: 0.8rem; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 @media (max-width: 480px) {
+    .container { padding: 0 12px; }
+    .header-content { height: 52px; }
+    .header-left { gap: 4px; }
+    .back-link, .home-link { width: 30px; height: 30px; }
+    .back-link svg, .home-link svg { width: 16px; height: 16px; }
+    .logo { gap: 6px; }
+    .logo h1 { font-size: 1rem; }
+    .logo-icon { width: 22px; height: 22px; }
+    .header-actions { gap: 6px; }
+    .input-wrapper-sm input { width: 70px; font-size: 0.8rem; }
+    .input-wrapper-sm { padding: 5px 8px; }
+    .btn-connect { padding: 5px 10px; font-size: 0.75rem; }
+    .theme-toggle { width: 32px; height: 32px; }
     .stat-card { flex-direction: column; text-align: center; }
     .categories-grid { grid-template-columns: 1fr; }
     .playlists-grid { grid-template-columns: 1fr; }
     .cf-input-group { flex-wrap: wrap; }
+    .section-header h2 { font-size: 1.2rem; }
+    .tabs { gap: 4px; }
+    .tab { padding: 8px 10px; font-size: 0.85rem; }
+    .problems-table th, .problems-table td { padding: 10px 8px; font-size: 0.8rem; }
+    .col-name { min-width: 160px; }
 }
