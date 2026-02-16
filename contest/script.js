@@ -524,6 +524,30 @@ function startTimer() {
     state.timerInterval = setInterval(updateTimer, 1000);
 }
 
+function updateTimerDisplay() {
+    // Update timer display without starting interval (for paused contests)
+    const elapsed = Math.floor((Date.now() - state.contestStartTime - state.contestPausedTime) / 1000);
+    const totalSeconds = state.contestDuration * 60;
+    const remaining = Math.max(0, totalSeconds - elapsed);
+
+    const hours = Math.floor(remaining / 3600);
+    const minutes = Math.floor((remaining % 3600) / 60);
+    const seconds = remaining % 60;
+
+    const display = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    const timerElement = document.getElementById('timerDisplay');
+    timerElement.textContent = display;
+
+    // Update timer color based on time remaining
+    if (remaining < 300) { // Less than 5 minutes
+        timerElement.className = 'timer-display danger paused';
+    } else if (remaining < 900) { // Less than 15 minutes
+        timerElement.className = 'timer-display warning paused';
+    } else {
+        timerElement.className = 'timer-display paused';
+    }
+}
+
 function updateTimer() {
     const elapsed = Math.floor((Date.now() - state.contestStartTime - state.contestPausedTime) / 1000);
     const totalSeconds = state.contestDuration * 60;
@@ -1171,6 +1195,10 @@ function restoreActiveContest() {
             document.getElementById('pauseBtn').style.display = 'none';
             document.getElementById('resumeBtn').style.display = 'inline-flex';
             document.getElementById('timerDisplay').classList.add('paused');
+            
+            // Update timer display to show correct remaining time
+            updateTimerDisplay();
+            
             showSuccess('Contest restored! Click Resume to continue.');
         } else {
             // Resume active contest
@@ -1387,29 +1415,44 @@ function resumePastContest(contestIndex) {
     const contest = state.pastContests[contestIndex];
     if (!contest) return;
     
-    if (confirm(`Resume contest from ${new Date(contest.date).toLocaleString()}?\nYou had solved ${contest.solvedCount}/${contest.totalProblems} problems.`)) {
+    const confirmMessage = contest.inProgress 
+        ? `Continue this in-progress contest from ${new Date(contest.date).toLocaleString()}?\nYou have solved ${contest.solvedCount}/${contest.totalProblems} problems.\nTime spent: ${formatDuration(contest.timeTaken)}`
+        : `Resume contest from ${new Date(contest.date).toLocaleString()}?\nYou had solved ${contest.solvedCount}/${contest.totalProblems} problems.\nTime taken: ${formatDuration(contest.timeTaken)}`;
+    
+    if (confirm(confirmMessage)) {
         // Restore contest state
         state.currentContest = {
-            id: Date.now(),
+            id: contest.contestId, // Use original ID to update the same record
             type: contest.contestType,
             name: contest.contestName,
-            problems: contest.problems,
+            problems: JSON.parse(JSON.stringify(contest.problems)), // Deep clone
             duration: contest.originalDuration || 120,
             startTime: contest.startTime || Date.now()
         };
         
+        // Calculate the effective start time based on time already taken
+        // This ensures the timer shows remaining time correctly
         state.contestStartTime = Date.now() - contest.timeTaken;
+        state.contestDuration = contest.originalDuration || 120;
         state.contestPausedTime = 0;
         state.isPaused = false;
         state.submissions = [];
         state.selectedDivision = contest.contestType;
         
-        // Hide preview, show arena
+        // Hide all other sections, show arena
         document.getElementById('divisionPreviewSection').classList.add('hidden');
+        document.getElementById('contestTypeSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.add('hidden');
+        document.getElementById('historySection').classList.add('hidden');
+        document.getElementById('performanceSection').classList.add('hidden');
+        
         displayContestArena();
         startTimer();
         
-        showSuccess('Contest resumed! Continue solving from where you left off.');
+        const remainingTime = (state.contestDuration * 60 * 1000) - contest.timeTaken;
+        const remainingMinutes = Math.floor(remainingTime / 60000);
+        
+        showSuccess(`Contest resumed! ${remainingMinutes} minutes remaining.`);
         saveContestState();
     }
 }
