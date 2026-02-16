@@ -457,13 +457,27 @@ function displayContestArena() {
     document.getElementById('contestProblemsCount').textContent = `${state.currentContest.problems.length} problems`;
     document.getElementById('contestDuration').textContent = `${state.currentContest.duration} minutes`;
 
+    // Initialize pause/resume buttons based on state
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    
+    if (state.isPaused) {
+        pauseBtn.style.display = 'none';
+        resumeBtn.style.display = 'inline-flex';
+    } else {
+        pauseBtn.style.display = 'inline-flex';
+        resumeBtn.style.display = 'none';
+    }
+
     // Render problems table
     renderProblemsTable();
     
     // Start auto-refresh for submissions (every 30 seconds)
-    state.autoRefreshInterval = setInterval(() => {
-        refreshSubmissions();
-    }, 30000);
+    if (!state.isPaused) {
+        state.autoRefreshInterval = setInterval(() => {
+            refreshSubmissions();
+        }, 30000);
+    }
 }
 
 function renderProblemsTable() {
