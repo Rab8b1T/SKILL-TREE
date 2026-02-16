@@ -202,6 +202,50 @@
                 </div>
             </section>
 
+            <!-- Division Preview Section -->
+            <section class="card hidden" id="divisionPreviewSection">
+                <div class="preview-header">
+                    <h2 class="card-title" id="previewDivisionName">DIV 3</h2>
+                    <button class="btn-secondary" onclick="backFromPreview()">← Back</button>
+                </div>
+                
+                <div class="preview-info">
+                    <div class="preview-item">
+                        <span class="preview-label">Problems:</span>
+                        <span class="preview-value" id="previewProblemsCount">7</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Duration:</span>
+                        <span class="preview-value"><span id="previewDuration">150</span> minutes</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-label">Rating Range:</span>
+                        <span class="preview-value" id="previewRatingRange">800-1700</span>
+                    </div>
+                </div>
+
+                <div class="division-stats-section">
+                    <h3>Your Performance in This Division</h3>
+                    <div class="division-stats-grid" id="divisionStatsContainer"></div>
+                    <div id="avgSolveTimePerProblem"></div>
+                </div>
+
+                <div class="division-past-contests">
+                    <h3>Recent Contests (Last 5)</h3>
+                    <div id="divisionPastContestsList"></div>
+                    <button class="btn-secondary" onclick="viewAllPastContests()" style="margin-top: 16px;">View All Past Contests</button>
+                </div>
+
+                <div class="preview-actions">
+                    <button class="btn-gradient btn-large" onclick="startContestFromPreview()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Start Contest
+                    </button>
+                </div>
+            </section>
+
             <!-- Loading Overlay -->
             <div class="loading-overlay hidden" id="loadingOverlay">
                 <div class="loading-content">
@@ -226,7 +270,22 @@
                     <div class="contest-timer">
                         <div class="timer-label">Time Remaining</div>
                         <div class="timer-display" id="timerDisplay">2:00:00</div>
-                        <button class="btn-danger" id="endContestBtn" onclick="endContest()">End Contest</button>
+                        <div class="timer-controls">
+                            <button class="btn-warning" id="pauseBtn" onclick="pauseContest()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <rect x="6" y="4" width="4" height="16"/>
+                                    <rect x="14" y="4" width="4" height="16"/>
+                                </svg>
+                                Pause
+                            </button>
+                            <button class="btn-success hidden" id="resumeBtn" onclick="resumeContest()" style="display:none;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polygon points="5 3 19 12 5 21 5 3"/>
+                                </svg>
+                                Resume
+                            </button>
+                            <button class="btn-danger" id="endContestBtn" onclick="endContest()">End Contest</button>
+                        </div>
                     </div>
                 </div>
 

@@ -6,11 +6,15 @@ const state = {
     currentContest: null,
     contestStartTime: null,
     contestDuration: 120, // minutes
+    contestPausedTime: 0, // Total paused time in ms
+    isPaused: false,
+    pauseStartTime: null,
     timerInterval: null,
     autoRefreshInterval: null,
     submissions: [],
     pastContests: [],
-    selectedTags: new Set()
+    selectedTags: new Set(),
+    selectedDivision: null
 };
 
 // ===== Contest Configurations =====
@@ -95,6 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedUser) {
         document.getElementById('handleInput').value = savedUser;
     }
+    
+    // Try to restore active contest if page was refreshed
+    restoreActiveContest();
 });
 
 // ===== Theme Management =====
@@ -231,11 +238,38 @@ function showContestTypeSelection() {
 }
 
 function selectContestType(type) {
+    state.selectedDivision = type;
+    showDivisionPreview(type);
+}
+
+function showDivisionPreview(type) {
+    // Hide contest type selection
+    document.getElementById('contestTypeSection').classList.add('hidden');
+    
+    // Show division preview section
+    const previewSection = document.getElementById('divisionPreviewSection');
+    previewSection.classList.remove('hidden');
+    
     if (type === 'custom') {
         showCustomConfig();
-    } else {
-        generatePresetContest(type);
+        return;
     }
+    
+    const config = CONTEST_CONFIGS[type];
+    
+    // Populate division preview
+    document.getElementById('previewDivisionName').textContent = config.name;
+    document.getElementById('previewProblemsCount').textContent = config.problems.length;
+    document.getElementById('previewDuration').textContent = config.duration;
+    document.getElementById('previewRatingRange').textContent = 
+        `${config.problems[0].rating[0]} - ${config.problems[config.problems.length - 1].rating[1]}`;
+    
+    // Calculate and show division stats
+    const divisionStats = calculateDivisionStats(type);
+    displayDivisionStats(divisionStats);
+    
+    // Show past contests for this division
+    displayPastContestsForDivision(type);
 }
 
 function showCustomConfig() {
@@ -346,15 +380,21 @@ async function startContest(type, config) {
 
     state.contestStartTime = Date.now();
     state.contestDuration = config.duration;
+    state.contestPausedTime = 0;
+    state.isPaused = false;
     state.submissions = [];
 
     // Hide config sections
     document.getElementById('contestTypeSection').classList.add('hidden');
     document.getElementById('customConfigSection').classList.add('hidden');
+    document.getElementById('divisionPreviewSection').classList.add('hidden');
     
     // Show contest arena
     displayContestArena();
     startTimer();
+    
+    // Save initial state
+    saveContestState();
 }
 
 function findUnsolvedProblem(ratingRange, allowedTags) {
@@ -450,7 +490,7 @@ function startTimer() {
 }
 
 function updateTimer() {
-    const elapsed = Math.floor((Date.now() - state.contestStartTime) / 1000);
+    const elapsed = Math.floor((Date.now() - state.contestStartTime - state.contestPausedTime) / 1000);
     const totalSeconds = state.contestDuration * 60;
     const remaining = Math.max(0, totalSeconds - elapsed);
 
@@ -473,6 +513,11 @@ function updateTimer() {
 
     // Update problem scores (decrease over time)
     updateProblemScores(elapsed);
+    
+    // Save state periodically
+    if (elapsed % 10 === 0) {
+        saveContestState();
+    }
 
     if (remaining === 0) {
         endContest();
@@ -558,6 +603,9 @@ async function refreshSubmissions() {
 
         renderProblemsTable();
         renderSubmissions();
+        
+        // Save state after updates
+        saveContestState();
 
     } catch (error) {
         showError('Failed to check submissions');
@@ -620,6 +668,9 @@ function endContest() {
     // Save contest
     saveContest(results);
     
+    // Clear active contest state
+    clearActiveContestState();
+    
     // Hide arena, show results
     document.getElementById('contestArena').classList.add('hidden');
     displayResults(results);
@@ -629,7 +680,7 @@ function calculateResults() {
     const solvedProblems = state.currentContest.problems.filter(p => p.status === 'solved');
     const totalScore = solvedProblems.reduce((sum, p) => sum + Math.round(p.currentScore), 0);
     const totalPenalty = solvedProblems.reduce((sum, p) => sum + (p.attempts * 5), 0);
-    const timeTaken = Date.now() - state.contestStartTime;
+    const timeTaken = Date.now() - state.contestStartTime - state.contestPausedTime;
 
     return {
         contestId: state.currentContest.id,
@@ -641,7 +692,9 @@ function calculateResults() {
         totalScore,
         totalPenalty,
         timeTaken,
-        date: new Date()
+        date: new Date(),
+        startTime: state.contestStartTime,
+        originalDuration: state.contestDuration
     };
 }
 
@@ -723,7 +776,9 @@ function renderHistory(filter) {
         return;
     }
 
-    list.innerHTML = contests.slice().reverse().map(contest => `
+    list.innerHTML = contests.slice().reverse().map((contest, idx) => {
+        const contestIdx = state.pastContests.length - 1 - idx;
+        return `
         <div class="history-item">
             <div class="history-item-info">
                 <div class="history-item-title">${contest.contestName}</div>
@@ -749,8 +804,13 @@ function renderHistory(filter) {
                     <span class="history-stat-label">Penalty</span>
                 </div>
             </div>
+            <div class="history-actions">
+                <button class="btn-mini" onclick="resumePastContest(${contestIdx})">Resume</button>
+                <button class="btn-mini-danger" onclick="deletePastContest(${contestIdx})">Delete</button>
+            </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // ===== Performance Analytics =====
@@ -913,13 +973,20 @@ function startNewContest() {
     // Reset state
     state.currentContest = null;
     state.contestStartTime = null;
+    state.contestPausedTime = 0;
+    state.isPaused = false;
     state.submissions = [];
+    state.selectedDivision = null;
+    
+    // Clear saved state
+    clearActiveContestState();
     
     // Hide all sections
     document.getElementById('resultsSection').classList.add('hidden');
     document.getElementById('historySection').classList.add('hidden');
     document.getElementById('performanceSection').classList.add('hidden');
     document.getElementById('contestArena').classList.add('hidden');
+    document.getElementById('divisionPreviewSection').classList.add('hidden');
     
     // Show contest type selection
     document.getElementById('contestTypeSection').classList.remove('hidden');
@@ -957,4 +1024,329 @@ function showSuccess(message) {
 
 function closeToast(toastId) {
     document.getElementById(toastId).classList.add('hidden');
+}
+
+// ===== State Persistence =====
+function saveContestState() {
+    if (!state.currentContest) return;
+    
+    const contestState = {
+        currentUser: state.currentUser,
+        solvedProblems: Array.from(state.solvedProblems),
+        currentContest: state.currentContest,
+        contestStartTime: state.contestStartTime,
+        contestPausedTime: state.contestPausedTime,
+        isPaused: state.isPaused,
+        pauseStartTime: state.pauseStartTime,
+        submissions: state.submissions,
+        selectedDivision: state.selectedDivision
+    };
+    
+    localStorage.setItem('activeContest', JSON.stringify(contestState));
+}
+
+function restoreActiveContest() {
+    const savedState = localStorage.getItem('activeContest');
+    if (!savedState) return;
+    
+    try {
+        const contestState = JSON.parse(savedState);
+        
+        // Restore state
+        state.currentUser = contestState.currentUser;
+        state.solvedProblems = new Set(contestState.solvedProblems);
+        state.currentContest = contestState.currentContest;
+        state.contestStartTime = contestState.contestStartTime;
+        state.contestPausedTime = contestState.contestPausedTime || 0;
+        state.isPaused = contestState.isPaused || false;
+        state.pauseStartTime = contestState.pauseStartTime;
+        state.submissions = contestState.submissions || [];
+        state.selectedDivision = contestState.selectedDivision;
+        
+        // Show restored contest
+        if (state.currentUser) {
+            displayUserInfo();
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('handleSection').classList.remove('hidden');
+        }
+        
+        if (state.isPaused) {
+            // Show paused contest
+            displayContestArena();
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('resumeBtn').style.display = 'inline-flex';
+            document.getElementById('timerDisplay').classList.add('paused');
+            showSuccess('Contest restored! Click Resume to continue.');
+        } else {
+            // Resume active contest
+            displayContestArena();
+            startTimer();
+            document.getElementById('pauseBtn').style.display = 'inline-flex';
+            document.getElementById('resumeBtn').style.display = 'none';
+            showSuccess('Active contest restored!');
+        }
+        
+    } catch (error) {
+        console.error('Failed to restore contest:', error);
+        localStorage.removeItem('activeContest');
+    }
+}
+
+function clearActiveContestState() {
+    localStorage.removeItem('activeContest');
+}
+
+// ===== Pause/Resume Functionality =====
+function pauseContest() {
+    if (!state.currentContest || state.isPaused) return;
+    
+    state.isPaused = true;
+    state.pauseStartTime = Date.now();
+    
+    // Stop timers
+    if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+    }
+    if (state.autoRefreshInterval) {
+        clearInterval(state.autoRefreshInterval);
+        state.autoRefreshInterval = null;
+    }
+    
+    // Update UI
+    document.getElementById('pauseBtn').style.display = 'none';
+    document.getElementById('resumeBtn').style.display = 'inline-flex';
+    document.getElementById('timerDisplay').classList.add('paused');
+    
+    saveContestState();
+    showSuccess('Contest paused');
+}
+
+function resumeContest() {
+    if (!state.currentContest || !state.isPaused) return;
+    
+    // Calculate paused duration
+    const pauseDuration = Date.now() - state.pauseStartTime;
+    state.contestPausedTime += pauseDuration;
+    state.isPaused = false;
+    state.pauseStartTime = null;
+    
+    // Update UI
+    document.getElementById('pauseBtn').style.display = 'inline-flex';
+    document.getElementById('resumeBtn').style.display = 'none';
+    document.getElementById('timerDisplay').classList.remove('paused');
+    
+    // Restart timers
+    startTimer();
+    state.autoRefreshInterval = setInterval(() => {
+        refreshSubmissions();
+    }, 30000);
+    
+    saveContestState();
+    showSuccess('Contest resumed');
+}
+
+// ===== Division Statistics =====
+function calculateDivisionStats(divisionType) {
+    const divisionContests = state.pastContests.filter(c => c.contestType === divisionType);
+    
+    if (divisionContests.length === 0) {
+        return {
+            averageScore: 0,
+            averageTime: 0,
+            averageSolved: 0,
+            totalContests: 0,
+            bestScore: 0,
+            averageProblemSolveTime: {}
+        };
+    }
+    
+    const totalScore = divisionContests.reduce((sum, c) => sum + c.totalScore, 0);
+    const totalTime = divisionContests.reduce((sum, c) => sum + c.timeTaken, 0);
+    const totalSolved = divisionContests.reduce((sum, c) => sum + c.solvedCount, 0);
+    const bestScore = Math.max(...divisionContests.map(c => c.totalScore));
+    
+    // Calculate average solve time per problem index
+    const problemSolveTimes = {};
+    divisionContests.forEach(contest => {
+        contest.problems.forEach(problem => {
+            if (problem.status === 'solved' && problem.solvedAt) {
+                const solveTime = problem.solvedAt - contest.startTime;
+                if (!problemSolveTimes[problem.index]) {
+                    problemSolveTimes[problem.index] = [];
+                }
+                problemSolveTimes[problem.index].push(solveTime);
+            }
+        });
+    });
+    
+    const averageProblemSolveTime = {};
+    Object.keys(problemSolveTimes).forEach(index => {
+        const times = problemSolveTimes[index];
+        const avg = times.reduce((sum, t) => sum + t, 0) / times.length;
+        averageProblemSolveTime[index] = avg;
+    });
+    
+    return {
+        averageScore: Math.round(totalScore / divisionContests.length),
+        averageTime: Math.round(totalTime / divisionContests.length),
+        averageSolved: (totalSolved / divisionContests.length).toFixed(1),
+        totalContests: divisionContests.length,
+        bestScore,
+        averageProblemSolveTime
+    };
+}
+
+function displayDivisionStats(stats) {
+    const statsContainer = document.getElementById('divisionStatsContainer');
+    
+    if (stats.totalContests === 0) {
+        statsContainer.innerHTML = '<p class="empty-state">No past contests for this division yet. Be the first to complete one!</p>';
+        return;
+    }
+    
+    statsContainer.innerHTML = `
+        <div class="division-stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+                <span class="stat-value">${stats.averageScore}</span>
+                <span class="stat-label">Avg Score</span>
+            </div>
+        </div>
+        <div class="division-stat-card">
+            <div class="stat-icon">⏱</div>
+            <div class="stat-info">
+                <span class="stat-value">${formatDuration(stats.averageTime)}</span>
+                <span class="stat-label">Avg Time</span>
+            </div>
+        </div>
+        <div class="division-stat-card">
+            <div class="stat-icon">✓</div>
+            <div class="stat-info">
+                <span class="stat-value">${stats.averageSolved}</span>
+                <span class="stat-label">Avg Solved</span>
+            </div>
+        </div>
+        <div class="division-stat-card">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-info">
+                <span class="stat-value">${stats.bestScore}</span>
+                <span class="stat-label">Best Score</span>
+            </div>
+        </div>
+        <div class="division-stat-card">
+            <div class="stat-icon">#</div>
+            <div class="stat-info">
+                <span class="stat-value">${stats.totalContests}</span>
+                <span class="stat-label">Total Attempts</span>
+            </div>
+        </div>
+    `;
+    
+    // Display average solve time per problem
+    if (Object.keys(stats.averageProblemSolveTime).length > 0) {
+        const solveTimeHtml = Object.entries(stats.averageProblemSolveTime)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([index, time]) => `
+                <div class="problem-time-stat">
+                    <span class="problem-index-small">${index}</span>
+                    <span class="problem-time">${formatDuration(time)}</span>
+                </div>
+            `).join('');
+        
+        document.getElementById('avgSolveTimePerProblem').innerHTML = `
+            <h4 style="margin-bottom: 12px; font-size: 15px;">Average Solve Time Per Problem</h4>
+            <div class="problem-times-grid">${solveTimeHtml}</div>
+        `;
+    }
+}
+
+function displayPastContestsForDivision(divisionType) {
+    const divisionContests = state.pastContests.filter(c => c.contestType === divisionType);
+    const listContainer = document.getElementById('divisionPastContestsList');
+    
+    if (divisionContests.length === 0) {
+        listContainer.innerHTML = '<p class="empty-state">No past contests for this division</p>';
+        return;
+    }
+    
+    listContainer.innerHTML = divisionContests.slice(-5).reverse().map((contest, idx) => `
+        <div class="mini-contest-card">
+            <div class="mini-contest-info">
+                <span class="mini-contest-date">${new Date(contest.date).toLocaleDateString()}</span>
+                <span class="mini-contest-stats">${contest.solvedCount}/${contest.totalProblems} • ${contest.totalScore} pts</span>
+            </div>
+            <button class="btn-mini" onclick="resumePastContest(${state.pastContests.indexOf(contest)})">
+                Resume
+            </button>
+        </div>
+    `).join('');
+}
+
+function resumePastContest(contestIndex) {
+    const contest = state.pastContests[contestIndex];
+    if (!contest) return;
+    
+    if (confirm(`Resume contest from ${new Date(contest.date).toLocaleString()}?\nYou had solved ${contest.solvedCount}/${contest.totalProblems} problems.`)) {
+        // Restore contest state
+        state.currentContest = {
+            id: Date.now(),
+            type: contest.contestType,
+            name: contest.contestName,
+            problems: contest.problems,
+            duration: contest.originalDuration || 120,
+            startTime: contest.startTime || Date.now()
+        };
+        
+        state.contestStartTime = Date.now() - contest.timeTaken;
+        state.contestPausedTime = 0;
+        state.isPaused = false;
+        state.submissions = [];
+        state.selectedDivision = contest.contestType;
+        
+        // Hide preview, show arena
+        document.getElementById('divisionPreviewSection').classList.add('hidden');
+        displayContestArena();
+        startTimer();
+        
+        showSuccess('Contest resumed! Continue solving from where you left off.');
+        saveContestState();
+    }
+}
+
+function startContestFromPreview() {
+    if (state.selectedDivision === 'custom') {
+        generateCustomContest();
+    } else {
+        generatePresetContest(state.selectedDivision);
+    }
+}
+
+function backFromPreview() {
+    document.getElementById('divisionPreviewSection').classList.add('hidden');
+    document.getElementById('contestTypeSection').classList.remove('hidden');
+    state.selectedDivision = null;
+}
+
+function deletePastContest(contestIndex) {
+    if (confirm('Are you sure you want to delete this contest record?')) {
+        state.pastContests.splice(contestIndex, 1);
+        localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+        
+        // Refresh display
+        if (!document.getElementById('historySection').classList.contains('hidden')) {
+            renderHistory(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+        }
+        
+        showSuccess('Contest record deleted');
+    }
+}
+
+function viewAllPastContests() {
+    document.getElementById('divisionPreviewSection').classList.add('hidden');
+    document.getElementById('historySection').classList.remove('hidden');
+    document.getElementById('performanceSection').classList.remove('hidden');
+    
+    renderHistory('all');
+    renderPerformanceGraph('overall');
 }
