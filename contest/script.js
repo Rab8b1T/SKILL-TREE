@@ -3,10 +3,11 @@ const state = {
     currentUser: null,
     solvedProblems: new Set(),
     allProblems: [],
+    problemStats: {},
     currentContest: null,
     contestStartTime: null,
-    contestDuration: 120, // minutes
-    contestPausedTime: 0, // Total paused time in ms
+    contestDuration: 120,
+    contestPausedTime: 0,
     isPaused: false,
     pauseStartTime: null,
     timerInterval: null,
@@ -14,7 +15,18 @@ const state = {
     submissions: [],
     pastContests: [],
     selectedTags: new Set(),
-    selectedDivision: null
+    selectedDivision: null,
+    settings: {
+        soundEnabled: false,
+        autoRefresh: true,
+        showTags: false
+    },
+    streak: {
+        current: 0,
+        lastDate: null,
+        best: 0,
+        history: []
+    }
 };
 
 // ===== Contest Configurations =====
@@ -45,7 +57,8 @@ const CONTEST_CONFIGS = {
             { index: 'G', rating: [1600, 1700] }
         ],
         duration: 150,
-        tags: ['implementation', 'math', 'greedy', 'dp', 'data structures', 'graphs']
+        tags: ['implementation', 'math', 'greedy', 'dp', 'data structures', 'graphs',
+               'sortings', 'binary search', 'constructive algorithms', 'dfs and similar']
     },
     div2: {
         name: 'DIV 2',
@@ -58,7 +71,8 @@ const CONTEST_CONFIGS = {
             { index: 'F', rating: [2000, 2200] }
         ],
         duration: 120,
-        tags: ['dp', 'greedy', 'graphs', 'data structures', 'math', 'number theory']
+        tags: ['dp', 'greedy', 'graphs', 'data structures', 'math', 'number theory',
+               'sortings', 'binary search', 'constructive algorithms', 'two pointers']
     },
     div1: {
         name: 'DIV 1',
@@ -71,11 +85,11 @@ const CONTEST_CONFIGS = {
             { index: 'F', rating: [2500, 2800] }
         ],
         duration: 150,
-        tags: ['dp', 'graphs', 'data structures', 'number theory', 'combinatorics', 'geometry']
+        tags: ['dp', 'graphs', 'data structures', 'number theory', 'combinatorics', 'geometry',
+               'binary search', 'constructive algorithms', 'bitmasks', 'trees']
     }
 };
 
-// Available tags for custom contests
 const AVAILABLE_TAGS = [
     'implementation', 'math', 'greedy', 'dp', 'data structures', 'brute force',
     'constructive algorithms', 'graphs', 'sortings', 'binary search', 'dfs and similar',
@@ -87,35 +101,139 @@ const AVAILABLE_TAGS = [
 // ===== Initialization =====
 document.addEventListener('DOMContentLoaded', () => {
     initializeTheme();
+    loadSettings();
     loadPastContests();
+    loadStreak();
     setupEventListeners();
     
-    // Auto-load default user
-    const defaultHandle = 'rab8bit';
-    document.getElementById('handleInput').value = defaultHandle;
-    
-    // Check if user was previously loaded
     const savedUser = localStorage.getItem('lastUser');
     if (savedUser) {
         document.getElementById('handleInput').value = savedUser;
     }
     
-    // Try to restore active contest if page was refreshed
     restoreActiveContest();
 });
 
 // ===== Theme Management =====
 function initializeTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
 }
 
 document.getElementById('themeToggle').addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme');
-    const newTheme = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
 });
+
+// ===== Settings =====
+function loadSettings() {
+    const saved = localStorage.getItem('contestSettings');
+    if (saved) {
+        try {
+            Object.assign(state.settings, JSON.parse(saved));
+        } catch(e) { /* ignore */ }
+    }
+    applySettings();
+}
+
+function applySettings() {
+    const soundEl = document.getElementById('soundToggle');
+    const autoRefreshEl = document.getElementById('autoRefreshToggle');
+    const showTagsEl = document.getElementById('showTagsToggle');
+    if (soundEl) soundEl.checked = state.settings.soundEnabled;
+    if (autoRefreshEl) autoRefreshEl.checked = state.settings.autoRefresh;
+    if (showTagsEl) showTagsEl.checked = state.settings.showTags;
+}
+
+function saveSettings() {
+    localStorage.setItem('contestSettings', JSON.stringify(state.settings));
+}
+
+function toggleSound() {
+    state.settings.soundEnabled = document.getElementById('soundToggle').checked;
+    saveSettings();
+}
+
+function toggleAutoRefresh() {
+    state.settings.autoRefresh = document.getElementById('autoRefreshToggle').checked;
+    saveSettings();
+    if (state.currentContest && !state.isPaused) {
+        if (state.settings.autoRefresh && !state.autoRefreshInterval) {
+            state.autoRefreshInterval = setInterval(refreshSubmissions, 30000);
+        } else if (!state.settings.autoRefresh && state.autoRefreshInterval) {
+            clearInterval(state.autoRefreshInterval);
+            state.autoRefreshInterval = null;
+        }
+    }
+}
+
+function toggleShowTags() {
+    state.settings.showTags = document.getElementById('showTagsToggle').checked;
+    saveSettings();
+    if (state.currentContest) renderProblemsTable();
+}
+
+// ===== Streak Tracking =====
+function loadStreak() {
+    const saved = localStorage.getItem('practiceStreak');
+    if (saved) {
+        try {
+            Object.assign(state.streak, JSON.parse(saved));
+        } catch(e) { /* ignore */ }
+    }
+    updateStreakDisplay();
+}
+
+function saveStreak() {
+    localStorage.setItem('practiceStreak', JSON.stringify(state.streak));
+}
+
+function recordPracticeDay() {
+    const today = new Date().toDateString();
+    if (state.streak.lastDate === today) return;
+    
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if (state.streak.lastDate === yesterday) {
+        state.streak.current += 1;
+    } else if (state.streak.lastDate !== today) {
+        state.streak.current = 1;
+    }
+    
+    state.streak.lastDate = today;
+    state.streak.best = Math.max(state.streak.best, state.streak.current);
+    
+    if (!state.streak.history.includes(today)) {
+        state.streak.history.push(today);
+        if (state.streak.history.length > 365) {
+            state.streak.history = state.streak.history.slice(-365);
+        }
+    }
+    
+    saveStreak();
+    updateStreakDisplay();
+}
+
+function updateStreakDisplay() {
+    const badge = document.getElementById('streakBadge');
+    const count = document.getElementById('streakCount');
+    
+    // Check if streak is still active
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    
+    if (state.streak.lastDate !== today && state.streak.lastDate !== yesterday) {
+        state.streak.current = 0;
+    }
+    
+    if (state.streak.current > 0) {
+        badge.classList.remove('hidden');
+        count.textContent = state.streak.current;
+    } else {
+        badge.classList.add('hidden');
+    }
+}
 
 // ===== Event Listeners =====
 function setupEventListeners() {
@@ -124,25 +242,182 @@ function setupEventListeners() {
         if (e.key === 'Enter') loadUserProfile();
     });
     
-    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-        // Escape key - close modals or go back
-        if (e.key === 'Escape') {
-            if (!document.getElementById('contestArena').classList.contains('hidden')) {
-                if (confirm('Are you sure you want to end the contest?')) {
-                    endContest();
-                }
-            }
-        }
+        // Don't trigger shortcuts if typing in input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
         
-        // R key - refresh submissions during contest
-        if (e.key === 'r' || e.key === 'R') {
-            if (!document.getElementById('contestArena').classList.contains('hidden')) {
+        const inContest = !document.getElementById('contestArena').classList.contains('hidden');
+        
+        switch(e.key) {
+            case 'Escape':
+                if (document.getElementById('shortcutsOverlay') && 
+                    !document.getElementById('shortcutsOverlay').classList.contains('hidden')) {
+                    closeShortcutsModal();
+                } else if (document.getElementById('settingsOverlay') &&
+                    !document.getElementById('settingsOverlay').classList.contains('hidden')) {
+                    closeSettingsModal();
+                } else if (!document.getElementById('modalOverlay').classList.contains('hidden')) {
+                    closeModal();
+                } else if (inContest) {
+                    confirmEndContest();
+                }
+                break;
+            case 'r':
+            case 'R':
+                if (inContest) { e.preventDefault(); refreshSubmissions(); }
+                break;
+            case '?':
                 e.preventDefault();
-                refreshSubmissions();
-            }
+                showShortcutsModal();
+                break;
+            case 't':
+            case 'T':
+                if (!inContest) {
+                    document.getElementById('themeToggle').click();
+                }
+                break;
+            case 'n':
+            case 'N':
+                if (!inContest) startNewContest();
+                break;
+            case ' ':
+                if (inContest) {
+                    e.preventDefault();
+                    if (state.isPaused) resumeContest();
+                    else pauseContest();
+                }
+                break;
         }
     });
+}
+
+// ===== Sound System =====
+function playSound(type) {
+    if (!state.settings.soundEnabled) return;
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.value = 0.15;
+        
+        if (type === 'success') {
+            osc.frequency.value = 523.25;
+            osc.type = 'sine';
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+            // Second note
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            gain2.gain.value = 0.15;
+            osc2.frequency.value = 659.25;
+            osc2.type = 'sine';
+            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            osc2.start(ctx.currentTime + 0.15);
+            osc2.stop(ctx.currentTime + 0.5);
+        } else if (type === 'warning') {
+            osc.frequency.value = 440;
+            osc.type = 'triangle';
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.5);
+        } else if (type === 'error') {
+            osc.frequency.value = 220;
+            osc.type = 'sawtooth';
+            gain.gain.value = 0.08;
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.3);
+        }
+    } catch(e) { /* ignore audio errors */ }
+}
+
+// ===== Toast System =====
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || icons.info}</span>
+        <span class="toast-text">${message}</span>
+        <button class="toast-close-btn" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 300);
+    }, type === 'error' ? 5000 : 3000);
+}
+
+function showError(message) { showToast(message, 'error'); }
+function showSuccess(message) { showToast(message, 'success'); }
+function showWarning(message) { showToast(message, 'warning'); }
+
+// ===== Modal System =====
+function showModal(title, bodyHtml, buttons) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').innerHTML = bodyHtml;
+    
+    const footer = document.getElementById('modalFooter');
+    footer.innerHTML = '';
+    
+    buttons.forEach(btn => {
+        const el = document.createElement('button');
+        el.className = btn.className || 'btn-ghost';
+        el.textContent = btn.text;
+        el.onclick = () => { btn.action(); closeModal(); };
+        footer.appendChild(el);
+    });
+    
+    document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function closeModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('modalOverlay').classList.add('hidden');
+}
+
+function showShortcutsModal() {
+    document.getElementById('shortcutsOverlay').classList.remove('hidden');
+}
+
+function closeShortcutsModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('shortcutsOverlay').classList.add('hidden');
+}
+
+function showSettingsModal() {
+    applySettings();
+    document.getElementById('settingsOverlay').classList.remove('hidden');
+}
+
+function closeSettingsModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('settingsOverlay').classList.add('hidden');
+}
+
+function confirmEndContest() {
+    showModal(
+        'End Contest?',
+        '<p style="color:var(--text-secondary);font-size:14px">Are you sure you want to end this contest? Your progress will be saved.</p>',
+        [
+            { text: 'Cancel', className: 'btn-ghost', action: () => {} },
+            { text: 'End Contest', className: 'btn-danger', action: () => endContest() }
+        ]
+    );
+}
+
+// ===== Info Box Toggle =====
+function toggleInfoBox() {
+    document.getElementById('howItWorks').classList.toggle('collapsed');
 }
 
 // ===== API Calls =====
@@ -153,83 +428,96 @@ async function loadUserProfile() {
         return;
     }
 
-    showLoading('Loading user profile...');
+    showLoading('Loading profile...');
     
     try {
-        // Fetch user info
         const userResponse = await fetch(`https://codeforces.com/api/user.info?handles=${handle}`);
         const userData = await userResponse.json();
         
-        if (userData.status !== 'OK') {
-            throw new Error('User not found');
-        }
+        if (userData.status !== 'OK') throw new Error(userData.comment || 'User not found');
 
         state.currentUser = userData.result[0];
-
-        // Save user handle for future sessions
         localStorage.setItem('lastUser', handle);
 
-        // Fetch user submissions
         const submissionsResponse = await fetch(`https://codeforces.com/api/user.status?handle=${handle}`);
         const submissionsData = await submissionsResponse.json();
         
-        if (submissionsData.status !== 'OK') {
-            throw new Error('Failed to fetch submissions');
-        }
+        if (submissionsData.status !== 'OK') throw new Error('Failed to fetch submissions');
 
-        // Get solved problems
         state.solvedProblems = new Set();
-        submissionsData.result.forEach(submission => {
-            if (submission.verdict === 'OK') {
-                const problemId = `${submission.problem.contestId}${submission.problem.index}`;
-                state.solvedProblems.add(problemId);
+        submissionsData.result.forEach(sub => {
+            if (sub.verdict === 'OK') {
+                state.solvedProblems.add(`${sub.problem.contestId}${sub.problem.index}`);
             }
         });
 
-        // Fetch all problems
         const problemsResponse = await fetch('https://codeforces.com/api/problemset.problems');
         const problemsData = await problemsResponse.json();
         
-        if (problemsData.status !== 'OK') {
-            throw new Error('Failed to fetch problemset');
-        }
+        if (problemsData.status !== 'OK') throw new Error('Failed to fetch problemset');
 
         state.allProblems = problemsData.result.problems;
+
+        state.problemStats = {};
+        if (problemsData.result.problemStatistics) {
+            problemsData.result.problemStatistics.forEach(stat => {
+                state.problemStats[`${stat.contestId}-${stat.index}`] = stat.solvedCount || 0;
+            });
+        }
 
         hideLoading();
         displayUserInfo();
         showContestTypeSelection();
-        showSuccess('Profile loaded successfully!');
+        showSuccess('Profile loaded!');
 
     } catch (error) {
         hideLoading();
-        showError(error.message || 'Failed to load user profile');
+        if (error.message && error.message.includes('fetch')) {
+            showError('Network error — check your connection or CF might be down');
+        } else {
+            showError(error.message || 'Failed to load profile');
+        }
     }
 }
 
 function displayUserInfo() {
-    const userInfo = document.getElementById('userInfo');
-    const userName = document.getElementById('userName');
-    const userRating = document.getElementById('userRating');
-    const problemsSolved = document.getElementById('problemsSolved');
+    const u = state.currentUser;
+    document.getElementById('userName').textContent = u.handle;
+    
+    const ratingEl = document.getElementById('userRating');
+    ratingEl.textContent = u.rating || 'Unrated';
+    ratingEl.style.color = getRatingColor(u.rating);
+    
+    const maxRatingEl = document.getElementById('userMaxRating');
+    maxRatingEl.textContent = u.maxRating || '-';
+    maxRatingEl.style.color = getRatingColor(u.maxRating);
+    
+    document.getElementById('userRank').textContent = u.rank || 'Unrated';
+    document.getElementById('problemsSolved').textContent = state.solvedProblems.size;
 
-    userName.textContent = state.currentUser.handle;
-    userRating.textContent = state.currentUser.rating || 'Unrated';
-    userRating.style.color = getRatingColor(state.currentUser.rating);
-    problemsSolved.textContent = state.solvedProblems.size;
-
-    userInfo.classList.remove('hidden');
+    document.getElementById('userInfo').classList.remove('hidden');
 }
 
 function getRatingColor(rating) {
     if (!rating) return '#808080';
-    if (rating < 1200) return '#808080';
-    if (rating < 1400) return '#008000';
-    if (rating < 1600) return '#03a89e';
-    if (rating < 1900) return '#0000ff';
-    if (rating < 2100) return '#aa00aa';
-    if (rating < 2300) return '#ff8c00';
-    return '#ff0000';
+    if (rating < 1200) return 'var(--rating-newbie)';
+    if (rating < 1400) return 'var(--rating-pupil)';
+    if (rating < 1600) return 'var(--rating-specialist)';
+    if (rating < 1900) return 'var(--rating-expert)';
+    if (rating < 2100) return 'var(--rating-cm)';
+    if (rating < 2300) return 'var(--rating-master)';
+    return 'var(--rating-gm)';
+}
+
+function getRatingClass(rating) {
+    if (!rating) return 'rating-newbie';
+    if (rating < 1200) return 'rating-newbie';
+    if (rating < 1400) return 'rating-pupil';
+    if (rating < 1600) return 'rating-specialist';
+    if (rating < 1900) return 'rating-expert';
+    if (rating < 2100) return 'rating-cm';
+    if (rating < 2300) return 'rating-master';
+    return 'rating-gm';
 }
 
 // ===== Contest Type Selection =====
@@ -239,36 +527,27 @@ function showContestTypeSelection() {
 
 function selectContestType(type) {
     state.selectedDivision = type;
-    showDivisionPreview(type);
+    if (type === 'custom') {
+        showCustomConfig();
+    } else {
+        showDivisionPreview(type);
+    }
 }
 
 function showDivisionPreview(type) {
-    // Hide contest type selection
     document.getElementById('contestTypeSection').classList.add('hidden');
-    
-    // Show division preview section
-    const previewSection = document.getElementById('divisionPreviewSection');
-    previewSection.classList.remove('hidden');
-    
-    if (type === 'custom') {
-        showCustomConfig();
-        return;
-    }
+    document.getElementById('divisionPreviewSection').classList.remove('hidden');
     
     const config = CONTEST_CONFIGS[type];
     
-    // Populate division preview
     document.getElementById('previewDivisionName').textContent = config.name;
     document.getElementById('previewProblemsCount').textContent = config.problems.length;
     document.getElementById('previewDuration').textContent = config.duration;
     document.getElementById('previewRatingRange').textContent = 
-        `${config.problems[0].rating[0]} - ${config.problems[config.problems.length - 1].rating[1]}`;
+        `${config.problems[0].rating[0]} – ${config.problems[config.problems.length - 1].rating[1]}`;
     
-    // Calculate and show division stats
     const divisionStats = calculateDivisionStats(type);
     displayDivisionStats(divisionStats);
-    
-    // Show past contests for this division
     displayPastContestsForDivision(type);
 }
 
@@ -276,9 +555,9 @@ function showCustomConfig() {
     document.getElementById('contestTypeSection').classList.add('hidden');
     document.getElementById('customConfigSection').classList.remove('hidden');
     
-    // Populate tags
     const tagsContainer = document.getElementById('tagsContainer');
     tagsContainer.innerHTML = '';
+    state.selectedTags.clear();
     AVAILABLE_TAGS.forEach(tag => {
         const chip = document.createElement('div');
         chip.className = 'tag-chip';
@@ -290,11 +569,8 @@ function showCustomConfig() {
 
 function toggleTag(chip, tag) {
     chip.classList.toggle('selected');
-    if (state.selectedTags.has(tag)) {
-        state.selectedTags.delete(tag);
-    } else {
-        state.selectedTags.add(tag);
-    }
+    if (state.selectedTags.has(tag)) state.selectedTags.delete(tag);
+    else state.selectedTags.add(tag);
 }
 
 function cancelCustom() {
@@ -303,6 +579,53 @@ function cancelCustom() {
     state.selectedTags.clear();
 }
 
+// ===== Quick Practice =====
+function showQuickPractice() {
+    document.getElementById('contestTypeSection').classList.add('hidden');
+    document.getElementById('quickPracticeSection').classList.remove('hidden');
+    
+    // Populate tags
+    const container = document.getElementById('qpTagsContainer');
+    container.innerHTML = '';
+    state.selectedTags.clear();
+    AVAILABLE_TAGS.forEach(tag => {
+        const chip = document.createElement('div');
+        chip.className = 'tag-chip';
+        chip.textContent = tag;
+        chip.onclick = () => toggleTag(chip, tag);
+        container.appendChild(chip);
+    });
+}
+
+function backFromQuickPractice() {
+    document.getElementById('quickPracticeSection').classList.add('hidden');
+    document.getElementById('contestTypeSection').classList.remove('hidden');
+    state.selectedTags.clear();
+}
+
+async function startQuickPractice() {
+    const targetRating = parseInt(document.getElementById('qpRating').value);
+    const timeLimit = parseInt(document.getElementById('qpTime').value);
+    
+    if (isNaN(targetRating) || targetRating < 800 || targetRating > 3500) {
+        showError('Rating must be between 800 and 3500');
+        return;
+    }
+    
+    const ratingRange = [Math.max(800, targetRating - 100), targetRating + 100];
+    const config = {
+        name: `Quick Practice (${targetRating})`,
+        problems: [{ index: 'A', rating: ratingRange }],
+        duration: timeLimit,
+        tags: Array.from(state.selectedTags)
+    };
+    
+    showLoading('Finding a problem...');
+    await startContest('custom', config);
+    hideLoading();
+}
+
+// ===== Contest Generation =====
 async function generateCustomContest() {
     const problemCount = parseInt(document.getElementById('problemCount').value);
     const duration = parseInt(document.getElementById('contestDuration').value);
@@ -313,15 +636,20 @@ async function generateCustomContest() {
         showError('Min rating must be less than max rating');
         return;
     }
+    
+    if (problemCount < 1 || problemCount > 10) {
+        showError('Problem count must be between 1 and 10');
+        return;
+    }
 
-    showLoading('Generating custom contest...');
+    showLoading('Generating contest...');
     
     const ratingStep = Math.floor((maxRating - minRating) / problemCount);
     const problems = [];
     
     for (let i = 0; i < problemCount; i++) {
         const min = minRating + (i * ratingStep);
-        const max = min + ratingStep;
+        const max = Math.min(min + ratingStep, maxRating);
         problems.push({
             index: String.fromCharCode(65 + i),
             rating: [min, max]
@@ -345,7 +673,6 @@ async function generatePresetContest(type) {
     hideLoading();
 }
 
-// ===== Contest Generation =====
 async function startContest(type, config) {
     const contestProblems = [];
     
@@ -354,7 +681,9 @@ async function startContest(type, config) {
         if (problem) {
             contestProblems.push({
                 ...problem,
+                originalIndex: problem.index,
                 index: problemSpec.index,
+                targetRating: problemSpec.rating,
                 maxScore: 500 + (problemSpec.rating[0] / 10),
                 currentScore: 500 + (problemSpec.rating[0] / 10),
                 status: 'pending',
@@ -365,7 +694,7 @@ async function startContest(type, config) {
     }
 
     if (contestProblems.length < config.problems.length) {
-        showError('Not enough unsolved problems found for this contest');
+        showError(`Not enough unsolved problems found (found ${contestProblems.length}/${config.problems.length}). Try a different division or rating range.`);
         return;
     }
 
@@ -383,14 +712,15 @@ async function startContest(type, config) {
     state.contestPausedTime = 0;
     state.isPaused = false;
     state.submissions = [];
+    
+    // Record practice day for streak
+    recordPracticeDay();
 
-    // Save initial contest snapshot to past contests immediately
-    // This prevents data loss if user refreshes or starts another contest
     const initialSnapshot = {
         contestId: state.currentContest.id,
         contestName: state.currentContest.name,
         contestType: state.currentContest.type,
-        problems: JSON.parse(JSON.stringify(state.currentContest.problems)), // Deep clone
+        problems: JSON.parse(JSON.stringify(state.currentContest.problems)),
         solvedCount: 0,
         totalProblems: state.currentContest.problems.length,
         totalScore: 0,
@@ -399,23 +729,25 @@ async function startContest(type, config) {
         date: new Date(),
         startTime: state.contestStartTime,
         originalDuration: state.contestDuration,
-        inProgress: true // Mark as in-progress
+        inProgress: true
     };
     
     state.pastContests.push(initialSnapshot);
     localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
 
-    // Hide config sections
-    document.getElementById('contestTypeSection').classList.add('hidden');
-    document.getElementById('customConfigSection').classList.add('hidden');
-    document.getElementById('divisionPreviewSection').classList.add('hidden');
-    
-    // Show contest arena
+    hideAllSections();
     displayContestArena();
     startTimer();
-    
-    // Save initial state
     saveContestState();
+}
+
+function hideAllSections() {
+    ['contestTypeSection', 'customConfigSection', 'divisionPreviewSection',
+     'quickPracticeSection', 'resultsSection', 'historySection', 'performanceSection'
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
 }
 
 function findUnsolvedProblem(ratingRange, allowedTags) {
@@ -428,22 +760,50 @@ function findUnsolvedProblem(ratingRange, allowedTags) {
         const problemId = `${problem.contestId}${problem.index}`;
         if (state.solvedProblems.has(problemId)) return false;
         
-        // Check tags if specified
         if (allowedTags && allowedTags.length > 0) {
             const problemTags = problem.tags || [];
-            const hasMatchingTag = problemTags.some(tag => 
-                allowedTags.some(allowed => tag.toLowerCase().includes(allowed.toLowerCase()))
+            const hasMatch = problemTags.some(tag => 
+                allowedTags.some(allowed => tag.toLowerCase() === allowed.toLowerCase())
             );
-            if (!hasMatchingTag) return false;
+            if (!hasMatch) return false;
         }
         
         return true;
     });
 
-    if (unsolvedProblems.length === 0) return null;
+    if (unsolvedProblems.length === 0) {
+        // Fallback: no tag filter but STRICT rating
+        const fallback = state.allProblems.filter(p => {
+            if (!p.rating) return false;
+            if (p.rating < minRating || p.rating > maxRating) return false;
+            return !state.solvedProblems.has(`${p.contestId}${p.index}`);
+        });
+        if (fallback.length === 0) return null;
+        return selectByPopularity(fallback);
+    }
     
-    // Pick a random problem from matching ones
-    return unsolvedProblems[Math.floor(Math.random() * unsolvedProblems.length)];
+    return selectByPopularity(unsolvedProblems);
+}
+
+function selectByPopularity(problems) {
+    const withStats = problems.map(p => ({
+        problem: p,
+        solvedCount: state.problemStats[`${p.contestId}-${p.index}`] || 0
+    }));
+    
+    const sorted = [...withStats].sort((a, b) => a.solvedCount - b.solvedCount);
+    
+    if (sorted.length <= 3) {
+        return problems[Math.floor(Math.random() * problems.length)];
+    }
+    
+    const lo = Math.floor(sorted.length * 0.2);
+    const hi = Math.ceil(sorted.length * 0.8);
+    const mid = sorted.slice(lo, hi);
+    
+    if (mid.length === 0) return problems[Math.floor(Math.random() * problems.length)];
+    
+    return mid[Math.floor(Math.random() * mid.length)].problem;
 }
 
 // ===== Contest Display =====
@@ -451,13 +811,11 @@ function displayContestArena() {
     const arena = document.getElementById('contestArena');
     arena.classList.remove('hidden');
 
-    // Set contest info
     document.getElementById('contestName').textContent = state.currentContest.name;
     document.getElementById('contestType').textContent = state.currentContest.type.toUpperCase();
     document.getElementById('contestProblemsCount').textContent = `${state.currentContest.problems.length} problems`;
-    document.getElementById('contestDuration').textContent = `${state.currentContest.duration} minutes`;
+    document.getElementById('contestDurationLabel').textContent = `${state.currentContest.duration} min`;
 
-    // Initialize pause/resume buttons based on state
     const pauseBtn = document.getElementById('pauseBtn');
     const resumeBtn = document.getElementById('resumeBtn');
     
@@ -469,14 +827,14 @@ function displayContestArena() {
         resumeBtn.style.display = 'none';
     }
 
-    // Render problems table
+    // Set total count
+    document.getElementById('totalCountLive').textContent = state.currentContest.problems.length;
+
     renderProblemsTable();
+    updateSolvedProgress();
     
-    // Start auto-refresh for submissions (every 30 seconds)
-    if (!state.isPaused) {
-        state.autoRefreshInterval = setInterval(() => {
-            refreshSubmissions();
-        }, 30000);
+    if (!state.isPaused && state.settings.autoRefresh) {
+        state.autoRefreshInterval = setInterval(refreshSubmissions, 30000);
     }
 }
 
@@ -485,19 +843,32 @@ function renderProblemsTable() {
     tbody.innerHTML = '';
 
     state.currentContest.problems.forEach(problem => {
+        const cfIndex = problem.originalIndex || problem.index;
+        const solveCount = state.problemStats[`${problem.contestId}-${cfIndex}`] || problem.solvedCount || '-';
+        const ratingClass = getRatingClass(problem.rating);
+        
+        // Build tags HTML
+        const tags = problem.tags || [];
+        let tagsHtml = '';
+        if (tags.length > 0) {
+            const displayTags = tags.slice(0, 3);
+            tagsHtml = displayTags.map(t => 
+                `<span class="problem-tag ${state.settings.showTags ? '' : 'hidden-tag'}">${t}</span>`
+            ).join('');
+            if (tags.length > 3) tagsHtml += `<span class="problem-tag">+${tags.length - 3}</span>`;
+        }
+        
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><span class="problem-index">${problem.index}</span></td>
             <td>
-                <a href="https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}" 
-                   target="_blank" 
-                   class="problem-link">
-                    ${problem.name}
-                </a>
+                <a href="https://codeforces.com/problemset/problem/${problem.contestId}/${cfIndex}" 
+                   target="_blank" class="problem-link">${problem.name}</a>
             </td>
-            <td>${problem.solvedCount || '-'}</td>
-            <td>${problem.rating || '-'}</td>
-            <td id="score-${problem.index}">${Math.round(problem.currentScore)}</td>
+            <td><div class="problem-tags">${tagsHtml || '<span style="color:var(--text-muted);font-size:11px">—</span>'}</div></td>
+            <td><span class="rating-color ${ratingClass}">${problem.rating || '-'}</span></td>
+            <td style="font-size:12px;color:var(--text-muted)">${typeof solveCount === 'number' ? solveCount.toLocaleString() : solveCount}</td>
+            <td id="score-${problem.index}" style="font-family:'JetBrains Mono',monospace;font-size:13px">${Math.round(problem.currentScore)}</td>
             <td>
                 <span class="status-badge ${problem.status}" id="status-${problem.index}">
                     ${getStatusText(problem.status)}
@@ -508,14 +879,21 @@ function renderProblemsTable() {
     });
 }
 
+function updateSolvedProgress() {
+    if (!state.currentContest) return;
+    const solved = state.currentContest.problems.filter(p => p.status === 'solved').length;
+    const total = state.currentContest.problems.length;
+    const score = state.currentContest.problems.reduce((s, p) => s + (p.status === 'solved' ? Math.round(p.currentScore) : 0), 0);
+    
+    document.getElementById('solvedCountLive').textContent = solved;
+    document.getElementById('liveScore').textContent = `Score: ${score}`;
+    
+    const pct = total > 0 ? (solved / total) * 100 : 0;
+    document.getElementById('solvedProgressFill').style.width = pct + '%';
+}
+
 function getStatusText(status) {
-    const statusMap = {
-        pending: 'Not Attempted',
-        attempted: 'Attempted',
-        solved: 'Solved',
-        failed: 'Wrong Answer'
-    };
-    return statusMap[status] || status;
+    return { pending: 'Pending', attempted: 'Attempted', solved: 'Accepted', failed: 'Wrong' }[status] || status;
 }
 
 // ===== Timer =====
@@ -525,26 +903,32 @@ function startTimer() {
 }
 
 function updateTimerDisplay() {
-    // Update timer display without starting interval (for paused contests)
     const elapsed = Math.floor((Date.now() - state.contestStartTime - state.contestPausedTime) / 1000);
     const totalSeconds = state.contestDuration * 60;
     const remaining = Math.max(0, totalSeconds - elapsed);
 
-    const hours = Math.floor(remaining / 3600);
-    const minutes = Math.floor((remaining % 3600) / 60);
-    const seconds = remaining % 60;
+    const h = Math.floor(remaining / 3600);
+    const m = Math.floor((remaining % 3600) / 60);
+    const s = remaining % 60;
 
-    const display = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    const timerElement = document.getElementById('timerDisplay');
-    timerElement.textContent = display;
+    const display = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    const timerEl = document.getElementById('timerDisplay');
+    timerEl.textContent = display;
 
-    // Update timer color based on time remaining
-    if (remaining < 300) { // Less than 5 minutes
-        timerElement.className = 'timer-display danger paused';
-    } else if (remaining < 900) { // Less than 15 minutes
-        timerElement.className = 'timer-display warning paused';
+    // Progress bar
+    const pct = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 0;
+    const fill = document.getElementById('timerProgressFill');
+    fill.style.width = pct + '%';
+    
+    if (remaining < 300) {
+        timerEl.className = 'timer-display danger paused';
+        fill.className = 'timer-progress-fill danger';
+    } else if (remaining < 900) {
+        timerEl.className = 'timer-display warning paused';
+        fill.className = 'timer-progress-fill warning';
     } else {
-        timerElement.className = 'timer-display paused';
+        timerEl.className = 'timer-display paused';
+        fill.className = 'timer-progress-fill';
     }
 }
 
@@ -553,105 +937,105 @@ function updateTimer() {
     const totalSeconds = state.contestDuration * 60;
     const remaining = Math.max(0, totalSeconds - elapsed);
 
-    const hours = Math.floor(remaining / 3600);
-    const minutes = Math.floor((remaining % 3600) / 60);
-    const seconds = remaining % 60;
+    const h = Math.floor(remaining / 3600);
+    const m = Math.floor((remaining % 3600) / 60);
+    const s = remaining % 60;
 
-    const display = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    const timerElement = document.getElementById('timerDisplay');
-    timerElement.textContent = display;
+    const display = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    const timerEl = document.getElementById('timerDisplay');
+    timerEl.textContent = display;
 
-    // Update timer color based on time remaining
-    if (remaining < 300) { // Less than 5 minutes
-        timerElement.className = 'timer-display danger';
-    } else if (remaining < 900) { // Less than 15 minutes
-        timerElement.className = 'timer-display warning';
+    // Progress bar
+    const pct = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 0;
+    const fill = document.getElementById('timerProgressFill');
+    fill.style.width = pct + '%';
+
+    if (remaining < 300) {
+        timerEl.className = 'timer-display danger';
+        fill.className = 'timer-progress-fill danger';
+    } else if (remaining < 900) {
+        timerEl.className = 'timer-display warning';
+        fill.className = 'timer-progress-fill warning';
     } else {
-        timerElement.className = 'timer-display';
+        timerEl.className = 'timer-display';
+        fill.className = 'timer-progress-fill';
     }
-
-    // Update problem scores (decrease over time)
-    updateProblemScores(elapsed);
     
-    // Save state periodically
-    if (elapsed % 10 === 0) {
-        saveContestState();
-    }
+    // Sound warnings
+    if (remaining === 300) playSound('warning');
+    if (remaining === 60) playSound('warning');
 
-    if (remaining === 0) {
-        endContest();
-    }
+    updateProblemScores(elapsed);
+    updateSolvedProgress();
+    
+    if (elapsed % 10 === 0) saveContestState();
+    if (remaining === 0) endContest();
 }
 
 function updateProblemScores(elapsedSeconds) {
     state.currentContest.problems.forEach(problem => {
         if (problem.status !== 'solved') {
-            const elapsedMinutes = elapsedSeconds / 60;
+            const elapsedMin = elapsedSeconds / 60;
             const maxScore = problem.maxScore;
-            const decreaseRate = maxScore * 0.002; // 0.2% per minute
-            problem.currentScore = Math.max(maxScore * 0.3, maxScore - (decreaseRate * elapsedMinutes));
+            const rate = maxScore * 0.002;
+            problem.currentScore = Math.max(maxScore * 0.3, maxScore - (rate * elapsedMin));
             
-            const scoreElement = document.getElementById(`score-${problem.index}`);
-            if (scoreElement) {
-                scoreElement.textContent = Math.round(problem.currentScore);
-            }
+            const el = document.getElementById(`score-${problem.index}`);
+            if (el) el.textContent = Math.round(problem.currentScore);
         }
     });
 }
 
-// ===== Submissions Checking =====
+// ===== Submissions =====
 async function refreshSubmissions() {
     if (!state.currentUser || !state.currentContest) return;
 
     const btn = document.getElementById('refreshSubmissions');
+    if (btn.disabled) return;
     btn.disabled = true;
+    const origHTML = btn.innerHTML;
     btn.innerHTML = '<div class="spinner"></div> Checking...';
 
     try {
         const response = await fetch(`https://codeforces.com/api/user.status?handle=${state.currentUser.handle}&from=1&count=50`);
         const data = await response.json();
 
-        if (data.status !== 'OK') throw new Error('Failed to fetch submissions');
+        if (data.status !== 'OK') throw new Error('API error');
 
-        const recentSubmissions = data.result.filter(sub => 
+        const recent = data.result.filter(sub => 
             sub.creationTimeSeconds * 1000 >= state.contestStartTime
         );
 
-        // Check each contest problem
         state.currentContest.problems.forEach(problem => {
-            const problemId = `${problem.contestId}${problem.index}`;
-            const problemSubmissions = recentSubmissions.filter(sub => 
-                `${sub.problem.contestId}${sub.problem.index}` === problemId
-            );
+            const cfIndex = problem.originalIndex || problem.index;
+            const pid = `${problem.contestId}${cfIndex}`;
+            const subs = recent.filter(s => `${s.problem.contestId}${s.problem.index}` === pid);
 
-            if (problemSubmissions.length > 0) {
-                const hasAccepted = problemSubmissions.some(sub => sub.verdict === 'OK');
-                const wrongAttempts = problemSubmissions.filter(sub => 
-                    sub.verdict !== 'OK' && sub.verdict !== 'TESTING'
-                ).length;
+            if (subs.length > 0) {
+                const accepted = subs.some(s => s.verdict === 'OK');
+                const wrongCount = subs.filter(s => s.verdict !== 'OK' && s.verdict !== 'TESTING').length;
 
-                if (hasAccepted && problem.status !== 'solved') {
-                    // Problem solved!
-                    const solvedSubmission = problemSubmissions.find(sub => sub.verdict === 'OK');
+                if (accepted && problem.status !== 'solved') {
+                    const acSub = subs.find(s => s.verdict === 'OK');
                     problem.status = 'solved';
-                    problem.solvedAt = solvedSubmission.creationTimeSeconds * 1000;
-                    problem.attempts = wrongAttempts;
-                    
-                    // Add penalty for wrong attempts (5 minutes each)
-                    const penalty = wrongAttempts * 5 * 60 * 1000;
+                    problem.solvedAt = acSub.creationTimeSeconds * 1000;
+                    problem.attempts = wrongCount;
                     
                     addSubmission({
                         problem: problem.index,
+                        name: problem.name,
                         verdict: 'Accepted',
-                        time: new Date(solvedSubmission.creationTimeSeconds * 1000),
-                        penalty: wrongAttempts * 5
+                        time: new Date(acSub.creationTimeSeconds * 1000),
+                        penalty: wrongCount * 5
                     });
                     
-                    showSuccess(`Problem ${problem.index} solved!`);
-                } else if (wrongAttempts > 0 && problem.status === 'pending') {
+                    playSound('success');
+                    showSuccess(`Problem ${problem.index} solved! 🎉`);
+                } else if (wrongCount > 0 && problem.status === 'pending') {
                     problem.status = 'attempted';
                     addSubmission({
                         problem: problem.index,
+                        name: problem.name,
                         verdict: 'Wrong Answer',
                         time: new Date(),
                         penalty: 0
@@ -662,86 +1046,66 @@ async function refreshSubmissions() {
 
         renderProblemsTable();
         renderSubmissions();
-        
-        // Update the in-progress contest record in pastContests
+        updateSolvedProgress();
         updateInProgressContest();
-        
-        // Save state after updates
         saveContestState();
 
     } catch (error) {
-        showError('Failed to check submissions');
+        showError('Failed to check submissions — CF API might be rate limited');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/>
-            </svg>
-            Refresh Submissions
-        `;
+        btn.innerHTML = origHTML;
     }
 }
 
 function addSubmission(submission) {
     state.submissions.unshift(submission);
-    if (state.submissions.length > 20) {
-        state.submissions = state.submissions.slice(0, 20);
-    }
+    if (state.submissions.length > 30) state.submissions = state.submissions.slice(0, 30);
 }
 
 function renderSubmissions() {
     const list = document.getElementById('submissionsList');
     
     if (state.submissions.length === 0) {
-        list.innerHTML = '<p class="empty-state">No submissions yet. Click on problems to open them in Codeforces!</p>';
+        list.innerHTML = '<p class="empty-state">No submissions yet. Open problems and solve them on Codeforces!</p>';
         return;
     }
 
     list.innerHTML = state.submissions.map(sub => `
         <div class="submission-item ${sub.verdict === 'Accepted' ? 'accepted' : 'wrong'}">
             <div class="submission-info">
-                <div class="submission-problem">Problem ${sub.problem}: ${sub.verdict}</div>
+                <div class="submission-problem">${sub.problem}: ${sub.verdict}</div>
                 <div class="submission-time">${formatTime(sub.time)}</div>
             </div>
-            ${sub.penalty > 0 ? `<span class="status-badge failed">+${sub.penalty} min</span>` : ''}
+            ${sub.penalty > 0 ? `<span class="status-badge failed">+${sub.penalty}m</span>` : ''}
         </div>
     `).join('');
 }
 
 function formatTime(date) {
+    if (typeof date === 'string') date = new Date(date);
+    if (!(date instanceof Date) || isNaN(date)) return '-';
     return date.toLocaleTimeString();
 }
 
 // ===== End Contest =====
 function endContest() {
-    if (state.timerInterval) {
-        clearInterval(state.timerInterval);
-        state.timerInterval = null;
-    }
-    
-    if (state.autoRefreshInterval) {
-        clearInterval(state.autoRefreshInterval);
-        state.autoRefreshInterval = null;
-    }
+    if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+    if (state.autoRefreshInterval) { clearInterval(state.autoRefreshInterval); state.autoRefreshInterval = null; }
 
-    // Calculate results
     const results = calculateResults();
-    
-    // Save contest
     saveContest(results);
-    
-    // Clear active contest state
     clearActiveContestState();
     
-    // Hide arena, show results
     document.getElementById('contestArena').classList.add('hidden');
     displayResults(results);
+    playSound('warning');
 }
 
 function calculateResults() {
-    const solvedProblems = state.currentContest.problems.filter(p => p.status === 'solved');
-    const totalScore = solvedProblems.reduce((sum, p) => sum + Math.round(p.currentScore), 0);
-    const totalPenalty = solvedProblems.reduce((sum, p) => sum + (p.attempts * 5), 0);
+    const solved = state.currentContest.problems.filter(p => p.status === 'solved');
+    const totalScore = solved.reduce((sum, p) => sum + Math.round(p.currentScore), 0);
+    const totalPenalty = solved.reduce((sum, p) => sum + (p.attempts * 5), 0);
     const timeTaken = Date.now() - state.contestStartTime - state.contestPausedTime;
 
     return {
@@ -749,7 +1113,7 @@ function calculateResults() {
         contestName: state.currentContest.name,
         contestType: state.currentContest.type,
         problems: state.currentContest.problems,
-        solvedCount: solvedProblems.length,
+        solvedCount: solved.length,
         totalProblems: state.currentContest.problems.length,
         totalScore,
         totalPenalty,
@@ -763,75 +1127,83 @@ function calculateResults() {
 function displayResults(results) {
     document.getElementById('resultsSection').classList.remove('hidden');
     
-    // Summary
     document.getElementById('solvedCount').textContent = `${results.solvedCount}/${results.totalProblems}`;
     document.getElementById('totalScore').textContent = results.totalScore;
     document.getElementById('timeTaken').textContent = formatDuration(results.timeTaken);
     document.getElementById('penaltyTime').textContent = results.totalPenalty;
 
-    // Problems results
     const tbody = document.getElementById('resultsTableBody');
-    tbody.innerHTML = results.problems.map(problem => `
+    tbody.innerHTML = results.problems.map(p => {
+        const cfIndex = p.originalIndex || p.index;
+        const ratingClass = getRatingClass(p.rating);
+        return `
         <tr>
-            <td class="problem-index">${problem.index}</td>
-            <td>
-                <span class="status-badge ${problem.status}">
-                    ${getStatusText(problem.status)}
-                </span>
-            </td>
-            <td>${problem.status === 'solved' ? Math.round(problem.currentScore) : 0}</td>
-            <td>${problem.solvedAt ? formatDuration(problem.solvedAt - state.contestStartTime) : '-'}</td>
-            <td>${problem.attempts || 0}</td>
-        </tr>
-    `).join('');
+            <td><span class="problem-index">${p.index}</span></td>
+            <td><a href="https://codeforces.com/problemset/problem/${p.contestId}/${cfIndex}" target="_blank" class="problem-link">${p.name}</a></td>
+            <td><span class="rating-color ${ratingClass}">${p.rating || '-'}</span></td>
+            <td><span class="status-badge ${p.status}">${getStatusText(p.status)}</span></td>
+            <td style="font-family:'JetBrains Mono',monospace">${p.status === 'solved' ? Math.round(p.currentScore) : 0}</td>
+            <td style="font-family:'JetBrains Mono',monospace">${p.solvedAt ? formatDuration(p.solvedAt - state.contestStartTime) : '-'}</td>
+            <td>${p.attempts || 0}</td>
+        </tr>`;
+    }).join('');
+    
+    // Upsolve section
+    const unsolved = results.problems.filter(p => p.status !== 'solved');
+    const upsolveSection = document.getElementById('upsolveSection');
+    
+    if (unsolved.length > 0) {
+        upsolveSection.classList.remove('hidden');
+        document.getElementById('upsolveList').innerHTML = unsolved.map(p => {
+            const cfIndex = p.originalIndex || p.index;
+            const ratingClass = getRatingClass(p.rating);
+            return `
+            <div class="upsolve-item">
+                <div class="upsolve-item-info">
+                    <span class="problem-index">${p.index}</span>
+                    <a href="https://codeforces.com/problemset/problem/${p.contestId}/${cfIndex}" target="_blank">${p.name}</a>
+                    <span class="rating-color ${ratingClass}">${p.rating}</span>
+                </div>
+            </div>`;
+        }).join('');
+    } else {
+        upsolveSection.classList.add('hidden');
+    }
 }
 
 function formatDuration(ms) {
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    if (ms < 0) ms = 0;
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 // ===== Contest History =====
 function saveContest(results) {
-    // Find if this contest already exists in past contests
-    const existingIndex = state.pastContests.findIndex(c => c.contestId === results.contestId);
-    
-    // Mark as completed
+    const idx = state.pastContests.findIndex(c => c.contestId === results.contestId);
     results.inProgress = false;
     
-    if (existingIndex !== -1) {
-        // Update existing record
-        state.pastContests[existingIndex] = results;
-    } else {
-        // Add new record (shouldn't happen normally, but fallback)
-        state.pastContests.push(results);
-    }
+    if (idx !== -1) state.pastContests[idx] = results;
+    else state.pastContests.push(results);
     
     localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
 }
 
 function updateInProgressContest() {
     if (!state.currentContest) return;
+    const idx = state.pastContests.findIndex(c => c.contestId === state.currentContest.id);
+    if (idx === -1) return;
     
-    const existingIndex = state.pastContests.findIndex(c => c.contestId === state.currentContest.id);
-    if (existingIndex === -1) return;
-    
-    // Update the record with current progress
-    const solvedProblems = state.currentContest.problems.filter(p => p.status === 'solved');
-    const totalScore = solvedProblems.reduce((sum, p) => sum + Math.round(p.currentScore), 0);
-    const totalPenalty = solvedProblems.reduce((sum, p) => sum + (p.attempts * 5), 0);
-    const timeTaken = Date.now() - state.contestStartTime - state.contestPausedTime;
-    
-    state.pastContests[existingIndex] = {
-        ...state.pastContests[existingIndex],
+    const solved = state.currentContest.problems.filter(p => p.status === 'solved');
+    state.pastContests[idx] = {
+        ...state.pastContests[idx],
         problems: JSON.parse(JSON.stringify(state.currentContest.problems)),
-        solvedCount: solvedProblems.length,
-        totalScore,
-        totalPenalty,
-        timeTaken,
+        solvedCount: solved.length,
+        totalScore: solved.reduce((s, p) => s + Math.round(p.currentScore), 0),
+        totalPenalty: solved.reduce((s, p) => s + (p.attempts * 5), 0),
+        timeTaken: Date.now() - state.contestStartTime - state.contestPausedTime,
         inProgress: true
     };
     
@@ -841,25 +1213,27 @@ function updateInProgressContest() {
 function loadPastContests() {
     const saved = localStorage.getItem('pastContests');
     if (saved) {
-        state.pastContests = JSON.parse(saved);
+        try { state.pastContests = JSON.parse(saved); }
+        catch(e) { state.pastContests = []; }
     }
 }
 
 function viewPastContests() {
-    document.getElementById('resultsSection').classList.add('hidden');
+    hideAllSections();
     document.getElementById('historySection').classList.remove('hidden');
     document.getElementById('performanceSection').classList.remove('hidden');
+    
+    const total = state.pastContests.filter(c => !c.inProgress).length;
+    document.getElementById('historySubtitle').textContent = `${total} contests completed`;
     
     renderHistory('all');
     renderPerformanceGraph('overall');
 }
 
 function filterHistory(filter) {
-    // Update active filter button
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.filter === filter);
     });
-    
     renderHistory(filter);
 }
 
@@ -867,31 +1241,34 @@ function renderHistory(filter) {
     const list = document.getElementById('historyList');
     
     let contests = state.pastContests;
-    if (filter !== 'all') {
-        contests = contests.filter(c => c.contestType === filter);
-    }
+    if (filter !== 'all') contests = contests.filter(c => c.contestType === filter);
 
     if (contests.length === 0) {
-        list.innerHTML = '<p class="empty-state">No past contests found</p>';
+        list.innerHTML = '<p class="empty-state">No contests found</p>';
         return;
     }
 
     list.innerHTML = contests.slice().reverse().map((contest, idx) => {
-        const contestIdx = state.pastContests.length - 1 - idx;
-        const isInProgress = contest.inProgress;
+        const contestIdx = state.pastContests.length - 1 - state.pastContests.slice().reverse().indexOf(contest);
+        const isIP = contest.inProgress;
+        const solveRate = contest.totalProblems > 0 
+            ? Math.round((contest.solvedCount / contest.totalProblems) * 100) : 0;
+        
         return `
-        <div class="history-item ${isInProgress ? 'in-progress-contest' : ''}">
+        <div class="history-item ${isIP ? 'in-progress-contest' : ''}">
             <div class="history-item-info">
                 <div class="history-item-title">
                     ${contest.contestName} 
-                    ${isInProgress ? '<span class="in-progress-badge">In Progress</span>' : ''}
+                    ${isIP ? '<span class="in-progress-badge">Live</span>' : ''}
                 </div>
                 <div class="history-item-meta">
                     <span>${new Date(contest.date).toLocaleDateString()}</span>
                     <span>•</span>
-                    <span>${contest.contestType.toUpperCase()}</span>
+                    <span>${(contest.contestType || '').toUpperCase()}</span>
                     <span>•</span>
                     <span>${formatDuration(contest.timeTaken)}</span>
+                    <span>•</span>
+                    <span>${solveRate}%</span>
                 </div>
             </div>
             <div class="history-item-stats">
@@ -903,17 +1280,12 @@ function renderHistory(filter) {
                     <span class="history-stat-value">${contest.totalScore}</span>
                     <span class="history-stat-label">Score</span>
                 </div>
-                <div class="history-stat">
-                    <span class="history-stat-value">${contest.totalPenalty}</span>
-                    <span class="history-stat-label">Penalty</span>
-                </div>
             </div>
             <div class="history-actions">
-                <button class="btn-mini" onclick="resumePastContest(${contestIdx})">${isInProgress ? 'Continue' : 'Resume'}</button>
+                <button class="btn-mini" onclick="resumePastContest(${contestIdx})">${isIP ? 'Continue' : 'Resume'}</button>
                 <button class="btn-mini-danger" onclick="deletePastContest(${contestIdx})">Delete</button>
             </div>
-        </div>
-    `;
+        </div>`;
     }).join('');
 }
 
@@ -921,30 +1293,25 @@ function renderHistory(filter) {
 let performanceChart = null;
 
 function switchPerformanceTab(tab) {
-    // Update active tab
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tab);
     });
-    
     renderPerformanceGraph(tab);
 }
 
 function renderPerformanceGraph(division) {
-    let contests = state.pastContests;
-    
-    if (division !== 'overall') {
-        contests = contests.filter(c => c.contestType === division);
-    }
+    let contests = state.pastContests.filter(c => !c.inProgress);
+    if (division !== 'overall') contests = contests.filter(c => c.contestType === division);
 
     const ctx = document.getElementById('performanceChart');
-    
-    if (performanceChart) {
-        performanceChart.destroy();
-    }
+    if (performanceChart) performanceChart.destroy();
 
-    const labels = contests.map((c, i) => `Contest ${i + 1}`);
+    const labels = contests.map((c, i) => `#${i + 1}`);
     const scores = contests.map(c => c.totalScore);
-    const solvedRates = contests.map(c => (c.solvedCount / c.totalProblems) * 100);
+    const solvedRates = contests.map(c => Math.round((c.solvedCount / c.totalProblems) * 100));
+
+    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+    const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim();
 
     performanceChart = new Chart(ctx, {
         type: 'line',
@@ -954,127 +1321,111 @@ function renderPerformanceGraph(division) {
                 label: 'Score',
                 data: scores,
                 borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
                 tension: 0.4,
-                yAxisID: 'y'
+                fill: true,
+                yAxisID: 'y',
+                pointRadius: 4,
+                pointHoverRadius: 6
             }, {
-                label: 'Solve Rate (%)',
+                label: 'Solve %',
                 data: solvedRates,
                 borderColor: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                backgroundColor: 'rgba(16, 185, 129, 0.08)',
                 tension: 0.4,
-                yAxisID: 'y1'
+                fill: true,
+                yAxisID: 'y1',
+                pointRadius: 4,
+                pointHoverRadius: 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: {
-                    labels: {
-                        color: getComputedStyle(document.documentElement)
-                            .getPropertyValue('--text-primary').trim()
-                    }
+                    labels: { color: textColor, font: { family: 'Inter', weight: '600', size: 12 } }
                 }
             },
             scales: {
                 y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    ticks: {
-                        color: getComputedStyle(document.documentElement)
-                            .getPropertyValue('--text-secondary').trim()
-                    },
-                    grid: {
-                        color: getComputedStyle(document.documentElement)
-                            .getPropertyValue('--border-color').trim()
-                    }
+                    type: 'linear', display: true, position: 'left',
+                    ticks: { color: textColor, font: { size: 11 } },
+                    grid: { color: gridColor }
                 },
                 y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    min: 0,
-                    max: 100,
-                    ticks: {
-                        color: getComputedStyle(document.documentElement)
-                            .getPropertyValue('--text-secondary').trim()
-                    },
-                    grid: {
-                        drawOnChartArea: false
-                    }
+                    type: 'linear', display: true, position: 'right',
+                    min: 0, max: 100,
+                    ticks: { color: textColor, font: { size: 11 }, callback: v => v + '%' },
+                    grid: { drawOnChartArea: false }
                 },
                 x: {
-                    ticks: {
-                        color: getComputedStyle(document.documentElement)
-                            .getPropertyValue('--text-secondary').trim()
-                    },
-                    grid: {
-                        color: getComputedStyle(document.documentElement)
-                            .getPropertyValue('--border-color').trim()
-                    }
+                    ticks: { color: textColor, font: { size: 11 } },
+                    grid: { color: gridColor }
                 }
             }
         }
     });
 
-    // Render stats
     renderPerformanceStats(contests);
 }
 
 function renderPerformanceStats(contests) {
-    const statsDiv = document.getElementById('performanceStats');
+    const div = document.getElementById('performanceStats');
     
     if (contests.length === 0) {
-        statsDiv.innerHTML = '<p class="empty-state">No data available</p>';
+        div.innerHTML = '<p class="empty-state">No completed contests yet</p>';
         return;
     }
 
-    const avgScore = Math.round(contests.reduce((sum, c) => sum + c.totalScore, 0) / contests.length);
-    const avgSolved = Math.round(contests.reduce((sum, c) => sum + c.solvedCount, 0) / contests.length);
-    const totalContests = contests.length;
+    const avgScore = Math.round(contests.reduce((s, c) => s + c.totalScore, 0) / contests.length);
+    const avgSolved = (contests.reduce((s, c) => s + c.solvedCount, 0) / contests.length).toFixed(1);
     const bestScore = Math.max(...contests.map(c => c.totalScore));
+    const total = contests.length;
 
-    statsDiv.innerHTML = `
+    div.innerHTML = `
         <div class="result-card">
-            <div class="result-icon score">📊</div>
+            <div class="result-icon score">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
             <div class="result-info">
                 <span class="result-value">${avgScore}</span>
                 <span class="result-label">Avg Score</span>
             </div>
         </div>
         <div class="result-card">
-            <div class="result-icon success">✓</div>
+            <div class="result-icon success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
             <div class="result-info">
                 <span class="result-value">${avgSolved}</span>
                 <span class="result-label">Avg Solved</span>
             </div>
         </div>
         <div class="result-card">
-            <div class="result-icon time">🏆</div>
+            <div class="result-icon time">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
             <div class="result-info">
                 <span class="result-value">${bestScore}</span>
                 <span class="result-label">Best Score</span>
             </div>
         </div>
         <div class="result-card">
-            <div class="result-icon info">#</div>
+            <div class="result-icon info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
             <div class="result-info">
-                <span class="result-value">${totalContests}</span>
-                <span class="result-label">Total Contests</span>
+                <span class="result-value">${total}</span>
+                <span class="result-label">Contests</span>
             </div>
         </div>
     `;
 }
 
-// ===== Navigation Functions =====
+// ===== Navigation =====
 function startNewContest() {
-    // Reset state
     state.currentContest = null;
     state.contestStartTime = null;
     state.contestPausedTime = 0;
@@ -1082,24 +1433,26 @@ function startNewContest() {
     state.submissions = [];
     state.selectedDivision = null;
     
-    // Clear saved state
     clearActiveContestState();
-    
-    // Hide all sections
-    document.getElementById('resultsSection').classList.add('hidden');
-    document.getElementById('historySection').classList.add('hidden');
-    document.getElementById('performanceSection').classList.add('hidden');
+    hideAllSections();
     document.getElementById('contestArena').classList.add('hidden');
-    document.getElementById('divisionPreviewSection').classList.add('hidden');
-    
-    // Show contest type selection
     document.getElementById('contestTypeSection').classList.remove('hidden');
 }
 
 function backToContestTypes() {
-    document.getElementById('historySection').classList.add('hidden');
-    document.getElementById('performanceSection').classList.add('hidden');
+    hideAllSections();
     document.getElementById('contestTypeSection').classList.remove('hidden');
+}
+
+function backFromPreview() {
+    document.getElementById('divisionPreviewSection').classList.add('hidden');
+    document.getElementById('contestTypeSection').classList.remove('hidden');
+    state.selectedDivision = null;
+}
+
+function startContestFromPreview() {
+    if (state.selectedDivision === 'custom') generateCustomContest();
+    else generatePresetContest(state.selectedDivision);
 }
 
 // ===== Utility Functions =====
@@ -1110,24 +1463,6 @@ function showLoading(message) {
 
 function hideLoading() {
     document.getElementById('loadingOverlay').classList.add('hidden');
-}
-
-function showError(message) {
-    const toast = document.getElementById('errorToast');
-    document.getElementById('errorMessage').textContent = message;
-    toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), 5000);
-}
-
-function showSuccess(message) {
-    const toast = document.getElementById('successToast');
-    document.getElementById('successMessage').textContent = message;
-    toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), 3000);
-}
-
-function closeToast(toastId) {
-    document.getElementById(toastId).classList.add('hidden');
 }
 
 // ===== State Persistence =====
@@ -1145,68 +1480,53 @@ function saveContestState() {
         pauseStartTime: state.pauseStartTime,
         submissions: state.submissions,
         selectedDivision: state.selectedDivision,
-        allProblems: state.allProblems
+        allProblems: state.allProblems,
+        problemStats: state.problemStats
     };
     
     localStorage.setItem('activeContest', JSON.stringify(contestState));
 }
 
 function restoreActiveContest() {
-    const savedState = localStorage.getItem('activeContest');
-    if (!savedState) return;
+    const saved = localStorage.getItem('activeContest');
+    if (!saved) return;
     
     try {
-        const contestState = JSON.parse(savedState);
+        const s = JSON.parse(saved);
         
-        // Restore state
-        state.currentUser = contestState.currentUser;
-        state.solvedProblems = new Set(contestState.solvedProblems);
-        state.allProblems = contestState.allProblems || [];
-        state.currentContest = contestState.currentContest;
-        state.contestStartTime = contestState.contestStartTime;
-        state.contestDuration = contestState.contestDuration || 120;
-        state.contestPausedTime = contestState.contestPausedTime || 0;
-        state.isPaused = contestState.isPaused || false;
-        state.pauseStartTime = contestState.pauseStartTime;
-        state.submissions = contestState.submissions || [];
-        state.selectedDivision = contestState.selectedDivision;
+        state.currentUser = s.currentUser;
+        state.solvedProblems = new Set(s.solvedProblems);
+        state.allProblems = s.allProblems || [];
+        state.problemStats = s.problemStats || {};
+        state.currentContest = s.currentContest;
+        state.contestStartTime = s.contestStartTime;
+        state.contestDuration = s.contestDuration || 120;
+        state.contestPausedTime = s.contestPausedTime || 0;
+        state.isPaused = s.isPaused || false;
+        state.pauseStartTime = s.pauseStartTime;
+        state.submissions = s.submissions || [];
+        state.selectedDivision = s.selectedDivision;
         
-        // If was paused before refresh, recalculate paused time
         if (state.isPaused && state.pauseStartTime) {
-            // Time spent paused before refresh
-            const priorPausedTime = state.contestPausedTime;
-            // Time elapsed since page was paused until now
-            const additionalPausedTime = Date.now() - state.pauseStartTime;
-            state.contestPausedTime = priorPausedTime + additionalPausedTime;
-            // Reset pause start time to now
+            state.contestPausedTime += (Date.now() - state.pauseStartTime);
             state.pauseStartTime = Date.now();
         }
         
-        // Show restored contest
         if (state.currentUser) {
             displayUserInfo();
-            document.getElementById('userInfo').classList.remove('hidden');
-            document.getElementById('handleSection').classList.remove('hidden');
         }
         
         if (state.isPaused) {
-            // Show paused contest
             displayContestArena();
             document.getElementById('pauseBtn').style.display = 'none';
             document.getElementById('resumeBtn').style.display = 'inline-flex';
             document.getElementById('timerDisplay').classList.add('paused');
-            
-            // Update timer display to show correct remaining time
             updateTimerDisplay();
-            
-            showSuccess('Contest restored! Click Resume to continue.');
+            showSuccess('Contest restored (paused)');
         } else {
-            // Resume active contest
             displayContestArena();
             startTimer();
-            document.getElementById('pauseBtn').style.display = 'inline-flex';
-            document.getElementById('resumeBtn').style.display = 'none';
-            showSuccess('Active contest restored!');
+            showSuccess('Contest restored!');
         }
         
     } catch (error) {
@@ -1219,51 +1539,39 @@ function clearActiveContestState() {
     localStorage.removeItem('activeContest');
 }
 
-// ===== Pause/Resume Functionality =====
+// ===== Pause/Resume =====
 function pauseContest() {
     if (!state.currentContest || state.isPaused) return;
     
     state.isPaused = true;
     state.pauseStartTime = Date.now();
     
-    // Stop timers
-    if (state.timerInterval) {
-        clearInterval(state.timerInterval);
-        state.timerInterval = null;
-    }
-    if (state.autoRefreshInterval) {
-        clearInterval(state.autoRefreshInterval);
-        state.autoRefreshInterval = null;
-    }
+    if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+    if (state.autoRefreshInterval) { clearInterval(state.autoRefreshInterval); state.autoRefreshInterval = null; }
     
-    // Update UI
     document.getElementById('pauseBtn').style.display = 'none';
     document.getElementById('resumeBtn').style.display = 'inline-flex';
     document.getElementById('timerDisplay').classList.add('paused');
     
     saveContestState();
-    showSuccess('Contest paused');
+    showToast('Contest paused', 'warning');
 }
 
 function resumeContest() {
     if (!state.currentContest || !state.isPaused) return;
     
-    // Calculate paused duration
-    const pauseDuration = Date.now() - state.pauseStartTime;
-    state.contestPausedTime += pauseDuration;
+    state.contestPausedTime += (Date.now() - state.pauseStartTime);
     state.isPaused = false;
     state.pauseStartTime = null;
     
-    // Update UI
     document.getElementById('pauseBtn').style.display = 'inline-flex';
     document.getElementById('resumeBtn').style.display = 'none';
     document.getElementById('timerDisplay').classList.remove('paused');
     
-    // Restart timers
     startTimer();
-    state.autoRefreshInterval = setInterval(() => {
-        refreshSubmissions();
-    }, 30000);
+    if (state.settings.autoRefresh) {
+        state.autoRefreshInterval = setInterval(refreshSubmissions, 30000);
+    }
     
     saveContestState();
     showSuccess('Contest resumed');
@@ -1271,143 +1579,98 @@ function resumeContest() {
 
 // ===== Division Statistics =====
 function calculateDivisionStats(divisionType) {
-    const divisionContests = state.pastContests.filter(c => c.contestType === divisionType);
+    const divContests = state.pastContests.filter(c => c.contestType === divisionType && !c.inProgress);
     
-    if (divisionContests.length === 0) {
-        return {
-            averageScore: 0,
-            averageTime: 0,
-            averageSolved: 0,
-            totalContests: 0,
-            bestScore: 0,
-            averageProblemSolveTime: {}
-        };
+    if (divContests.length === 0) {
+        return { averageScore: 0, averageTime: 0, averageSolved: 0, totalContests: 0, bestScore: 0, averageProblemSolveTime: {} };
     }
     
-    const totalScore = divisionContests.reduce((sum, c) => sum + c.totalScore, 0);
-    const totalTime = divisionContests.reduce((sum, c) => sum + c.timeTaken, 0);
-    const totalSolved = divisionContests.reduce((sum, c) => sum + c.solvedCount, 0);
-    const bestScore = Math.max(...divisionContests.map(c => c.totalScore));
+    const totalScore = divContests.reduce((s, c) => s + c.totalScore, 0);
+    const totalTime = divContests.reduce((s, c) => s + c.timeTaken, 0);
+    const totalSolved = divContests.reduce((s, c) => s + c.solvedCount, 0);
+    const bestScore = Math.max(...divContests.map(c => c.totalScore));
     
-    // Calculate average solve time per problem index
     const problemSolveTimes = {};
-    divisionContests.forEach(contest => {
-        contest.problems.forEach(problem => {
-            if (problem.status === 'solved' && problem.solvedAt) {
-                const solveTime = problem.solvedAt - contest.startTime;
-                if (!problemSolveTimes[problem.index]) {
-                    problemSolveTimes[problem.index] = [];
-                }
-                problemSolveTimes[problem.index].push(solveTime);
+    divContests.forEach(contest => {
+        (contest.problems || []).forEach(p => {
+            if (p.status === 'solved' && p.solvedAt) {
+                const time = p.solvedAt - contest.startTime;
+                if (!problemSolveTimes[p.index]) problemSolveTimes[p.index] = [];
+                problemSolveTimes[p.index].push(time);
             }
         });
     });
     
-    const averageProblemSolveTime = {};
-    Object.keys(problemSolveTimes).forEach(index => {
-        const times = problemSolveTimes[index];
-        const avg = times.reduce((sum, t) => sum + t, 0) / times.length;
-        averageProblemSolveTime[index] = avg;
+    const avgProblemTime = {};
+    Object.entries(problemSolveTimes).forEach(([idx, times]) => {
+        avgProblemTime[idx] = times.reduce((s, t) => s + t, 0) / times.length;
     });
     
     return {
-        averageScore: Math.round(totalScore / divisionContests.length),
-        averageTime: Math.round(totalTime / divisionContests.length),
-        averageSolved: (totalSolved / divisionContests.length).toFixed(1),
-        totalContests: divisionContests.length,
+        averageScore: Math.round(totalScore / divContests.length),
+        averageTime: Math.round(totalTime / divContests.length),
+        averageSolved: (totalSolved / divContests.length).toFixed(1),
+        totalContests: divContests.length,
         bestScore,
-        averageProblemSolveTime
+        averageProblemSolveTime: avgProblemTime
     };
 }
 
 function displayDivisionStats(stats) {
-    const statsContainer = document.getElementById('divisionStatsContainer');
+    const container = document.getElementById('divisionStatsContainer');
     
     if (stats.totalContests === 0) {
-        statsContainer.innerHTML = '<p class="empty-state">No past contests for this division yet. Be the first to complete one!</p>';
+        container.innerHTML = '<p class="empty-state">No completed contests yet — start your first one!</p>';
+        document.getElementById('avgSolveTimePerProblem').innerHTML = '';
         return;
     }
     
-    statsContainer.innerHTML = `
-        <div class="division-stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-info">
-                <span class="stat-value">${stats.averageScore}</span>
-                <span class="stat-label">Avg Score</span>
-            </div>
-        </div>
-        <div class="division-stat-card">
-            <div class="stat-icon">⏱</div>
-            <div class="stat-info">
-                <span class="stat-value">${formatDuration(stats.averageTime)}</span>
-                <span class="stat-label">Avg Time</span>
-            </div>
-        </div>
-        <div class="division-stat-card">
-            <div class="stat-icon">✓</div>
-            <div class="stat-info">
-                <span class="stat-value">${stats.averageSolved}</span>
-                <span class="stat-label">Avg Solved</span>
-            </div>
-        </div>
-        <div class="division-stat-card">
-            <div class="stat-icon">🏆</div>
-            <div class="stat-info">
-                <span class="stat-value">${stats.bestScore}</span>
-                <span class="stat-label">Best Score</span>
-            </div>
-        </div>
-        <div class="division-stat-card">
-            <div class="stat-icon">#</div>
-            <div class="stat-info">
-                <span class="stat-value">${stats.totalContests}</span>
-                <span class="stat-label">Total Attempts</span>
-            </div>
-        </div>
+    container.innerHTML = `
+        <div class="division-stat-card"><div class="stat-icon">📊</div><div class="stat-info"><span class="stat-value">${stats.averageScore}</span><span class="stat-label">Avg Score</span></div></div>
+        <div class="division-stat-card"><div class="stat-icon">⏱</div><div class="stat-info"><span class="stat-value">${formatDuration(stats.averageTime)}</span><span class="stat-label">Avg Time</span></div></div>
+        <div class="division-stat-card"><div class="stat-icon">✓</div><div class="stat-info"><span class="stat-value">${stats.averageSolved}</span><span class="stat-label">Avg Solved</span></div></div>
+        <div class="division-stat-card"><div class="stat-icon">🏆</div><div class="stat-info"><span class="stat-value">${stats.bestScore}</span><span class="stat-label">Best</span></div></div>
+        <div class="division-stat-card"><div class="stat-icon">#</div><div class="stat-info"><span class="stat-value">${stats.totalContests}</span><span class="stat-label">Contests</span></div></div>
     `;
     
-    // Display average solve time per problem
     if (Object.keys(stats.averageProblemSolveTime).length > 0) {
-        const solveTimeHtml = Object.entries(stats.averageProblemSolveTime)
+        const html = Object.entries(stats.averageProblemSolveTime)
             .sort(([a], [b]) => a.localeCompare(b))
-            .map(([index, time]) => `
-                <div class="problem-time-stat">
-                    <span class="problem-index-small">${index}</span>
-                    <span class="problem-time">${formatDuration(time)}</span>
-                </div>
-            `).join('');
+            .map(([idx, time]) => `<div class="problem-time-stat"><span class="problem-index-small">${idx}</span><span class="problem-time">${formatDuration(time)}</span></div>`)
+            .join('');
         
         document.getElementById('avgSolveTimePerProblem').innerHTML = `
-            <h4 style="margin-bottom: 12px; font-size: 15px;">Average Solve Time Per Problem</h4>
-            <div class="problem-times-grid">${solveTimeHtml}</div>
+            <h4 style="margin:16px 0 10px;font-size:13px;color:var(--text-secondary)">Avg Solve Time</h4>
+            <div class="problem-times-grid">${html}</div>
         `;
+    } else {
+        document.getElementById('avgSolveTimePerProblem').innerHTML = '';
     }
 }
 
-function displayPastContestsForDivision(divisionType) {
-    const divisionContests = state.pastContests.filter(c => c.contestType === divisionType);
-    const listContainer = document.getElementById('divisionPastContestsList');
+function displayPastContestsForDivision(divType) {
+    const divContests = state.pastContests.filter(c => c.contestType === divType);
+    const container = document.getElementById('divisionPastContestsList');
     
-    if (divisionContests.length === 0) {
-        listContainer.innerHTML = '<p class="empty-state">No past contests for this division</p>';
+    if (divContests.length === 0) {
+        container.innerHTML = '<p class="empty-state">No contests for this division yet</p>';
         return;
     }
     
-    listContainer.innerHTML = divisionContests.slice(-5).reverse().map((contest, idx) => {
-        const contestIdx = state.pastContests.indexOf(contest);
-        const isInProgress = contest.inProgress;
+    container.innerHTML = divContests.slice(-5).reverse().map(contest => {
+        const idx = state.pastContests.indexOf(contest);
+        const isIP = contest.inProgress;
         return `
         <div class="mini-contest-card">
             <div class="mini-contest-info">
-                <span class="mini-contest-date">${new Date(contest.date).toLocaleDateString()}${isInProgress ? ' (In Progress)' : ''}</span>
+                <span class="mini-contest-date">${new Date(contest.date).toLocaleDateString()}${isIP ? ' (Live)' : ''}</span>
                 <span class="mini-contest-stats">${contest.solvedCount}/${contest.totalProblems} • ${contest.totalScore} pts</span>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn-mini" onclick="resumePastContest(${contestIdx})">${isInProgress ? 'Continue' : 'Resume'}</button>
-                <button class="btn-mini-danger" onclick="deletePastContest(${contestIdx})">Delete</button>
+            <div style="display:flex;gap:6px">
+                <button class="btn-mini" onclick="resumePastContest(${idx})">${isIP ? 'Continue' : 'Resume'}</button>
+                <button class="btn-mini-danger" onclick="deletePastContest(${idx})">Del</button>
             </div>
-        </div>
-    `;
+        </div>`;
     }).join('');
 }
 
@@ -1415,90 +1678,159 @@ function resumePastContest(contestIndex) {
     const contest = state.pastContests[contestIndex];
     if (!contest) return;
     
-    const confirmMessage = contest.inProgress 
-        ? `Continue this in-progress contest from ${new Date(contest.date).toLocaleString()}?\nYou have solved ${contest.solvedCount}/${contest.totalProblems} problems.\nTime spent: ${formatDuration(contest.timeTaken)}`
-        : `Resume contest from ${new Date(contest.date).toLocaleString()}?\nYou had solved ${contest.solvedCount}/${contest.totalProblems} problems.\nTime taken: ${formatDuration(contest.timeTaken)}`;
+    const msg = contest.inProgress 
+        ? `Continue this contest?\n${contest.solvedCount}/${contest.totalProblems} solved • ${formatDuration(contest.timeTaken)} elapsed`
+        : `Resume this contest?\n${contest.solvedCount}/${contest.totalProblems} solved`;
     
-    if (confirm(confirmMessage)) {
-        // Restore contest state
-        state.currentContest = {
-            id: contest.contestId, // Use original ID to update the same record
-            type: contest.contestType,
-            name: contest.contestName,
-            problems: JSON.parse(JSON.stringify(contest.problems)), // Deep clone
-            duration: contest.originalDuration || 120,
-            startTime: contest.startTime || Date.now()
-        };
-        
-        // Calculate the effective start time based on time already taken
-        // This ensures the timer shows remaining time correctly
-        state.contestStartTime = Date.now() - contest.timeTaken;
-        state.contestDuration = contest.originalDuration || 120;
-        state.contestPausedTime = 0;
-        state.isPaused = false;
-        state.submissions = [];
-        state.selectedDivision = contest.contestType;
-        
-        // Hide all other sections, show arena
-        document.getElementById('divisionPreviewSection').classList.add('hidden');
-        document.getElementById('contestTypeSection').classList.add('hidden');
-        document.getElementById('resultsSection').classList.add('hidden');
-        document.getElementById('historySection').classList.add('hidden');
-        document.getElementById('performanceSection').classList.add('hidden');
-        
-        displayContestArena();
-        startTimer();
-        
-        const remainingTime = (state.contestDuration * 60 * 1000) - contest.timeTaken;
-        const remainingMinutes = Math.floor(remainingTime / 60000);
-        
-        showSuccess(`Contest resumed! ${remainingMinutes} minutes remaining.`);
-        saveContestState();
-    }
+    showModal('Resume Contest?', `<p style="color:var(--text-secondary);font-size:14px;white-space:pre-line">${msg}</p>`, [
+        { text: 'Cancel', className: 'btn-ghost', action: () => {} },
+        { text: 'Resume', className: 'btn-primary', action: () => doResumePastContest(contestIndex) }
+    ]);
 }
 
-function startContestFromPreview() {
-    if (state.selectedDivision === 'custom') {
-        generateCustomContest();
-    } else {
-        generatePresetContest(state.selectedDivision);
-    }
-}
-
-function backFromPreview() {
-    document.getElementById('divisionPreviewSection').classList.add('hidden');
-    document.getElementById('contestTypeSection').classList.remove('hidden');
-    state.selectedDivision = null;
+function doResumePastContest(contestIndex) {
+    const contest = state.pastContests[contestIndex];
+    if (!contest) return;
+    
+    state.currentContest = {
+        id: contest.contestId,
+        type: contest.contestType,
+        name: contest.contestName,
+        problems: JSON.parse(JSON.stringify(contest.problems)),
+        duration: contest.originalDuration || 120,
+        startTime: contest.startTime || Date.now()
+    };
+    
+    state.contestStartTime = Date.now() - contest.timeTaken;
+    state.contestDuration = contest.originalDuration || 120;
+    state.contestPausedTime = 0;
+    state.isPaused = false;
+    state.submissions = [];
+    state.selectedDivision = contest.contestType;
+    
+    hideAllSections();
+    displayContestArena();
+    startTimer();
+    
+    const remaining = Math.max(0, Math.floor(((state.contestDuration * 60 * 1000) - contest.timeTaken) / 60000));
+    showSuccess(`Contest resumed! ${remaining} min remaining`);
+    saveContestState();
 }
 
 function deletePastContest(contestIndex) {
-    if (confirm('Are you sure you want to delete this contest record?')) {
-        state.pastContests.splice(contestIndex, 1);
-        localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
-        
-        // Refresh display based on current view
-        if (!document.getElementById('historySection').classList.contains('hidden')) {
-            renderHistory(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
-        }
-        
-        if (!document.getElementById('divisionPreviewSection').classList.contains('hidden')) {
-            // Refresh division preview
-            if (state.selectedDivision) {
-                const divisionStats = calculateDivisionStats(state.selectedDivision);
-                displayDivisionStats(divisionStats);
-                displayPastContestsForDivision(state.selectedDivision);
-            }
-        }
-        
-        showSuccess('Contest record deleted');
+    showModal('Delete Contest?', '<p style="color:var(--text-secondary);font-size:14px">This cannot be undone.</p>', [
+        { text: 'Cancel', className: 'btn-ghost', action: () => {} },
+        { text: 'Delete', className: 'btn-danger', action: () => doDeletePastContest(contestIndex) }
+    ]);
+}
+
+function doDeletePastContest(contestIndex) {
+    state.pastContests.splice(contestIndex, 1);
+    localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+    
+    if (!document.getElementById('historySection').classList.contains('hidden')) {
+        const activeFilter = document.querySelector('.filter-btn.active');
+        renderHistory(activeFilter ? activeFilter.dataset.filter : 'all');
     }
+    
+    if (!document.getElementById('divisionPreviewSection').classList.contains('hidden') && state.selectedDivision) {
+        displayDivisionStats(calculateDivisionStats(state.selectedDivision));
+        displayPastContestsForDivision(state.selectedDivision);
+    }
+    
+    showSuccess('Contest deleted');
 }
 
 function viewAllPastContests() {
     document.getElementById('divisionPreviewSection').classList.add('hidden');
-    document.getElementById('historySection').classList.remove('hidden');
-    document.getElementById('performanceSection').classList.remove('hidden');
+    viewPastContests();
+}
+
+// ===== Export / Import =====
+function exportData() {
+    const data = {
+        version: 2,
+        exportDate: new Date().toISOString(),
+        pastContests: state.pastContests,
+        streak: state.streak,
+        settings: state.settings,
+        lastUser: localStorage.getItem('lastUser')
+    };
     
-    renderHistory('all');
-    renderPerformanceGraph('overall');
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `contest-data-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showSuccess('Data exported!');
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            if (!data.pastContests || !Array.isArray(data.pastContests)) {
+                throw new Error('Invalid data format');
+            }
+            
+            showModal('Import Data?', 
+                `<p style="color:var(--text-secondary);font-size:14px">This will merge <strong>${data.pastContests.length}</strong> contests into your history. Existing data will be preserved.</p>`,
+                [
+                    { text: 'Cancel', className: 'btn-ghost', action: () => {} },
+                    { text: 'Import', className: 'btn-primary', action: () => {
+                        // Merge contests (avoid duplicates by contestId)
+                        const existingIds = new Set(state.pastContests.map(c => c.contestId));
+                        let imported = 0;
+                        data.pastContests.forEach(c => {
+                            if (!existingIds.has(c.contestId)) {
+                                state.pastContests.push(c);
+                                imported++;
+                            }
+                        });
+                        localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+                        
+                        if (data.streak) {
+                            state.streak.best = Math.max(state.streak.best, data.streak.best || 0);
+                            saveStreak();
+                        }
+                        
+                        showSuccess(`Imported ${imported} new contests!`);
+                    }}
+                ]
+            );
+        } catch (err) {
+            showError('Invalid file format');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+// ===== Clear All Data =====
+function clearAllData() {
+    showModal('Clear All Data?', 
+        '<p style="color:var(--text-secondary);font-size:14px">This will permanently delete all contest history, streak data, and settings. This cannot be undone.</p>',
+        [
+            { text: 'Cancel', className: 'btn-ghost', action: () => {} },
+            { text: 'Clear Everything', className: 'btn-danger', action: () => {
+                localStorage.removeItem('pastContests');
+                localStorage.removeItem('practiceStreak');
+                localStorage.removeItem('contestSettings');
+                localStorage.removeItem('activeContest');
+                state.pastContests = [];
+                state.streak = { current: 0, lastDate: null, best: 0, history: [] };
+                updateStreakDisplay();
+                closeSettingsModal();
+                showSuccess('All data cleared');
+            }}
+        ]
+    );
 }

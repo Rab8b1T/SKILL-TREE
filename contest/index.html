@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Virtual Contest - Codeforces</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -14,29 +14,38 @@
         <div class="container">
             <div class="header-content">
                 <div class="header-left">
-                    <a href="../" class="back-link" aria-label="Back to Skill Tree">
+                    <a href="../" class="back-link" title="Back to Skill Tree">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                             <path d="M19 12H5M12 19l-7-7 7-7"/>
                         </svg>
-                        Back
-                    </a>
-                    <a href="../" class="home-link" title="Home">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     </a>
                     <div class="logo">
-                        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                         </svg>
                         <h1>Virtual Contest</h1>
                     </div>
+                    <div class="streak-badge hidden" id="streakBadge" title="Daily Practice Streak">
+                        <span class="streak-fire">🔥</span>
+                        <span class="streak-count" id="streakCount">0</span>
+                    </div>
                 </div>
                 <div class="header-actions">
-                    <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
-                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="5"/>
-                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    <button class="icon-btn" id="shortcutsBtn" onclick="showShortcutsModal()" title="Keyboard Shortcuts (?)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
                         </svg>
-                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    </button>
+                    <button class="icon-btn" id="settingsBtn" onclick="showSettingsModal()" title="Settings">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" id="themeToggle" title="Toggle Theme">
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                         </svg>
                     </button>
@@ -50,22 +59,32 @@
         <div class="container">
             <!-- User Handle Section -->
             <section class="card" id="handleSection">
-                <h2 class="card-title">Enter Your Codeforces Handle</h2>
-                <p class="card-subtitle">We'll fetch your submissions to show only unsolved problems</p>
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="card-title">Connect to Codeforces</h2>
+                        <p class="card-subtitle">Load your profile to generate personalized contests</p>
+                    </div>
+                </div>
                 <div class="search-form">
                     <div class="input-wrapper">
                         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"/>
-                            <path d="M21 21l-4.35-4.35"/>
+                            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
                         </svg>
-                        <input type="text" id="handleInput" placeholder="Enter handle (default: rab8bit)" value="rab8bit" autocomplete="off">
+                        <input type="text" id="handleInput" placeholder="Enter Codeforces handle..." value="rab8bit" autocomplete="off">
                     </div>
-                    <button id="loadUserBtn" class="btn-gradient">
-                        <span class="btn-text">Load Profile</span>
-                        <span class="spinner hidden"></span>
+                    <button id="loadUserBtn" class="btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Load Profile
                     </button>
                 </div>
                 <div class="user-info hidden" id="userInfo">
+                    <div class="user-avatar" id="userAvatar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
                     <div class="user-stats">
                         <div class="stat-item">
                             <span class="stat-label">Handle</span>
@@ -76,112 +95,194 @@
                             <span class="stat-value" id="userRating"></span>
                         </div>
                         <div class="stat-item">
+                            <span class="stat-label">Max Rating</span>
+                            <span class="stat-value" id="userMaxRating"></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Rank</span>
+                            <span class="stat-value" id="userRank"></span>
+                        </div>
+                        <div class="stat-item">
                             <span class="stat-label">Problems Solved</span>
                             <span class="stat-value" id="problemsSolved"></span>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Info Box -->
-                <div style="margin-top: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md); border-left: 4px solid var(--accent-primary);">
-                    <h4 style="margin: 0 0 8px 0; font-size: 15px; color: var(--text-primary);">How it works:</h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: var(--text-secondary); line-height: 1.8;">
+                <div class="info-box" id="howItWorks">
+                    <div class="info-box-header" onclick="toggleInfoBox()">
+                        <h4>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+                            </svg>
+                            How it works
+                        </h4>
+                        <svg class="info-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <ul class="info-box-content" id="infoBoxContent">
                         <li>Select a division or create a custom contest</li>
                         <li>Solve problems on Codeforces and submit your solutions</li>
-                        <li>Return here and click "Refresh Submissions" to update your progress</li>
-                        <li>Score decreases over time, wrong submissions add 5-minute penalties</li>
+                        <li>Click "Refresh Submissions" to update your progress</li>
+                        <li>Score decreases over time — solve fast for maximum points</li>
+                        <li>Wrong submissions add 5-minute penalty each</li>
                         <li>All contests are saved locally for performance tracking</li>
+                        <li>Press <kbd>?</kbd> for keyboard shortcuts</li>
                     </ul>
                 </div>
             </section>
 
             <!-- Contest Type Selection -->
             <section class="card hidden" id="contestTypeSection">
-                <h2 class="card-title">Select Contest Type</h2>
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="card-title">Choose Your Battle</h2>
+                        <p class="card-subtitle">Select a division or create a custom contest</p>
+                    </div>
+                    <div class="card-header-actions">
+                        <button class="btn-ghost" onclick="showQuickPractice()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            Quick Practice
+                        </button>
+                        <button class="btn-ghost" onclick="viewPastContests()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                            History
+                        </button>
+                    </div>
+                </div>
                 <div class="contest-types">
-                    <div class="contest-type-card" data-type="div4">
+                    <div class="contest-type-card div4-card" onclick="selectContestType('div4')">
                         <div class="contest-type-header">
                             <h3>DIV 4</h3>
                             <span class="difficulty-badge beginner">Beginner</span>
                         </div>
-                        <p class="contest-type-desc">Perfect for beginners (800-1500)</p>
-                        <ul class="contest-type-features">
-                            <li>6-8 problems</li>
-                            <li>2 hours duration</li>
-                            <li>Rating: 800-1500</li>
-                        </ul>
-                        <button class="btn-select" onclick="selectContestType('div4')">Select</button>
+                        <p class="contest-type-desc">For newcomers (800–1500)</p>
+                        <div class="contest-type-meta">
+                            <span>7 problems</span>
+                            <span>2 hours</span>
+                        </div>
+                        <div class="contest-type-bar">
+                            <div class="contest-type-fill" style="width: 25%"></div>
+                        </div>
                     </div>
                     
-                    <div class="contest-type-card" data-type="div3">
+                    <div class="contest-type-card div3-card" onclick="selectContestType('div3')">
                         <div class="contest-type-header">
                             <h3>DIV 3</h3>
-                            <span class="difficulty-badge easy">Easy-Medium</span>
+                            <span class="difficulty-badge easy">Easy-Med</span>
                         </div>
-                        <p class="contest-type-desc">Lower to mid-level (800-1700)</p>
-                        <ul class="contest-type-features">
-                            <li>6-7 problems</li>
-                            <li>2-2.5 hours duration</li>
-                            <li>Rating: 800-1700</li>
-                        </ul>
-                        <button class="btn-select" onclick="selectContestType('div3')">Select</button>
+                        <p class="contest-type-desc">Lower–mid level (800–1700)</p>
+                        <div class="contest-type-meta">
+                            <span>7 problems</span>
+                            <span>2.5 hours</span>
+                        </div>
+                        <div class="contest-type-bar">
+                            <div class="contest-type-fill" style="width: 45%"></div>
+                        </div>
                     </div>
                     
-                    <div class="contest-type-card" data-type="div2">
+                    <div class="contest-type-card div2-card" onclick="selectContestType('div2')">
                         <div class="contest-type-header">
                             <h3>DIV 2</h3>
                             <span class="difficulty-badge medium">Medium</span>
                         </div>
-                        <p class="contest-type-desc">Intermediate level (1000-2200)</p>
-                        <ul class="contest-type-features">
-                            <li>5-6 problems</li>
-                            <li>2 hours duration</li>
-                            <li>Rating: 1000-2200</li>
-                        </ul>
-                        <button class="btn-select" onclick="selectContestType('div2')">Select</button>
+                        <p class="contest-type-desc">Intermediate (1000–2200)</p>
+                        <div class="contest-type-meta">
+                            <span>6 problems</span>
+                            <span>2 hours</span>
+                        </div>
+                        <div class="contest-type-bar">
+                            <div class="contest-type-fill" style="width: 65%"></div>
+                        </div>
                     </div>
                     
-                    <div class="contest-type-card" data-type="div1">
+                    <div class="contest-type-card div1-card" onclick="selectContestType('div1')">
                         <div class="contest-type-header">
                             <h3>DIV 1</h3>
                             <span class="difficulty-badge hard">Advanced</span>
                         </div>
-                        <p class="contest-type-desc">Expert level (1500-2800)</p>
-                        <ul class="contest-type-features">
-                            <li>5-6 problems</li>
-                            <li>2-2.5 hours duration</li>
-                            <li>Rating: 1500-2800</li>
-                        </ul>
-                        <button class="btn-select" onclick="selectContestType('div1')">Select</button>
+                        <p class="contest-type-desc">Expert level (1500–2800)</p>
+                        <div class="contest-type-meta">
+                            <span>6 problems</span>
+                            <span>2.5 hours</span>
+                        </div>
+                        <div class="contest-type-bar">
+                            <div class="contest-type-fill" style="width: 90%"></div>
+                        </div>
                     </div>
                     
-                    <div class="contest-type-card" data-type="custom">
+                    <div class="contest-type-card custom-card" onclick="selectContestType('custom')">
                         <div class="contest-type-header">
                             <h3>Custom</h3>
-                            <span class="difficulty-badge custom">Customize</span>
+                            <span class="difficulty-badge custom">Your Rules</span>
                         </div>
-                        <p class="contest-type-desc">Create your own contest</p>
-                        <ul class="contest-type-features">
-                            <li>Choose problem count</li>
-                            <li>Select rating range</li>
-                            <li>Filter by topics</li>
-                        </ul>
-                        <button class="btn-select" onclick="selectContestType('custom')">Select</button>
+                        <p class="contest-type-desc">Build your own contest</p>
+                        <div class="contest-type-meta">
+                            <span>3–10 problems</span>
+                            <span>Custom time</span>
+                        </div>
+                        <div class="contest-type-bar">
+                            <div class="contest-type-fill custom-fill" style="width: 100%"></div>
+                        </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- Quick Practice Section -->
+            <section class="card hidden" id="quickPracticeSection">
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="card-title">Quick Practice</h2>
+                        <p class="card-subtitle">Solve a single problem with a timer — great for daily warmup</p>
+                    </div>
+                    <button class="btn-ghost" onclick="backFromQuickPractice()">← Back</button>
+                </div>
+                <div class="quick-practice-grid">
+                    <div class="config-group">
+                        <label for="qpRating">Target Rating</label>
+                        <input type="number" id="qpRating" min="800" max="3500" step="100" value="1200">
+                    </div>
+                    <div class="config-group">
+                        <label for="qpTime">Time Limit (min)</label>
+                        <input type="number" id="qpTime" min="5" max="120" value="30">
+                    </div>
+                </div>
+                <div class="config-group full-width" style="margin-top:16px">
+                    <label>Topic (optional)</label>
+                    <div class="tags-container" id="qpTagsContainer"></div>
+                </div>
+                <div class="config-actions" style="margin-top:20px">
+                    <button class="btn-primary" onclick="startQuickPractice()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                        Start Practice
+                    </button>
                 </div>
             </section>
 
             <!-- Custom Contest Configuration -->
             <section class="card hidden" id="customConfigSection">
-                <h2 class="card-title">Configure Custom Contest</h2>
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="card-title">Custom Contest</h2>
+                        <p class="card-subtitle">Configure your contest parameters</p>
+                    </div>
+                    <button class="btn-ghost" onclick="cancelCustom()">← Back</button>
+                </div>
                 <div class="config-grid">
                     <div class="config-group">
-                        <label for="problemCount">Number of Problems</label>
+                        <label for="problemCount">Problems</label>
                         <input type="number" id="problemCount" min="3" max="10" value="5">
                     </div>
                     <div class="config-group">
-                        <label for="contestDuration">Duration (minutes)</label>
-                        <input type="number" id="contestDuration" min="60" max="180" value="120">
+                        <label for="contestDuration">Duration (min)</label>
+                        <input type="number" id="contestDuration" min="30" max="300" value="120">
                     </div>
                     <div class="config-group">
                         <label for="minRating">Min Rating</label>
@@ -193,51 +294,55 @@
                     </div>
                 </div>
                 <div class="config-group full-width">
-                    <label>Select Topics (Optional)</label>
+                    <label>Topics (optional — leave empty for all)</label>
                     <div class="tags-container" id="tagsContainer"></div>
                 </div>
                 <div class="config-actions">
-                    <button class="btn-secondary" onclick="cancelCustom()">Cancel</button>
-                    <button class="btn-gradient" onclick="generateCustomContest()">Generate Contest</button>
+                    <button class="btn-primary btn-large" onclick="generateCustomContest()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Generate Contest
+                    </button>
                 </div>
             </section>
 
             <!-- Division Preview Section -->
             <section class="card hidden" id="divisionPreviewSection">
-                <div class="preview-header">
+                <div class="card-header-row">
                     <h2 class="card-title" id="previewDivisionName">DIV 3</h2>
-                    <button class="btn-secondary" onclick="backFromPreview()">← Back</button>
+                    <button class="btn-ghost" onclick="backFromPreview()">← Back</button>
                 </div>
                 
                 <div class="preview-info">
                     <div class="preview-item">
-                        <span class="preview-label">Problems:</span>
+                        <span class="preview-label">Problems</span>
                         <span class="preview-value" id="previewProblemsCount">7</span>
                     </div>
                     <div class="preview-item">
-                        <span class="preview-label">Duration:</span>
-                        <span class="preview-value"><span id="previewDuration">150</span> minutes</span>
+                        <span class="preview-label">Duration</span>
+                        <span class="preview-value"><span id="previewDuration">150</span> min</span>
                     </div>
                     <div class="preview-item">
-                        <span class="preview-label">Rating Range:</span>
-                        <span class="preview-value" id="previewRatingRange">800-1700</span>
+                        <span class="preview-label">Rating Range</span>
+                        <span class="preview-value" id="previewRatingRange">800–1700</span>
                     </div>
                 </div>
 
                 <div class="division-stats-section">
-                    <h3>Your Performance in This Division</h3>
+                    <h3>Your Performance</h3>
                     <div class="division-stats-grid" id="divisionStatsContainer"></div>
                     <div id="avgSolveTimePerProblem"></div>
                 </div>
 
                 <div class="division-past-contests">
-                    <h3>Recent Contests (Last 5)</h3>
+                    <h3>Recent Contests</h3>
                     <div id="divisionPastContestsList"></div>
-                    <button class="btn-secondary" onclick="viewAllPastContests()" style="margin-top: 16px;">View All Past Contests</button>
+                    <button class="btn-ghost" onclick="viewAllPastContests()" style="margin-top: 12px;">View All History →</button>
                 </div>
 
                 <div class="preview-actions">
-                    <button class="btn-gradient btn-large" onclick="startContestFromPreview()">
+                    <button class="btn-primary btn-large" onclick="startContestFromPreview()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                             <polygon points="5 3 19 12 5 21 5 3"/>
                         </svg>
@@ -260,32 +365,43 @@
                     <div class="contest-info">
                         <h2 id="contestName">Contest Name</h2>
                         <div class="contest-meta">
-                            <span id="contestType"></span>
-                            <span>•</span>
+                            <span class="contest-meta-badge" id="contestType"></span>
                             <span id="contestProblemsCount"></span>
-                            <span>•</span>
-                            <span id="contestDuration"></span>
+                            <span id="contestDurationLabel"></span>
                         </div>
                     </div>
                     <div class="contest-timer">
                         <div class="timer-label">Time Remaining</div>
                         <div class="timer-display" id="timerDisplay">2:00:00</div>
+                        <div class="timer-progress-bar">
+                            <div class="timer-progress-fill" id="timerProgressFill"></div>
+                        </div>
                         <div class="timer-controls">
                             <button class="btn-warning" id="pauseBtn" onclick="pauseContest()" style="display:inline-flex;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                    <rect x="6" y="4" width="4" height="16"/>
-                                    <rect x="14" y="4" width="4" height="16"/>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
                                 </svg>
                                 Pause
                             </button>
                             <button class="btn-success" id="resumeBtn" onclick="resumeContest()" style="display:none;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                                     <polygon points="5 3 19 12 5 21 5 3"/>
                                 </svg>
                                 Resume
                             </button>
-                            <button class="btn-danger" id="endContestBtn" onclick="endContest()">End Contest</button>
+                            <button class="btn-danger" id="endContestBtn" onclick="confirmEndContest()">End</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Solved Counter -->
+                <div class="solved-progress" id="solvedProgress">
+                    <div class="solved-progress-text">
+                        <span>Solved: <strong id="solvedCountLive">0</strong> / <strong id="totalCountLive">0</strong></span>
+                        <span id="liveScore">Score: 0</span>
+                    </div>
+                    <div class="solved-progress-bar">
+                        <div class="solved-progress-fill" id="solvedProgressFill" style="width:0%"></div>
                     </div>
                 </div>
 
@@ -294,10 +410,11 @@
                     <table class="problems-table">
                         <thead>
                             <tr>
-                                <th>Problem</th>
+                                <th>#</th>
                                 <th>Name</th>
-                                <th>Solved</th>
+                                <th>Tags</th>
                                 <th>Rating</th>
+                                <th>Solved By</th>
                                 <th>Score</th>
                                 <th>Status</th>
                             </tr>
@@ -308,49 +425,57 @@
 
                 <!-- Submissions Panel -->
                 <div class="submissions-panel">
-                    <h3>Recent Submissions</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
-                        Auto-refreshes every 30 seconds. Press 'R' to refresh manually.
-                    </p>
-                    <div class="submissions-list" id="submissionsList">
-                        <p class="empty-state">No submissions yet. Click on problems to open them in Codeforces!</p>
+                    <div class="submissions-header">
+                        <h3>Submissions</h3>
+                        <button class="btn-ghost btn-sm" id="refreshSubmissions" onclick="refreshSubmissions()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/>
+                            </svg>
+                            Refresh
+                        </button>
                     </div>
-                    <button class="btn-secondary" id="refreshSubmissions" onclick="refreshSubmissions()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                            <path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/>
-                        </svg>
-                        Refresh Submissions
-                    </button>
+                    <p class="submissions-hint">Auto-refreshes every 30s · Press <kbd>R</kbd> to refresh</p>
+                    <div class="submissions-list" id="submissionsList">
+                        <p class="empty-state">No submissions yet. Open problems and solve them on Codeforces!</p>
+                    </div>
                 </div>
             </section>
 
             <!-- Contest Results -->
             <section class="card hidden" id="resultsSection">
-                <h2 class="card-title">Contest Results</h2>
+                <h2 class="card-title">Contest Complete!</h2>
                 <div class="results-summary">
                     <div class="result-card">
-                        <div class="result-icon success">✓</div>
+                        <div class="result-icon success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="24" height="24"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
                         <div class="result-info">
                             <span class="result-value" id="solvedCount">0</span>
-                            <span class="result-label">Problems Solved</span>
+                            <span class="result-label">Solved</span>
                         </div>
                     </div>
                     <div class="result-card">
-                        <div class="result-icon score">★</div>
+                        <div class="result-icon score">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="24" height="24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </div>
                         <div class="result-info">
                             <span class="result-value" id="totalScore">0</span>
-                            <span class="result-label">Total Score</span>
+                            <span class="result-label">Score</span>
                         </div>
                     </div>
                     <div class="result-card">
-                        <div class="result-icon time">⏱</div>
+                        <div class="result-icon time">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="24" height="24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </div>
                         <div class="result-info">
                             <span class="result-value" id="timeTaken">0:00:00</span>
-                            <span class="result-label">Time Taken</span>
+                            <span class="result-label">Time</span>
                         </div>
                     </div>
                     <div class="result-card">
-                        <div class="result-icon penalty">⚠</div>
+                        <div class="result-icon penalty">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="24" height="24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        </div>
                         <div class="result-info">
                             <span class="result-value" id="penaltyTime">0</span>
                             <span class="result-label">Penalty (min)</span>
@@ -358,13 +483,14 @@
                     </div>
                 </div>
 
-                <!-- Problems Results -->
                 <div class="problems-results">
                     <h3>Problem-wise Performance</h3>
                     <table class="results-table">
                         <thead>
                             <tr>
-                                <th>Problem</th>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Rating</th>
                                 <th>Status</th>
                                 <th>Score</th>
                                 <th>Time</th>
@@ -375,15 +501,47 @@
                     </table>
                 </div>
 
+                <!-- Upsolve Section -->
+                <div class="upsolve-section hidden" id="upsolveSection">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+                        </svg>
+                        Upsolve These
+                    </h3>
+                    <p class="upsolve-hint">Problems you didn't solve — practice them to improve!</p>
+                    <div id="upsolveList"></div>
+                </div>
+
                 <div class="results-actions">
-                    <button class="btn-secondary" onclick="viewPastContests()">View Past Contests</button>
-                    <button class="btn-gradient" onclick="startNewContest()">Start New Contest</button>
+                    <button class="btn-ghost" onclick="viewPastContests()">View History</button>
+                    <button class="btn-primary" onclick="startNewContest()">New Contest</button>
                 </div>
             </section>
 
             <!-- Past Contests History -->
             <section class="card hidden" id="historySection">
-                <h2 class="card-title">Past Contests</h2>
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="card-title">Contest History</h2>
+                        <p class="card-subtitle" id="historySubtitle">Your practice journey</p>
+                    </div>
+                    <div class="card-header-actions">
+                        <button class="btn-ghost btn-sm" onclick="exportData()" title="Export Data">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Export
+                        </button>
+                        <button class="btn-ghost btn-sm" onclick="document.getElementById('importFileInput').click()" title="Import Data">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Import
+                        </button>
+                        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
+                    </div>
+                </div>
                 <div class="history-filters">
                     <button class="filter-btn active" data-filter="all" onclick="filterHistory('all')">All</button>
                     <button class="filter-btn" data-filter="div4" onclick="filterHistory('div4')">DIV 4</button>
@@ -393,7 +551,9 @@
                     <button class="filter-btn" data-filter="custom" onclick="filterHistory('custom')">Custom</button>
                 </div>
                 <div class="history-list" id="historyList"></div>
-                <button class="btn-secondary" onclick="backToContestTypes()">Back to Contest Selection</button>
+                <div class="results-actions">
+                    <button class="btn-ghost" onclick="backToContestTypes()">← Back to Contests</button>
+                </div>
             </section>
 
             <!-- Performance Graphs -->
@@ -414,25 +574,94 @@
         </div>
     </main>
 
-    <!-- Error Toast -->
-    <div class="toast error hidden" id="errorToast">
-        <div class="toast-icon">⚠</div>
-        <div class="toast-content">
-            <strong>Error</strong>
-            <span id="errorMessage"></span>
+    <!-- Custom Modal -->
+    <div class="modal-overlay hidden" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" id="modalContent" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle">Confirm</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer" id="modalFooter"></div>
         </div>
-        <button class="toast-close" onclick="closeToast('errorToast')">&times;</button>
     </div>
 
-    <!-- Success Toast -->
-    <div class="toast success hidden" id="successToast">
-        <div class="toast-icon">✓</div>
-        <div class="toast-content">
-            <strong>Success</strong>
-            <span id="successMessage"></span>
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="modal-overlay hidden" id="shortcutsOverlay" onclick="closeShortcutsModal(event)">
+        <div class="modal shortcuts-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Keyboard Shortcuts</h3>
+                <button class="modal-close" onclick="closeShortcutsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="shortcut-group">
+                    <h4>During Contest</h4>
+                    <div class="shortcut-item"><kbd>R</kbd><span>Refresh submissions</span></div>
+                    <div class="shortcut-item"><kbd>Space</kbd><span>Pause / Resume</span></div>
+                    <div class="shortcut-item"><kbd>Esc</kbd><span>End contest</span></div>
+                </div>
+                <div class="shortcut-group">
+                    <h4>General</h4>
+                    <div class="shortcut-item"><kbd>?</kbd><span>Show shortcuts</span></div>
+                    <div class="shortcut-item"><kbd>T</kbd><span>Toggle theme</span></div>
+                    <div class="shortcut-item"><kbd>N</kbd><span>New contest</span></div>
+                </div>
+            </div>
         </div>
-        <button class="toast-close" onclick="closeToast('successToast')">&times;</button>
     </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay hidden" id="settingsOverlay" onclick="closeSettingsModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Settings</h3>
+                <button class="modal-close" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Sound Notifications</span>
+                        <span class="setting-desc">Play sounds on problem solved & time warnings</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="soundToggle" onchange="toggleSound()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Auto-refresh Submissions</span>
+                        <span class="setting-desc">Automatically check for new submissions every 30s</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoRefreshToggle" checked onchange="toggleAutoRefresh()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Show Problem Tags</span>
+                        <span class="setting-desc">Display problem tags during contest (spoiler!)</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showTagsToggle" onchange="toggleShowTags()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <hr class="setting-divider">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Clear All Data</span>
+                        <span class="setting-desc">Delete all contest history and settings</span>
+                    </div>
+                    <button class="btn-danger btn-sm" onclick="clearAllData()">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <script src="script.js"></script>
 </body>
