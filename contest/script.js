@@ -384,6 +384,27 @@ async function startContest(type, config) {
     state.isPaused = false;
     state.submissions = [];
 
+    // Save initial contest snapshot to past contests immediately
+    // This prevents data loss if user refreshes or starts another contest
+    const initialSnapshot = {
+        contestId: state.currentContest.id,
+        contestName: state.currentContest.name,
+        contestType: state.currentContest.type,
+        problems: JSON.parse(JSON.stringify(state.currentContest.problems)), // Deep clone
+        solvedCount: 0,
+        totalProblems: state.currentContest.problems.length,
+        totalScore: 0,
+        totalPenalty: 0,
+        timeTaken: 0,
+        date: new Date(),
+        startTime: state.contestStartTime,
+        originalDuration: state.contestDuration,
+        inProgress: true // Mark as in-progress
+    };
+    
+    state.pastContests.push(initialSnapshot);
+    localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+
     // Hide config sections
     document.getElementById('contestTypeSection').classList.add('hidden');
     document.getElementById('customConfigSection').classList.add('hidden');
@@ -604,6 +625,9 @@ async function refreshSubmissions() {
         renderProblemsTable();
         renderSubmissions();
         
+        // Update the in-progress contest record in pastContests
+        updateInProgressContest();
+        
         // Save state after updates
         saveContestState();
 
@@ -734,7 +758,45 @@ function formatDuration(ms) {
 
 // ===== Contest History =====
 function saveContest(results) {
-    state.pastContests.push(results);
+    // Find if this contest already exists in past contests
+    const existingIndex = state.pastContests.findIndex(c => c.contestId === results.contestId);
+    
+    // Mark as completed
+    results.inProgress = false;
+    
+    if (existingIndex !== -1) {
+        // Update existing record
+        state.pastContests[existingIndex] = results;
+    } else {
+        // Add new record (shouldn't happen normally, but fallback)
+        state.pastContests.push(results);
+    }
+    
+    localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+}
+
+function updateInProgressContest() {
+    if (!state.currentContest) return;
+    
+    const existingIndex = state.pastContests.findIndex(c => c.contestId === state.currentContest.id);
+    if (existingIndex === -1) return;
+    
+    // Update the record with current progress
+    const solvedProblems = state.currentContest.problems.filter(p => p.status === 'solved');
+    const totalScore = solvedProblems.reduce((sum, p) => sum + Math.round(p.currentScore), 0);
+    const totalPenalty = solvedProblems.reduce((sum, p) => sum + (p.attempts * 5), 0);
+    const timeTaken = Date.now() - state.contestStartTime - state.contestPausedTime;
+    
+    state.pastContests[existingIndex] = {
+        ...state.pastContests[existingIndex],
+        problems: JSON.parse(JSON.stringify(state.currentContest.problems)),
+        solvedCount: solvedProblems.length,
+        totalScore,
+        totalPenalty,
+        timeTaken,
+        inProgress: true
+    };
+    
     localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
 }
 
@@ -778,10 +840,14 @@ function renderHistory(filter) {
 
     list.innerHTML = contests.slice().reverse().map((contest, idx) => {
         const contestIdx = state.pastContests.length - 1 - idx;
+        const isInProgress = contest.inProgress;
         return `
-        <div class="history-item">
+        <div class="history-item ${isInProgress ? 'in-progress-contest' : ''}">
             <div class="history-item-info">
-                <div class="history-item-title">${contest.contestName}</div>
+                <div class="history-item-title">
+                    ${contest.contestName} 
+                    ${isInProgress ? '<span class="in-progress-badge">In Progress</span>' : ''}
+                </div>
                 <div class="history-item-meta">
                     <span>${new Date(contest.date).toLocaleDateString()}</span>
                     <span>•</span>
@@ -805,7 +871,7 @@ function renderHistory(filter) {
                 </div>
             </div>
             <div class="history-actions">
-                <button class="btn-mini" onclick="resumePastContest(${contestIdx})">Resume</button>
+                <button class="btn-mini" onclick="resumePastContest(${contestIdx})">${isInProgress ? 'Continue' : 'Resume'}</button>
                 <button class="btn-mini-danger" onclick="deletePastContest(${contestIdx})">Delete</button>
             </div>
         </div>
@@ -1035,11 +1101,13 @@ function saveContestState() {
         solvedProblems: Array.from(state.solvedProblems),
         currentContest: state.currentContest,
         contestStartTime: state.contestStartTime,
+        contestDuration: state.contestDuration,
         contestPausedTime: state.contestPausedTime,
         isPaused: state.isPaused,
         pauseStartTime: state.pauseStartTime,
         submissions: state.submissions,
-        selectedDivision: state.selectedDivision
+        selectedDivision: state.selectedDivision,
+        allProblems: state.allProblems
     };
     
     localStorage.setItem('activeContest', JSON.stringify(contestState));
@@ -1055,13 +1123,26 @@ function restoreActiveContest() {
         // Restore state
         state.currentUser = contestState.currentUser;
         state.solvedProblems = new Set(contestState.solvedProblems);
+        state.allProblems = contestState.allProblems || [];
         state.currentContest = contestState.currentContest;
         state.contestStartTime = contestState.contestStartTime;
+        state.contestDuration = contestState.contestDuration || 120;
         state.contestPausedTime = contestState.contestPausedTime || 0;
         state.isPaused = contestState.isPaused || false;
         state.pauseStartTime = contestState.pauseStartTime;
         state.submissions = contestState.submissions || [];
         state.selectedDivision = contestState.selectedDivision;
+        
+        // If was paused before refresh, recalculate paused time
+        if (state.isPaused && state.pauseStartTime) {
+            // Time spent paused before refresh
+            const priorPausedTime = state.contestPausedTime;
+            // Time elapsed since page was paused until now
+            const additionalPausedTime = Date.now() - state.pauseStartTime;
+            state.contestPausedTime = priorPausedTime + additionalPausedTime;
+            // Reset pause start time to now
+            state.pauseStartTime = Date.now();
+        }
         
         // Show restored contest
         if (state.currentUser) {
@@ -1270,17 +1351,22 @@ function displayPastContestsForDivision(divisionType) {
         return;
     }
     
-    listContainer.innerHTML = divisionContests.slice(-5).reverse().map((contest, idx) => `
+    listContainer.innerHTML = divisionContests.slice(-5).reverse().map((contest, idx) => {
+        const contestIdx = state.pastContests.indexOf(contest);
+        const isInProgress = contest.inProgress;
+        return `
         <div class="mini-contest-card">
             <div class="mini-contest-info">
-                <span class="mini-contest-date">${new Date(contest.date).toLocaleDateString()}</span>
+                <span class="mini-contest-date">${new Date(contest.date).toLocaleDateString()}${isInProgress ? ' (In Progress)' : ''}</span>
                 <span class="mini-contest-stats">${contest.solvedCount}/${contest.totalProblems} • ${contest.totalScore} pts</span>
             </div>
-            <button class="btn-mini" onclick="resumePastContest(${state.pastContests.indexOf(contest)})">
-                Resume
-            </button>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-mini" onclick="resumePastContest(${contestIdx})">${isInProgress ? 'Continue' : 'Resume'}</button>
+                <button class="btn-mini-danger" onclick="deletePastContest(${contestIdx})">Delete</button>
+            </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function resumePastContest(contestIndex) {
@@ -1333,9 +1419,18 @@ function deletePastContest(contestIndex) {
         state.pastContests.splice(contestIndex, 1);
         localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
         
-        // Refresh display
+        // Refresh display based on current view
         if (!document.getElementById('historySection').classList.contains('hidden')) {
             renderHistory(document.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+        }
+        
+        if (!document.getElementById('divisionPreviewSection').classList.contains('hidden')) {
+            // Refresh division preview
+            if (state.selectedDivision) {
+                const divisionStats = calculateDivisionStats(state.selectedDivision);
+                displayDivisionStats(divisionStats);
+                displayPastContestsForDivision(state.selectedDivision);
+            }
         }
         
         showSuccess('Contest record deleted');
