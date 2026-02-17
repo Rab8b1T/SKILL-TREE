@@ -1,22 +1,12 @@
 {
   "builds": [
-    {
-      "src": "contest_server.py",
-      "use": "@vercel/python"
-    }
+    { "src": "contest_server.py", "use": "@vercel/python" },
+    { "src": "api/*.js", "use": "@vercel/node" }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "contest_server.py"
-    },
-    {
-      "src": "/contest/(.*)",
-      "dest": "/contest/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
+    { "src": "/api/health", "dest": "contest_server.py" },
+    { "src": "/api/contest/(.*)", "dest": "contest_server.py" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
