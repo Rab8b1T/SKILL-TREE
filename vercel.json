@@ -3,8 +3,10 @@
     { "src": "contest_server.py", "use": "@vercel/python" },
     { "src": "api/*.js", "use": "@vercel/node" },
     { "src": "index.html", "use": "@vercel/static" },
+    { "src": "app.js", "use": "@vercel/static" },
     { "src": "styles.css", "use": "@vercel/static" },
-    { "src": "*.json", "use": "@vercel/static" },
+    { "src": "progress.json", "use": "@vercel/static" },
+    { "src": "skilltree-progress-2025-11-26.json", "use": "@vercel/static" },
     { "src": "contest/**", "use": "@vercel/static" },
     { "src": "A2OJ/**", "use": "@vercel/static" },
     { "src": "analysis/**", "use": "@vercel/static" },
@@ -13,8 +15,9 @@
   "routes": [
     { "src": "/api/health", "dest": "contest_server.py" },
     { "src": "/api/contest/(.*)", "dest": "contest_server.py" },
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/progress", "dest": "/api/progress" },
+    { "src": "/progress", "dest": "api/progress.js" },
+    { "src": "/api/progress", "dest": "api/progress.js" },
+    { "src": "/api/contest-data", "dest": "api/contest-data.js" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }
