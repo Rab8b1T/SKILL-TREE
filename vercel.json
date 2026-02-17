@@ -1,7 +1,14 @@
 {
   "builds": [
     { "src": "contest_server.py", "use": "@vercel/python" },
-    { "src": "api/*.js", "use": "@vercel/node" }
+    { "src": "api/*.js", "use": "@vercel/node" },
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "styles.css", "use": "@vercel/static" },
+    { "src": "*.json", "use": "@vercel/static" },
+    { "src": "contest/**", "use": "@vercel/static" },
+    { "src": "A2OJ/**", "use": "@vercel/static" },
+    { "src": "analysis/**", "use": "@vercel/static" },
+    { "src": "codeforces/**", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/health", "dest": "contest_server.py" },
