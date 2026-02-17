@@ -1,7 +1,8 @@
 {
   "outputDirectory": ".",
   "rewrites": [
-    { "source": "/progress", "destination": "/api/progress" }
+    { "source": "/progress", "destination": "/api/progress" },
+    { "source": "/contest-data", "destination": "/api/contest-data" }
   ]
 }
 

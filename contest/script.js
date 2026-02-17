@@ -26,8 +26,112 @@ const state = {
         lastDate: null,
         best: 0,
         history: []
-    }
+    },
+    apiSyncEnabled: true,
+    lastSyncTime: null
 };
+
+// ===== API Sync Functions =====
+function updateSyncStatus(status, text) {
+    const syncEl = document.getElementById('syncStatus');
+    const syncText = syncEl.querySelector('.sync-text');
+    
+    syncEl.className = 'sync-status ' + status;
+    syncText.textContent = text;
+}
+
+async function syncToAPI() {
+    if (!state.apiSyncEnabled) return;
+    
+    updateSyncStatus('syncing', 'Syncing...');
+    
+    try {
+        const dataToSync = {
+            pastContests: state.pastContests,
+            streak: state.streak,
+            settings: state.settings,
+            lastUser: localStorage.getItem('lastUser') || 'rab8bit',
+            lastSyncTime: new Date().toISOString()
+        };
+
+        const response = await fetch('/contest-data?user=rab8bit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToSync)
+        });
+
+        if (response.ok) {
+            state.lastSyncTime = Date.now();
+            updateSyncStatus('synced', 'Synced');
+            // Also save to localStorage as backup
+            localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+            localStorage.setItem('practiceStreak', JSON.stringify(state.streak));
+            localStorage.setItem('contestSettings', JSON.stringify(state.settings));
+        } else {
+            console.warn('Failed to sync to API, falling back to localStorage');
+            updateSyncStatus('error', 'Local only');
+            // Fallback to localStorage
+            localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+            localStorage.setItem('practiceStreak', JSON.stringify(state.streak));
+            localStorage.setItem('contestSettings', JSON.stringify(state.settings));
+        }
+    } catch (error) {
+        console.error('API sync error:', error);
+        updateSyncStatus('error', 'Local only');
+        // Fallback to localStorage
+        localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+        localStorage.setItem('practiceStreak', JSON.stringify(state.streak));
+        localStorage.setItem('contestSettings', JSON.stringify(state.settings));
+    }
+}
+
+async function loadFromAPI() {
+    try {
+        const response = await fetch('/contest-data?user=rab8bit');
+        if (!response.ok) throw new Error('API fetch failed');
+        
+        const data = await response.json();
+        
+        if (data.pastContests && Array.isArray(data.pastContests)) {
+            state.pastContests = data.pastContests;
+        }
+        if (data.streak && typeof data.streak === 'object') {
+            state.streak = { ...state.streak, ...data.streak };
+        }
+        if (data.settings && typeof data.settings === 'object') {
+            state.settings = { ...state.settings, ...data.settings };
+        }
+        
+        state.apiSyncEnabled = true;
+        updateSyncStatus('synced', 'Synced');
+        return true;
+    } catch (error) {
+        console.warn('Failed to load from API, using localStorage:', error);
+        state.apiSyncEnabled = false;
+        updateSyncStatus('error', 'Local only');
+        
+        // Fallback to localStorage
+        const savedContests = localStorage.getItem('pastContests');
+        if (savedContests) {
+            try { state.pastContests = JSON.parse(savedContests); }
+            catch(e) { state.pastContests = []; }
+        }
+        
+        const savedStreak = localStorage.getItem('practiceStreak');
+        if (savedStreak) {
+            try { state.streak = { ...state.streak, ...JSON.parse(savedStreak) }; }
+            catch(e) { /* ignore */ }
+        }
+        
+        const savedSettings = localStorage.getItem('contestSettings');
+        if (savedSettings) {
+            try { state.settings = { ...state.settings, ...JSON.parse(savedSettings) }; }
+            catch(e) { /* ignore */ }
+        }
+        
+        return false;
+    }
+}
 
 // ===== Contest Configurations =====
 const CONTEST_CONFIGS = {
@@ -99,11 +203,20 @@ const AVAILABLE_TAGS = [
 ];
 
 // ===== Initialization =====
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initializeTheme();
-    loadSettings();
-    loadPastContests();
-    loadStreak();
+    
+    // Load from API first, then apply settings
+    showLoading('Loading your data...');
+    const apiLoaded = await loadFromAPI();
+    hideLoading();
+    
+    if (apiLoaded) {
+        showToast('Data synced from cloud ☁️', 'success');
+    }
+    
+    applySettings();
+    updateStreakDisplay();
     setupEventListeners();
     
     const savedUser = localStorage.getItem('lastUser');
@@ -129,12 +242,8 @@ document.getElementById('themeToggle').addEventListener('click', () => {
 
 // ===== Settings =====
 function loadSettings() {
-    const saved = localStorage.getItem('contestSettings');
-    if (saved) {
-        try {
-            Object.assign(state.settings, JSON.parse(saved));
-        } catch(e) { /* ignore */ }
-    }
+    // Settings are now loaded from API in loadFromAPI()
+    // This function is kept for compatibility
     applySettings();
 }
 
@@ -148,7 +257,7 @@ function applySettings() {
 }
 
 function saveSettings() {
-    localStorage.setItem('contestSettings', JSON.stringify(state.settings));
+    syncToAPI();
 }
 
 function toggleSound() {
@@ -177,17 +286,13 @@ function toggleShowTags() {
 
 // ===== Streak Tracking =====
 function loadStreak() {
-    const saved = localStorage.getItem('practiceStreak');
-    if (saved) {
-        try {
-            Object.assign(state.streak, JSON.parse(saved));
-        } catch(e) { /* ignore */ }
-    }
+    // Streak is now loaded from API in loadFromAPI()
+    // This function is kept for compatibility
     updateStreakDisplay();
 }
 
 function saveStreak() {
-    localStorage.setItem('practiceStreak', JSON.stringify(state.streak));
+    syncToAPI();
 }
 
 function recordPracticeDay() {
@@ -733,7 +838,7 @@ async function startContest(type, config) {
     };
     
     state.pastContests.push(initialSnapshot);
-    localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+    syncToAPI();
 
     hideAllSections();
     displayContestArena();
@@ -1188,7 +1293,7 @@ function saveContest(results) {
     if (idx !== -1) state.pastContests[idx] = results;
     else state.pastContests.push(results);
     
-    localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+    syncToAPI();
 }
 
 function updateInProgressContest() {
@@ -1207,15 +1312,12 @@ function updateInProgressContest() {
         inProgress: true
     };
     
-    localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+    syncToAPI();
 }
 
 function loadPastContests() {
-    const saved = localStorage.getItem('pastContests');
-    if (saved) {
-        try { state.pastContests = JSON.parse(saved); }
-        catch(e) { state.pastContests = []; }
-    }
+    // Past contests are now loaded from API in loadFromAPI()
+    // This function is kept for compatibility
 }
 
 function viewPastContests() {
@@ -1726,7 +1828,7 @@ function deletePastContest(contestIndex) {
 
 function doDeletePastContest(contestIndex) {
     state.pastContests.splice(contestIndex, 1);
-    localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+    syncToAPI();
     
     if (!document.getElementById('historySection').classList.contains('hidden')) {
         const activeFilter = document.querySelector('.filter-btn.active');
@@ -1754,7 +1856,9 @@ function exportData() {
         pastContests: state.pastContests,
         streak: state.streak,
         settings: state.settings,
-        lastUser: localStorage.getItem('lastUser')
+        lastUser: localStorage.getItem('lastUser'),
+        syncEnabled: state.apiSyncEnabled,
+        lastSyncTime: state.lastSyncTime ? new Date(state.lastSyncTime).toISOString() : null
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1795,7 +1899,7 @@ function importData(event) {
                                 imported++;
                             }
                         });
-                        localStorage.setItem('pastContests', JSON.stringify(state.pastContests));
+                        syncToAPI();
                         
                         if (data.streak) {
                             state.streak.best = Math.max(state.streak.best, data.streak.best || 0);
