@@ -1,189 +1,431 @@
-# Virtual Contest Platform
+# 🏆 Virtual Contest System - Complete Guide
 
-A comprehensive virtual contest platform for Codeforces that simulates real contest experience with personalized problem selection.
+A full-stack virtual contest management system for Codeforces with MongoDB cloud sync.
 
-## Features
+## ✨ Features
 
-### 🎯 Core Features
+### Contest Features
+- ✅ **Multiple Division Support**: DIV 1, DIV 2, DIV 3, DIV 4, and Custom
+- ✅ **Quick Practice Mode**: Single problem practice with timer
+- ✅ **Real-time Submissions Tracking**: Auto-refresh from Codeforces API
+- ✅ **Dynamic Scoring**: Score decreases over time (competitive format)
+- ✅ **Penalty System**: Wrong submissions add 5-minute penalty
+- ✅ **Pause/Resume**: Pause contests and continue later
+- ✅ **Problem Filtering**: Filter by rating, tags, and difficulty
 
-1. **User Profile Integration**
-   - Fetch Codeforces user data via API
-   - Track solved problems automatically
-   - Display user rating and statistics
-   - Default user: `rab8bit`
+### Data & Sync
+- ✅ **Cloud Sync with MongoDB**: All data stored in cloud
+- ✅ **Multi-Device Support**: Access same data from anywhere
+- ✅ **Offline Fallback**: Works with localStorage when offline
+- ✅ **Real-time Sync Status**: See connection status live
+- ✅ **Export/Import**: Backup your data anytime
 
-2. **Multiple Contest Types**
-   - **DIV 4**: Beginner-friendly (800-1500 rating)
-   - **DIV 3**: Easy-medium level (800-1700 rating)
-   - **DIV 2**: Intermediate (1000-2200 rating)
-   - **DIV 1**: Advanced (1500-2800 rating)
-   - **Custom**: Create your own contest
+### Analytics & Tracking
+- ✅ **Contest History**: Full history of all contests
+- ✅ **Performance Graphs**: Track score and solve rate over time
+- ✅ **Division Statistics**: Stats per division type
+- ✅ **Streak Tracking**: Daily practice streak counter
+- ✅ **Detailed Stats**: Problems solved, average score, best performance
 
-3. **Smart Problem Selection**
-   - Only shows unsolved problems
-   - Rating-based difficulty progression
-   - Topic/tag filtering for custom contests
-   - Realistic difficulty curves matching actual Codeforces divisions
+### User Experience
+- ✅ **Dark/Light Theme**: Toggle between themes
+- ✅ **Keyboard Shortcuts**: Fast navigation (R, Space, Esc, etc.)
+- ✅ **Sound Notifications**: Optional sound alerts
+- ✅ **Responsive Design**: Works on all screen sizes
+- ✅ **Beautiful UI**: Modern, clean interface
 
-4. **Contest Experience**
-   - Real-time countdown timer
-   - Dynamic scoring (decreases over time)
-   - Penalty system (5 minutes per wrong submission)
-   - Live submission tracking
-   - Problem status indicators (Pending/Attempted/Solved/Failed)
+---
 
-5. **Submission Verification**
-   - Automatic verification via Codeforces API
-   - Track wrong submissions and penalties
-   - Real-time status updates
-   - Submission history panel
+## 🚀 Local Development Setup
 
-6. **Results & Analytics**
-   - Detailed performance summary
-   - Problem-wise breakdown
-   - Time tracking for each problem
-   - Score calculation with penalties
+### Prerequisites
+- Python 3.8+ installed
+- MongoDB Atlas account (free tier is fine)
+- Web browser
 
-7. **Contest History**
-   - Save all past contests locally
-   - Filter by division type
-   - Performance metrics tracking
-   - View detailed contest results
+### Step 1: Install Dependencies
 
-8. **Performance Analytics**
-   - Interactive charts using Chart.js
-   - Division-wise performance graphs
-   - Score trends over time
-   - Solve rate analysis
-   - Average statistics (score, problems solved, best performance)
-
-9. **Theme Support**
-   - Dark and light themes
-   - Persistent theme selection
-   - Smooth transitions
-
-## Division Structure
-
-### DIV 4 (Beginner)
-- **Target**: Unrated - 1399
-- **Duration**: 2 hours
-- **Problems**: 6-8
-- **Rating Range**: 800-1500
-- **Focus**: Implementation, math, greedy, basic algorithms
-
-### DIV 3 (Lower-Mid Level)
-- **Target**: ≤1599
-- **Duration**: 2-2.5 hours
-- **Problems**: 6-7
-- **Rating Range**: 800-1700
-- **Focus**: Greedy, DP, data structures, graphs
-
-### DIV 2 (Intermediate)
-- **Target**: ~1200-2100
-- **Duration**: 2 hours
-- **Problems**: 5-6
-- **Rating Range**: 1000-2200
-- **Focus**: DP, graphs, advanced algorithms
-
-### DIV 1 (Advanced)
-- **Target**: 1900+
-- **Duration**: 2-2.5 hours
-- **Problems**: 5-6
-- **Rating Range**: 1500-2800
-- **Focus**: Advanced DP, graphs, combinatorics, number theory
-
-## Custom Contest Options
-
-When creating a custom contest, you can configure:
-
-1. **Number of Problems**: 3-10 problems
-2. **Duration**: 60-180 minutes
-3. **Rating Range**: Custom min/max ratings
-4. **Topic Filters**: Select from 25+ available tags
-   - Implementation, Math, Greedy, DP, Data Structures
-   - Graphs, Binary Search, Trees, Strings
-   - Number Theory, Combinatorics, and more
-
-## Scoring System
-
-- **Base Score**: Calculated based on problem rating (500 + rating/10)
-- **Score Decay**: 0.2% per minute
-- **Minimum Score**: 30% of base score
-- **Penalty**: 5 minutes per wrong submission
-- **Time Tracking**: Exact solve time from contest start
-
-## How to Use
-
-1. **Enter Handle**: Input your Codeforces username (default: rab8bit)
-2. **Load Profile**: System fetches your submissions and profile data
-3. **Select Contest Type**: Choose from DIV 1-4 or create custom
-4. **Start Contest**: Timer begins, problems are displayed
-5. **Solve Problems**: Click problem links to open in Codeforces
-6. **Submit Solutions**: Submit on Codeforces as usual
-7. **Refresh Status**: Click "Refresh Submissions" to update status
-8. **View Results**: After contest ends, see detailed analytics
-
-## Technical Details
-
-### API Integration
-- Codeforces API for user data, submissions, and problemset
-- Rate limiting considerations
-- Error handling for API failures
-
-### Data Storage
-- LocalStorage for past contests
-- JSON format for contest records
-- Persistent theme preferences
-
-### Problem Selection Algorithm
-1. Filter by rating range
-2. Filter by topic tags (if specified)
-3. Exclude already solved problems
-4. Randomly select from matching problems
-5. Ensure progressive difficulty
-
-### Timer & Score Updates
-- Updates every second
-- Real-time score calculation
-- Visual indicators for time remaining
-- Auto-end contest when timer reaches zero
-
-## Files Structure
-
-```
-contest/
-├── index.html          # Main HTML structure
-├── styles.css          # Responsive styling
-├── script.js           # Core functionality
-└── sample-contests.json # Sample contest data
+```bash
+cd "d:\SKILL TREE"
+pip install -r requirements.txt
 ```
 
-## Browser Compatibility
+### Step 2: Set Up MongoDB
 
-- Modern browsers (Chrome, Firefox, Safari, Edge)
-- Requires JavaScript enabled
-- LocalStorage support needed for history
+1. Go to [MongoDB Atlas](https://cloud.mongodb.com)
+2. Create a free account
+3. Create a new cluster (M0 Free tier)
+4. Click **Connect** → **Connect your application**
+5. Copy the connection string
 
-## Future Enhancements
+### Step 3: Configure Environment
 
-Possible additions:
-- Virtual rating calculation
-- Upsolving mode
-- Friends comparison
-- Contest recommendations based on rating
-- Export contest results
-- Share contest with friends
+1. Copy the example env file:
+   ```bash
+   copy .env.example .env
+   ```
 
-## Notes
+2. Edit `.env` and add your MongoDB URI:
+   ```env
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority
+   DB_NAME=skilltree
+   ```
 
-- Problems are fetched from Codeforces public API
-- Submissions are verified via API (requires internet)
-- Contest data is stored locally in browser
-- No server-side storage required
-- Privacy-focused: only public Codeforces data used
+### Step 4: Run the Server
 
-## Credits
+```bash
+# Start contest API server
+python contest_server.py
+```
 
-Built as part of the SKILL TREE learning platform.
-Uses Codeforces API for problem data and verification.
-Charts powered by Chart.js.
+The API will be available at `http://localhost:5000`
+
+### Step 5: Open the App
+
+Open `contest/index.html` in your browser or serve it with:
+
+```bash
+# Python simple server (from project root)
+python -m http.server 8000
+```
+
+Then visit: `http://localhost:8000/contest/`
+
+---
+
+## 🌐 Vercel Deployment
+
+### Prerequisites
+- Vercel account
+- MongoDB Atlas cluster set up
+- Git repository
+
+### Step 1: Install Vercel CLI
+
+```bash
+npm i -g vercel
+```
+
+### Step 2: Configure Environment Variables
+
+In your Vercel project dashboard, add these environment variables:
+- `MONGODB_URI`: Your MongoDB connection string
+- `DB_NAME`: `skilltree` (or your preferred name)
+
+### Step 3: Deploy
+
+```bash
+vercel --prod
+```
+
+The `vercel.json` file is already configured with proper routing.
+
+### Step 4: Update API URL (if needed)
+
+The frontend automatically detects if it's on localhost or production:
+- **Localhost**: Uses `http://localhost:5000/api`
+- **Production**: Uses relative path `/api`
+
+---
+
+## 📚 API Documentation
+
+### Base URL
+- **Local**: `http://localhost:5000/api`
+- **Production**: `https://your-domain.vercel.app/api`
+
+### Endpoints
+
+#### Health Check
+```http
+GET /api/health
+```
+Response:
+```json
+{
+  "status": "healthy",
+  "database": "connected",
+  "timestamp": "2024-02-20T10:30:00Z"
+}
+```
+
+#### Get User Data
+```http
+GET /api/contest/data?user=<codeforces_handle>
+```
+Response:
+```json
+{
+  "user": "rab8bit",
+  "pastContests": [...],
+  "streak": { ... },
+  "settings": { ... },
+  "lastSyncTime": "..."
+}
+```
+
+#### Save User Data
+```http
+POST /api/contest/data
+Content-Type: application/json
+
+{
+  "user": "rab8bit",
+  "pastContests": [...],
+  "streak": { ... },
+  "settings": { ... }
+}
+```
+
+#### Get Statistics
+```http
+GET /api/contest/stats?user=<codeforces_handle>
+```
+
+---
+
+## 🗄️ Database Schema
+
+### Collection: `contest_data`
+
+```javascript
+{
+  _id: ObjectId,
+  user: "rab8bit",                    // Codeforces handle
+  pastContests: [
+    {
+      contestId: 1708445600000,
+      contestName: "DIV 3",
+      contestType: "div3",
+      problems: [...],
+      solvedCount: 5,
+      totalProblems: 7,
+      totalScore: 2500,
+      totalPenalty: 10,
+      timeTaken: 5400000,             // milliseconds
+      date: ISODate("2024-02-20"),
+      inProgress: false
+    }
+  ],
+  streak: {
+    current: 5,
+    lastDate: "2024-02-20",
+    best: 12,
+    history: ["2024-02-15", "2024-02-16", ...]
+  },
+  settings: {
+    soundEnabled: false,
+    autoRefresh: true,
+    showTags: false
+  },
+  lastSyncTime: "2024-02-20T10:30:00Z",
+  updatedAt: ISODate("2024-02-20")
+}
+```
+
+---
+
+## 🎯 Usage Guide
+
+### Starting a Contest
+
+1. **Load Profile**: Enter your Codeforces handle and click "Load Profile"
+2. **Choose Division**: Select DIV 1/2/3/4 or create Custom contest
+3. **Review & Start**: Check preview stats and click "Start Contest"
+4. **Solve Problems**: Click problem links to open on Codeforces
+5. **Submit Solutions**: Submit on Codeforces as usual
+6. **Refresh**: Click "Refresh" or press `R` to update standings
+7. **End Contest**: Timer expires automatically or click "End Contest"
+
+### Quick Practice
+
+1. Click "Quick Practice" from main menu
+2. Set target rating and time limit
+3. Optionally select topic tags
+4. Click "Start Practice"
+5. Solve the single problem within time limit
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `R` | Refresh submissions |
+| `Space` | Pause/Resume contest |
+| `Esc` | End contest |
+| `?` | Show shortcuts |
+| `T` | Toggle theme |
+| `N` | New contest |
+
+---
+
+## 🔧 Troubleshooting
+
+### "Database not available" Error
+
+**Cause**: Cannot connect to MongoDB
+
+**Solutions**:
+1. Check `.env` file has correct `MONGODB_URI`
+2. Verify MongoDB Atlas cluster is running
+3. Whitelist your IP in MongoDB Atlas
+4. Check network connection
+
+**Fallback**: App works with localStorage if MongoDB unavailable
+
+### API Server Won't Start
+
+**Cause**: Missing dependencies or port conflict
+
+**Solutions**:
+```bash
+# Reinstall dependencies
+pip install -r requirements.txt --force-reinstall
+
+# Use different port
+PORT=8000 python contest_server.py
+```
+
+### Data Not Syncing
+
+**Solutions**:
+1. Check sync status indicator (top right)
+2. Click Settings → Test Connection
+3. Check browser console for errors
+4. Verify API server is running
+5. Export data as backup
+
+### Codeforces API Rate Limit
+
+**Cause**: Too many API requests
+
+**Solutions**:
+- Use auto-refresh (30s interval is safe)
+- Don't spam manual refresh
+- Wait a minute if rate limited
+
+---
+
+## 🔐 Security Best Practices
+
+### Environment Variables
+- ✅ Never commit `.env` file to git
+- ✅ Use different credentials for dev/prod
+- ✅ Rotate MongoDB password periodically
+
+### MongoDB Atlas
+- ✅ Enable IP whitelist (not `0.0.0.0/0`)
+- ✅ Use strong passwords
+- ✅ Enable 2FA on MongoDB account
+- ✅ Set up connection alerts
+
+### Vercel
+- ✅ Store secrets as environment variables
+- ✅ Don't expose API keys in code
+- ✅ Enable Vercel authentication if needed
+
+---
+
+## 📊 Performance Tips
+
+1. **Auto-refresh**: Keep at 30s interval (Codeforces limit)
+2. **Problem Count**: Limit custom contests to ≤10 problems
+3. **Export Regular**: Backup data weekly
+4. **Clean History**: Delete old test contests periodically
+
+---
+
+## 🤝 Contributing
+
+### Development Workflow
+
+1. Create feature branch
+2. Make changes
+3. Test locally
+4. Test API endpoints
+5. Submit PR with description
+
+### Code Style
+
+- Python: Follow PEP 8
+- JavaScript: Use ES6+
+- CSS: BEM naming for new classes
+
+---
+
+## 📝 Changelog
+
+### v2.0.0 - MongoDB Backend
+- ✨ Added MongoDB cloud sync
+- ✨ Multi-device support
+- ✨ Enhanced statistics dashboard
+- ✨ Real-time sync status
+- ✨ Connection testing
+- 🐛 Fixed localStorage reliability issues
+
+### v1.0.0 - Initial Release
+- ✨ Contest system with 4 divisions
+- ✨ Quick practice mode
+- ✨ Local storage persistence
+- ✨ Dark/light theme
+
+---
+
+## 📄 License
+
+This project is open source and available for personal use.
+
+---
+
+## 🆘 Support
+
+### Getting Help
+
+1. Check this README thoroughly
+2. Review `CONTEST_MONGODB_SETUP.md`
+3. Check browser console for errors
+4. Test API health endpoint
+5. Export your data before major changes
+
+### Common Issues
+
+See **Troubleshooting** section above.
+
+---
+
+## 🎨 Customization
+
+### Change Division Configs
+
+Edit `contest/script.js`:
+```javascript
+const CONTEST_CONFIGS = {
+  div3: {
+    problems: [...],  // Modify problem ratings
+    duration: 150     // Change duration
+  }
+}
+```
+
+### Add New Themes
+
+Edit `contest/styles.css`:
+```css
+[data-theme="custom"] {
+  --bg-primary: #...;
+  --accent-primary: #...;
+}
+```
+
+---
+
+## 🚦 Status
+
+- ✅ Core features complete
+- ✅ MongoDB integration stable
+- ✅ Production ready
+- 🚧 Mobile app (planned)
+- 🚧 Team contests (planned)
+
+---
+
+**Happy Coding! 🚀**

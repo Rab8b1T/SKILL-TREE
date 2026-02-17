@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Virtual Contest - Codeforces</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="description" content="Practice Codeforces problems in a timed virtual contest format with cloud sync and performance analytics.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2.5'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -26,8 +29,15 @@
                         <h1>Virtual Contest</h1>
                     </div>
                     <div class="streak-badge hidden" id="streakBadge" title="Daily Practice Streak">
-                        <span class="streak-fire">🔥</span>
+                        <span class="streak-fire">&#x1F525;</span>
                         <span class="streak-count" id="streakCount">0</span>
+                    </div>
+                    <div class="daily-goal-badge hidden" id="dailyGoalBadge" title="Daily Goal Progress">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                        <span id="dailyGoalText">0/1</span>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -38,9 +48,19 @@
                             <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
                             <path d="M3 21v-5h5"/>
                         </svg>
-                        <span class="sync-text">Synced</span>
+                        <span class="sync-text">Loading...</span>
                     </div>
-                    <button class="icon-btn" id="shortcutsBtn" onclick="showShortcutsModal()" title="Keyboard Shortcuts (?)">>
+                    <button class="icon-btn" id="focusModeBtn" onclick="toggleFocusMode()" title="Focus Mode (F)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" id="statsBtn" onclick="showStatsModal()" title="Statistics">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" id="shortcutsBtn" onclick="showShortcutsModal()" title="Keyboard Shortcuts (?)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                             <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
                         </svg>
@@ -134,10 +154,10 @@
                         <li>Select a division or create a custom contest</li>
                         <li>Solve problems on Codeforces and submit your solutions</li>
                         <li>Click "Refresh Submissions" to update your progress</li>
-                        <li>Score decreases over time — solve fast for maximum points</li>
+                        <li>Score decreases over time &mdash; solve fast for maximum points</li>
                         <li>Wrong submissions add 5-minute penalty each</li>
-                        <li>All contests are saved locally for performance tracking</li>
-                        <li>Press <kbd>?</kbd> for keyboard shortcuts</li>
+                        <li>All contests sync to cloud &amp; save locally as backup</li>
+                        <li>Press <kbd>?</kbd> for keyboard shortcuts, <kbd>F</kbd> for focus mode</li>
                     </ul>
                 </div>
             </section>
@@ -166,11 +186,16 @@
                 </div>
                 <div class="contest-types">
                     <div class="contest-type-card div4-card" onclick="selectContestType('div4')">
+                        <div class="contest-type-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
                         <div class="contest-type-header">
                             <h3>DIV 4</h3>
                             <span class="difficulty-badge beginner">Beginner</span>
                         </div>
-                        <p class="contest-type-desc">For newcomers (800–1500)</p>
+                        <p class="contest-type-desc">For newcomers (800&ndash;1500)</p>
                         <div class="contest-type-meta">
                             <span>7 problems</span>
                             <span>2 hours</span>
@@ -181,11 +206,16 @@
                     </div>
                     
                     <div class="contest-type-card div3-card" onclick="selectContestType('div3')">
+                        <div class="contest-type-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                <path d="M12 20V10M18 20V4M6 20v-4"/>
+                            </svg>
+                        </div>
                         <div class="contest-type-header">
                             <h3>DIV 3</h3>
                             <span class="difficulty-badge easy">Easy-Med</span>
                         </div>
-                        <p class="contest-type-desc">Lower–mid level (800–1700)</p>
+                        <p class="contest-type-desc">Lower&ndash;mid level (800&ndash;1700)</p>
                         <div class="contest-type-meta">
                             <span>7 problems</span>
                             <span>2.5 hours</span>
@@ -196,11 +226,16 @@
                     </div>
                     
                     <div class="contest-type-card div2-card" onclick="selectContestType('div2')">
+                        <div class="contest-type-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                            </svg>
+                        </div>
                         <div class="contest-type-header">
                             <h3>DIV 2</h3>
                             <span class="difficulty-badge medium">Medium</span>
                         </div>
-                        <p class="contest-type-desc">Intermediate (1000–2200)</p>
+                        <p class="contest-type-desc">Intermediate (1000&ndash;2200)</p>
                         <div class="contest-type-meta">
                             <span>6 problems</span>
                             <span>2 hours</span>
@@ -211,11 +246,17 @@
                     </div>
                     
                     <div class="contest-type-card div1-card" onclick="selectContestType('div1')">
+                        <div class="contest-type-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                <path d="M6 9l6 6 6-6"/>
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                        </div>
                         <div class="contest-type-header">
                             <h3>DIV 1</h3>
                             <span class="difficulty-badge hard">Advanced</span>
                         </div>
-                        <p class="contest-type-desc">Expert level (1500–2800)</p>
+                        <p class="contest-type-desc">Expert level (1500&ndash;2800)</p>
                         <div class="contest-type-meta">
                             <span>6 problems</span>
                             <span>2.5 hours</span>
@@ -226,13 +267,19 @@
                     </div>
                     
                     <div class="contest-type-card custom-card" onclick="selectContestType('custom')">
+                        <div class="contest-type-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                                <path d="M12 3v18M3 12h18"/>
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                        </div>
                         <div class="contest-type-header">
                             <h3>Custom</h3>
                             <span class="difficulty-badge custom">Your Rules</span>
                         </div>
                         <p class="contest-type-desc">Build your own contest</p>
                         <div class="contest-type-meta">
-                            <span>3–10 problems</span>
+                            <span>3&ndash;10 problems</span>
                             <span>Custom time</span>
                         </div>
                         <div class="contest-type-bar">
@@ -247,9 +294,9 @@
                 <div class="card-header-row">
                     <div>
                         <h2 class="card-title">Quick Practice</h2>
-                        <p class="card-subtitle">Solve a single problem with a timer — great for daily warmup</p>
+                        <p class="card-subtitle">Solve a single problem with a timer &mdash; great for daily warmup</p>
                     </div>
-                    <button class="btn-ghost" onclick="backFromQuickPractice()">← Back</button>
+                    <button class="btn-ghost" onclick="backFromQuickPractice()">&larr; Back</button>
                 </div>
                 <div class="quick-practice-grid">
                     <div class="config-group">
@@ -282,7 +329,7 @@
                         <h2 class="card-title">Custom Contest</h2>
                         <p class="card-subtitle">Configure your contest parameters</p>
                     </div>
-                    <button class="btn-ghost" onclick="cancelCustom()">← Back</button>
+                    <button class="btn-ghost" onclick="cancelCustom()">&larr; Back</button>
                 </div>
                 <div class="config-grid">
                     <div class="config-group">
@@ -303,7 +350,7 @@
                     </div>
                 </div>
                 <div class="config-group full-width">
-                    <label>Topics (optional — leave empty for all)</label>
+                    <label>Topics (optional &mdash; leave empty for all)</label>
                     <div class="tags-container" id="tagsContainer"></div>
                 </div>
                 <div class="config-actions">
@@ -320,7 +367,7 @@
             <section class="card hidden" id="divisionPreviewSection">
                 <div class="card-header-row">
                     <h2 class="card-title" id="previewDivisionName">DIV 3</h2>
-                    <button class="btn-ghost" onclick="backFromPreview()">← Back</button>
+                    <button class="btn-ghost" onclick="backFromPreview()">&larr; Back</button>
                 </div>
                 
                 <div class="preview-info">
@@ -334,7 +381,7 @@
                     </div>
                     <div class="preview-item">
                         <span class="preview-label">Rating Range</span>
-                        <span class="preview-value" id="previewRatingRange">800–1700</span>
+                        <span class="preview-value" id="previewRatingRange">800&ndash;1700</span>
                     </div>
                 </div>
 
@@ -347,7 +394,7 @@
                 <div class="division-past-contests">
                     <h3>Recent Contests</h3>
                     <div id="divisionPastContestsList"></div>
-                    <button class="btn-ghost" onclick="viewAllPastContests()" style="margin-top: 12px;">View All History →</button>
+                    <button class="btn-ghost" onclick="viewAllPastContests()" style="margin-top: 12px;">View All History &rarr;</button>
                 </div>
 
                 <div class="preview-actions">
@@ -358,6 +405,23 @@
                         Start Contest
                     </button>
                 </div>
+            </section>
+
+            <!-- Recommendation Section -->
+            <section class="card hidden" id="recommendationSection">
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="card-title">Recommended For You</h2>
+                        <p class="card-subtitle">Problems from your weak topic areas to strengthen your skills</p>
+                    </div>
+                    <button class="btn-ghost" onclick="refreshRecommendations()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+                <div id="recommendationList"></div>
             </section>
 
             <!-- Loading Overlay -->
@@ -421,9 +485,9 @@
                             <tr>
                                 <th>#</th>
                                 <th>Name</th>
-                                <th>Tags</th>
+                                <th class="hide-focus">Tags</th>
                                 <th>Rating</th>
-                                <th>Solved By</th>
+                                <th class="hide-mobile">Solved By</th>
                                 <th>Score</th>
                                 <th>Status</th>
                             </tr>
@@ -443,7 +507,7 @@
                             Refresh
                         </button>
                     </div>
-                    <p class="submissions-hint">Auto-refreshes every 30s · Press <kbd>R</kbd> to refresh</p>
+                    <p class="submissions-hint">Auto-refreshes every 30s &middot; Press <kbd>R</kbd> to refresh</p>
                     <div class="submissions-list" id="submissionsList">
                         <p class="empty-state">No submissions yet. Open problems and solve them on Codeforces!</p>
                     </div>
@@ -452,7 +516,15 @@
 
             <!-- Contest Results -->
             <section class="card hidden" id="resultsSection">
-                <h2 class="card-title">Contest Complete!</h2>
+                <div class="results-header">
+                    <div class="results-trophy">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+                            <path d="M6 9H4.5a2.5 2.5 0 010-5H6M18 9h1.5a2.5 2.5 0 000-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22M18 2H6v7a6 6 0 0012 0V2z"/>
+                        </svg>
+                    </div>
+                    <h2 class="card-title">Contest Complete!</h2>
+                    <div class="performance-rating" id="performanceRating"></div>
+                </div>
                 <div class="results-summary">
                     <div class="result-card">
                         <div class="result-icon success">
@@ -518,7 +590,7 @@
                         </svg>
                         Upsolve These
                     </h3>
-                    <p class="upsolve-hint">Problems you didn't solve — practice them to improve!</p>
+                    <p class="upsolve-hint">Problems you didn't solve &mdash; practice them to improve!</p>
                     <div id="upsolveList"></div>
                 </div>
 
@@ -561,27 +633,58 @@
                 </div>
                 <div class="history-list" id="historyList"></div>
                 <div class="results-actions">
-                    <button class="btn-ghost" onclick="backToContestTypes()">← Back to Contests</button>
+                    <button class="btn-ghost" onclick="backToContestTypes()">&larr; Back to Contests</button>
                 </div>
             </section>
 
-            <!-- Performance Graphs -->
+            <!-- Performance Analytics -->
             <section class="card hidden" id="performanceSection">
                 <h2 class="card-title">Performance Analytics</h2>
-                <div class="performance-tabs">
-                    <button class="tab-btn active" data-tab="overall" onclick="switchPerformanceTab('overall')">Overall</button>
-                    <button class="tab-btn" data-tab="div4" onclick="switchPerformanceTab('div4')">DIV 4</button>
-                    <button class="tab-btn" data-tab="div3" onclick="switchPerformanceTab('div3')">DIV 3</button>
-                    <button class="tab-btn" data-tab="div2" onclick="switchPerformanceTab('div2')">DIV 2</button>
-                    <button class="tab-btn" data-tab="div1" onclick="switchPerformanceTab('div1')">DIV 1</button>
+                <div class="analytics-controls">
+                    <div class="performance-tabs">
+                        <button class="tab-btn active" data-tab="overall" onclick="switchPerformanceTab('overall')">Overall</button>
+                        <button class="tab-btn" data-tab="div4" onclick="switchPerformanceTab('div4')">DIV 4</button>
+                        <button class="tab-btn" data-tab="div3" onclick="switchPerformanceTab('div3')">DIV 3</button>
+                        <button class="tab-btn" data-tab="div2" onclick="switchPerformanceTab('div2')">DIV 2</button>
+                        <button class="tab-btn" data-tab="div1" onclick="switchPerformanceTab('div1')">DIV 1</button>
+                    </div>
+                    <div class="date-range-controls">
+                        <div class="date-range-quick">
+                            <button class="range-btn" data-range="7d" onclick="setAnalyticsRange('7d')">7D</button>
+                            <button class="range-btn" data-range="30d" onclick="setAnalyticsRange('30d')">30D</button>
+                            <button class="range-btn" data-range="90d" onclick="setAnalyticsRange('90d')">90D</button>
+                            <button class="range-btn active" data-range="all" onclick="setAnalyticsRange('all')">All</button>
+                        </div>
+                        <div class="date-range-inputs">
+                            <input type="date" id="analyticsDateFrom" onchange="renderAnalyticsCharts()">
+                            <span class="date-range-sep">&mdash;</span>
+                            <input type="date" id="analyticsDateTo" onchange="renderAnalyticsCharts()">
+                        </div>
+                    </div>
                 </div>
-                <div class="chart-container">
-                    <canvas id="performanceChart"></canvas>
+                <div class="analytics-charts-grid">
+                    <div class="chart-container">
+                        <canvas id="solvedChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="scoreChart"></canvas>
+                    </div>
                 </div>
                 <div class="performance-stats" id="performanceStats"></div>
             </section>
         </div>
     </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <span>Virtual Contest &mdash; Practice smarter, compete harder</span>
+                <span class="footer-sep">&middot;</span>
+                <span>Data synced via MongoDB Atlas</span>
+            </div>
+        </div>
+    </footer>
 
     <!-- Custom Modal -->
     <div class="modal-overlay hidden" id="modalOverlay" onclick="closeModal(event)">
@@ -608,12 +711,14 @@
                     <div class="shortcut-item"><kbd>R</kbd><span>Refresh submissions</span></div>
                     <div class="shortcut-item"><kbd>Space</kbd><span>Pause / Resume</span></div>
                     <div class="shortcut-item"><kbd>Esc</kbd><span>End contest</span></div>
+                    <div class="shortcut-item"><kbd>F</kbd><span>Toggle focus mode</span></div>
                 </div>
                 <div class="shortcut-group">
                     <h4>General</h4>
                     <div class="shortcut-item"><kbd>?</kbd><span>Show shortcuts</span></div>
                     <div class="shortcut-item"><kbd>T</kbd><span>Toggle theme</span></div>
                     <div class="shortcut-item"><kbd>N</kbd><span>New contest</span></div>
+                    <div class="shortcut-item"><kbd>F</kbd><span>Toggle focus mode</span></div>
                 </div>
             </div>
         </div>
@@ -630,7 +735,7 @@
                 <div class="setting-item">
                     <div class="setting-info">
                         <span class="setting-label">Sound Notifications</span>
-                        <span class="setting-desc">Play sounds on problem solved & time warnings</span>
+                        <span class="setting-desc">Play sounds on problem solved &amp; time warnings</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="soundToggle" onchange="toggleSound()">
@@ -657,6 +762,37 @@
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Browser Notifications</span>
+                        <span class="setting-desc">Get notified when submissions are checked</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notifToggle" onchange="toggleNotifications()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <hr class="setting-divider">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Daily Goal</span>
+                        <span class="setting-desc">Number of contests to complete each day</span>
+                    </div>
+                    <select id="dailyGoalSelect" onchange="updateDailyGoal()">
+                        <option value="1">1 contest</option>
+                        <option value="2">2 contests</option>
+                        <option value="3">3 contests</option>
+                        <option value="5">5 contests</option>
+                    </select>
+                </div>
+                <hr class="setting-divider">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <span class="setting-label">Cloud Sync Status</span>
+                        <span class="setting-desc" id="cloudSyncDesc">Connected to MongoDB</span>
+                    </div>
+                    <button class="btn-ghost btn-sm" onclick="testConnection()">Test</button>
+                </div>
                 <hr class="setting-divider">
                 <div class="setting-item">
                     <div class="setting-info">
@@ -665,6 +801,19 @@
                     </div>
                     <button class="btn-danger btn-sm" onclick="clearAllData()">Clear</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Modal -->
+    <div class="modal-overlay hidden" id="statsOverlay" onclick="closeStatsModal(event)">
+        <div class="modal stats-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Your Statistics</h3>
+                <button class="modal-close" onclick="closeStatsModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="statsModalBody">
+                <div class="stats-loading">Loading statistics...</div>
             </div>
         </div>
     </div>

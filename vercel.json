@@ -1,8 +1,26 @@
 {
-  "outputDirectory": ".",
-  "rewrites": [
-    { "source": "/progress", "destination": "/api/progress" },
-    { "source": "/contest-data", "destination": "/api/contest-data" }
-  ]
+  "builds": [
+    {
+      "src": "contest_server.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "contest_server.py"
+    },
+    {
+      "src": "/contest/(.*)",
+      "dest": "/contest/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "env": {
+    "MONGODB_URI": "@mongodb_uri",
+    "DB_NAME": "skilltree"
+  }
 }
-
