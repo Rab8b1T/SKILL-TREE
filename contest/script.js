@@ -289,7 +289,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('handleInput').value = savedUser;
         state.currentHandle = savedUser;
     }
-    
+
+    // Detect incoming CF Picker contest
+    const isFromPicker = new URLSearchParams(window.location.search).get('from') === 'picker';
+    const pickerRaw = localStorage.getItem('cf_picker_contest_data');
+    if (isFromPicker && pickerRaw) {
+        try {
+            const pickerData = JSON.parse(pickerRaw);
+            const banner = document.getElementById('pickerContestBanner');
+            if (banner) {
+                const title = document.getElementById('pickerBannerTitle');
+                const desc = document.getElementById('pickerBannerDesc');
+                if (title) title.textContent = `CF Picker Contest — ${pickerData.problems.length} problems ready`;
+                if (desc) desc.textContent = `Load your profile to start · ${pickerData.duration} min total`;
+                banner.classList.remove('hidden');
+            }
+            // Pre-fill handle from picker if not already set
+            const handleInput = document.getElementById('handleInput');
+            if (handleInput && pickerData.handle && !handleInput.value) {
+                handleInput.value = pickerData.handle;
+                state.currentHandle = pickerData.handle;
+            }
+        } catch (e) {
+            console.warn('Could not parse picker contest data:', e);
+        }
+    }
+
     restoreActiveContest();
     
     requestNotificationPermission();
@@ -918,6 +943,22 @@ async function loadUserProfile() {
 
         hideLoading();
         displayUserInfo();
+
+        // Check for a pending CF Picker contest
+        const pickerRaw = localStorage.getItem('cf_picker_contest_data');
+        const isFromPicker = new URLSearchParams(window.location.search).get('from') === 'picker';
+        if (pickerRaw && isFromPicker) {
+            try {
+                const pickerData = JSON.parse(pickerRaw);
+                localStorage.removeItem('cf_picker_contest_data');
+                showToast(`Starting CF Picker Contest — ${pickerData.problems.length} problems · ${pickerData.duration} min`, 'success');
+                await startContestFromPickerData(pickerData);
+                return;
+            } catch (e) {
+                console.warn('Failed to start picker contest:', e);
+            }
+        }
+
         showContestTypeSelection();
         renderRecommendations();
         showSuccess('Profile loaded!');
@@ -1186,6 +1227,76 @@ async function startContest(type, config) {
         inProgress: true
     });
     
+    debouncedSync();
+
+    hideAllSections();
+    displayContestArena();
+    startTimer();
+    saveContestState();
+    syncActiveContestToCloud();
+}
+
+// ===== CF Picker Contest =====
+async function startContestFromPickerData(pickerData) {
+    const problems = pickerData.problems || [];
+    if (problems.length === 0) {
+        showError('No problems found in CF Picker data.');
+        return;
+    }
+
+    const duration = pickerData.duration || problems.length * 30;
+
+    // Sort problems by rating ascending so A is easiest
+    const sorted = [...problems].sort((a, b) => (a.rating || 0) - (b.rating || 0));
+
+    const contestProblems = sorted.map((p, i) => ({
+        contestId: p.contestId,
+        originalIndex: p.index,
+        index: String.fromCharCode(65 + i),
+        name: p.name,
+        rating: p.rating || 0,
+        tags: p.tags || [],
+        targetRating: [p.rating || 0, p.rating || 0],
+        maxScore: Math.round(500 + ((p.rating || 0) / 10)),
+        currentScore: Math.round(500 + ((p.rating || 0) / 10)),
+        status: 'pending',
+        attempts: 0,
+        solvedAt: null
+    }));
+
+    state.currentContest = {
+        id: Date.now(),
+        type: 'custom',
+        name: 'CF Picker Contest',
+        problems: contestProblems,
+        duration,
+        startTime: Date.now()
+    };
+
+    state.contestStartTime = Date.now();
+    state.contestDuration = duration;
+    state.contestPausedTime = 0;
+    state.isPaused = false;
+    state.submissions = [];
+
+    recordPracticeDay();
+
+    state.pastContests.push({
+        contestId: state.currentContest.id,
+        contestName: state.currentContest.name,
+        contestType: 'custom',
+        problems: JSON.parse(JSON.stringify(contestProblems)),
+        solvedCount: 0,
+        totalProblems: contestProblems.length,
+        totalScore: 0,
+        totalPenalty: 0,
+        timeTaken: 0,
+        date: new Date(),
+        startTime: state.contestStartTime,
+        originalDuration: duration,
+        inProgress: true
+    });
+
     debouncedSync();
 
     hideAllSections();

@@ -557,6 +557,13 @@ function renderResults() {
             `;
         }).join('');
 
+    // Update virtual contest button meta
+    const meta = $('#contestBtnMeta');
+    if (meta) {
+        const dur = selectedProblems.length * 30;
+        meta.textContent = `${selectedProblems.length} problems · ${dur} min`;
+    }
+
     showElement('#resultsSection');
 }
 
@@ -799,9 +806,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// =====================================================
+// Virtual Contest Creation
+// =====================================================
+
+function createVirtualContest() {
+    if (!state.selectedProblems || state.selectedProblems.length === 0) {
+        showMessage('No problems selected. Please pick problems first.', 'warning');
+        return;
+    }
+
+    const duration = state.selectedProblems.length * 30;
+
+    const pickerData = {
+        problems: state.selectedProblems,
+        handle: state.handle,
+        duration,
+        timestamp: Date.now()
+    };
+
+    localStorage.setItem('cf_picker_contest_data', JSON.stringify(pickerData));
+    window.location.href = '../contest/?from=picker';
+}
+
 // Make functions available globally for onclick handlers
 window.fetchData = fetchData;
 window.pickProblems = pickProblems;
+window.createVirtualContest = createVirtualContest;
 window.addSegment = addSegment;
 window.removeSegment = removeSegment;
 window.updateSegment = updateSegment;
