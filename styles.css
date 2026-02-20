@@ -206,6 +206,7 @@ body {
 
 .auth-panel {
     margin-top: var(--spacing-sm);
+    /* visibility is controlled entirely by JS inline style */
 }
 
 .auth-form {

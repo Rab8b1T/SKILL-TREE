@@ -1,151 +1,171 @@
 /**
- * Auth gate: requires login before showing the main app.
- * Dispatches 'skilltree:auth-ready' when authenticated so app.js can init.
+ * Auth gate — login / signup wall before the main app loads.
+ * Dispatches 'skilltree:auth-ready' once authenticated.
  */
 (function () {
     'use strict';
 
-    const AUTH_TOKEN_KEY = 'authToken';
-    const API_ME = '/api/auth/me';
-    const API_LOGIN = '/api/auth/login';
-    const API_SIGNUP = '/api/auth/signup';
+    var API_ME     = '/api/auth/me';
+    var API_LOGIN  = '/api/auth/login';
+    var API_SIGNUP = '/api/auth/signup';
 
-    function getToken() {
-        return localStorage.getItem(AUTH_TOKEN_KEY);
-    }
-
-    function setToken(token) {
-        localStorage.setItem(AUTH_TOKEN_KEY, token);
-    }
+    /* ---------- token helpers ---------- */
+    function getToken()      { return localStorage.getItem('authToken'); }
+    function saveToken(t)    { localStorage.setItem('authToken', t); }
+    function clearToken()    { localStorage.removeItem('authToken'); }
 
     function authHeaders() {
-        const token = getToken();
-        return token ? { Authorization: 'Bearer ' + token } : {};
+        var t = getToken();
+        return t ? { 'Authorization': 'Bearer ' + t } : {};
     }
 
-    async function checkAuth() {
-        const token = getToken();
-        if (!token) return false;
-        try {
-            var res = await fetch(API_ME, { headers: authHeaders(), cache: 'no-store' });
-            if (res.ok) return true;
-        } catch (_) {}
-        return false;
-    }
-
+    /* ---------- show/hide app vs gate ---------- */
     function showApp() {
-        var gate = document.getElementById('auth-gate');
-        var app = document.getElementById('app');
-        if (gate) gate.style.display = 'none';
-        if (app) { app.hidden = false; app.style.display = ''; }
+        document.getElementById('auth-gate').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
         document.dispatchEvent(new CustomEvent('skilltree:auth-ready'));
     }
 
     function showGate() {
-        var gate = document.getElementById('auth-gate');
-        var app = document.getElementById('app');
-        if (gate) gate.style.display = '';
-        if (app) { app.hidden = true; app.style.display = 'none'; }
+        document.getElementById('auth-gate').style.display = '';
+        document.getElementById('app').style.display = 'none';
     }
 
-    // ---- Toast popup ----
-    var toastTimer = null;
-    function showToast(message, type) {
-        var existing = document.getElementById('auth-toast');
-        if (existing) existing.remove();
+    /* ---------- toast popup ---------- */
+    var _toastTimer = null;
 
-        var toast = document.createElement('div');
-        toast.id = 'auth-toast';
-        toast.className = 'auth-toast ' + (type || 'error');
-        toast.setAttribute('role', 'alert');
+    function showToast(msg, type) {
+        var old = document.getElementById('ag-toast');
+        if (old) old.remove();
 
-        var icon = type === 'success' ? '\u2714' : '\u26A0';
-        toast.innerHTML = '<span class="auth-toast-icon">' + icon + '</span><span class="auth-toast-msg">' + escapeHtml(message) + '</span>';
-        document.body.appendChild(toast);
+        var t = document.createElement('div');
+        t.id = 'ag-toast';
+        t.style.cssText = [
+            'position:fixed',
+            'top:28px',
+            'left:50%',
+            'transform:translateX(-50%)',
+            'z-index:99999',
+            'display:flex',
+            'align-items:center',
+            'gap:10px',
+            'padding:14px 22px',
+            'border-radius:10px',
+            'font-family:inherit',
+            'font-size:14px',
+            'font-weight:500',
+            'color:#fff',
+            'box-shadow:0 8px 32px rgba(0,0,0,.55)',
+            'max-width:400px',
+            'line-height:1.4',
+            'opacity:0',
+            'transition:opacity .25s ease',
+            'pointer-events:auto',
+            type === 'success'
+                ? 'background:linear-gradient(135deg,#10b981,#059669)'
+                : 'background:linear-gradient(135deg,#ef4444,#dc2626)'
+        ].join(';');
 
-        void toast.offsetWidth;
-        toast.classList.add('show');
+        var icon = type === 'success' ? '✔' : '⚠';
+        t.innerHTML = '<span style="font-size:16px;flex-shrink:0">' + icon + '</span><span>' + esc(msg) + '</span>';
+        document.body.appendChild(t);
 
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () {
-            toast.classList.remove('show');
-            setTimeout(function () { if (toast.parentNode) toast.remove(); }, 300);
-        }, 4000);
+        /* fade in */
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () { t.style.opacity = '1'; });
+        });
+
+        clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(function () {
+            t.style.opacity = '0';
+            setTimeout(function () { if (t.parentNode) t.remove(); }, 300);
+        }, 4500);
     }
 
-    function escapeHtml(s) {
+    function esc(s) {
         var d = document.createElement('div');
         d.textContent = s;
         return d.innerHTML;
     }
 
-    // ---- Tab switching ----
+    /* ---------- tab switching ---------- */
     function switchTab(mode) {
-        var loginTab = document.getElementById('auth-tab-login');
-        var signupTab = document.getElementById('auth-tab-signup');
-        var loginPanel = document.getElementById('auth-panel-login');
-        var signupPanel = document.getElementById('auth-panel-signup');
+        var tabLogin   = document.getElementById('auth-tab-login');
+        var tabSignup  = document.getElementById('auth-tab-signup');
+        var panelLogin  = document.getElementById('auth-panel-login');
+        var panelSignup = document.getElementById('auth-panel-signup');
 
         if (mode === 'signup') {
-            if (loginTab) { loginTab.classList.remove('active'); loginTab.setAttribute('aria-selected', 'false'); }
-            if (signupTab) { signupTab.classList.add('active'); signupTab.setAttribute('aria-selected', 'true'); }
-            if (loginPanel) { loginPanel.style.display = 'none'; }
-            if (signupPanel) { signupPanel.removeAttribute('hidden'); signupPanel.style.display = 'block'; }
+            tabLogin.classList.remove('active');
+            tabLogin.setAttribute('aria-selected', 'false');
+            tabSignup.classList.add('active');
+            tabSignup.setAttribute('aria-selected', 'true');
+            panelLogin.style.display  = 'none';
+            panelSignup.style.display = 'block';
         } else {
-            if (loginTab) { loginTab.classList.add('active'); loginTab.setAttribute('aria-selected', 'true'); }
-            if (signupTab) { signupTab.classList.remove('active'); signupTab.setAttribute('aria-selected', 'false'); }
-            if (loginPanel) { loginPanel.style.display = 'block'; }
-            if (signupPanel) { signupPanel.style.display = 'none'; }
+            tabSignup.classList.remove('active');
+            tabSignup.setAttribute('aria-selected', 'false');
+            tabLogin.classList.add('active');
+            tabLogin.setAttribute('aria-selected', 'true');
+            panelSignup.style.display = 'none';
+            panelLogin.style.display  = 'block';
         }
     }
 
-    // ---- Form handlers ----
+    /* ---------- login ---------- */
     async function handleLogin(e) {
         e.preventDefault();
-        var form = e.target;
-        var username = (form.querySelector('[name="username"]').value || '').trim();
-        var password = form.querySelector('[name="password"]').value || '';
+        var form     = document.getElementById('auth-login-form');
+        var username = form.querySelector('[name=username]').value.trim();
+        var password = form.querySelector('[name=password]').value;
+        var btn      = form.querySelector('button[type=submit]');
 
         if (!username || !password) {
-            showToast('Username and password are required.', 'error');
+            showToast('Please enter both username and password.', 'error');
             return;
         }
 
-        var submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Logging in...'; }
+        btn.disabled    = true;
+        btn.textContent = 'Logging in…';
 
         try {
-            var res = await fetch(API_LOGIN, {
-                method: 'POST',
+            var res  = await fetch(API_LOGIN, {
+                method : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: username, password: password }),
+                body   : JSON.stringify({ username: username, password: password })
             });
+
             var data = {};
             try { data = await res.json(); } catch (_) {}
 
             if (res.ok && data.token) {
-                setToken(data.token);
+                saveToken(data.token);
                 showApp();
                 return;
             }
 
             if (res.status === 401) {
-                showToast('User not found or wrong password. Please sign up first!', 'error');
+                showToast('No account found for "' + esc(username) + '". Please sign up first!', 'error');
+            } else if (res.status === 404) {
+                showToast('Auth service not reachable (404). Please check deployment.', 'error');
             } else {
-                showToast(data.error || 'Login failed. Please try again.', 'error');
+                showToast(data.error || 'Login failed — please try again.', 'error');
             }
-        } catch (_) {
-            showToast('Network error. Please try again.', 'error');
+        } catch (err) {
+            showToast('Network error: ' + err.message, 'error');
         } finally {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Log in'; }
+            btn.disabled    = false;
+            btn.textContent = 'Log in';
         }
     }
 
+    /* ---------- signup ---------- */
     async function handleSignup(e) {
         e.preventDefault();
-        var form = e.target;
-        var username = (form.querySelector('[name="username"]').value || '').trim();
-        var password = form.querySelector('[name="password"]').value || '';
+        var form     = document.getElementById('auth-signup-form');
+        var username = form.querySelector('[name=username]').value.trim();
+        var password = form.querySelector('[name=password]').value;
+        var btn      = form.querySelector('button[type=submit]');
 
         if (!username) {
             showToast('Username is required.', 'error');
@@ -156,63 +176,87 @@
             return;
         }
 
-        var submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Creating...'; }
+        btn.disabled    = true;
+        btn.textContent = 'Creating…';
 
         try {
-            var res = await fetch(API_SIGNUP, {
-                method: 'POST',
+            var res  = await fetch(API_SIGNUP, {
+                method : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: username, password: password }),
+                body   : JSON.stringify({ username: username, password: password })
             });
+
             var data = {};
             try { data = await res.json(); } catch (_) {}
 
             if (res.ok && data.token) {
-                showToast('Account created! Welcome, ' + username + '!', 'success');
-                setToken(data.token);
-                setTimeout(showApp, 800);
+                saveToken(data.token);
+                showToast('Welcome, ' + esc(username) + '! Account created.', 'success');
+                setTimeout(showApp, 900);
                 return;
             }
 
             if (res.status === 409) {
-                showToast('Username "' + username + '" already exists. Try a different one.', 'error');
+                showToast('Username "' + esc(username) + '" is already taken. Try another.', 'error');
+            } else if (res.status === 404) {
+                showToast('Auth service not reachable (404). Please check deployment.', 'error');
             } else {
-                showToast(data.error || 'Sign up failed. Please try again.', 'error');
+                showToast(data.error || 'Sign-up failed — please try again.', 'error');
             }
-        } catch (_) {
-            showToast('Network error. Please try again.', 'error');
+        } catch (err) {
+            showToast('Network error: ' + err.message, 'error');
         } finally {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create account'; }
+            btn.disabled    = false;
+            btn.textContent = 'Create account';
         }
     }
 
-    // ---- Init ----
-    function init() {
-        var loginTab = document.getElementById('auth-tab-login');
-        var signupTab = document.getElementById('auth-tab-signup');
-        var loginForm = document.getElementById('auth-login-form');
-        var signupForm = document.getElementById('auth-signup-form');
+    /* ---------- check existing token ---------- */
+    async function checkAuth() {
+        var token = getToken();
+        if (!token) return false;
+        try {
+            var res = await fetch(API_ME, {
+                headers: { 'Authorization': 'Bearer ' + token },
+                cache  : 'no-store'
+            });
+            return res.ok;
+        } catch (_) {
+            return false;
+        }
+    }
 
-        if (loginTab) loginTab.addEventListener('click', function (e) { e.preventDefault(); switchTab('login'); });
-        if (signupTab) signupTab.addEventListener('click', function (e) { e.preventDefault(); switchTab('signup'); });
-        if (loginForm) loginForm.addEventListener('submit', handleLogin);
-        if (signupForm) signupForm.addEventListener('submit', handleSignup);
+    /* ---------- boot ---------- */
+    function boot() {
+        /* wire tabs */
+        document.getElementById('auth-tab-login').addEventListener('click', function (e) {
+            e.preventDefault(); switchTab('login');
+        });
+        document.getElementById('auth-tab-signup').addEventListener('click', function (e) {
+            e.preventDefault(); switchTab('signup');
+        });
 
+        /* wire forms */
+        document.getElementById('auth-login-form').addEventListener('submit', handleLogin);
+        document.getElementById('auth-signup-form').addEventListener('submit', handleSignup);
+
+        /* start on login panel */
         switchTab('login');
 
+        /* check if already logged in */
         checkAuth().then(function (ok) {
-            if (ok) showApp();
-            else showGate();
+            if (ok) showApp(); else showGate();
         });
     }
 
-    window.getAuthToken = getToken;
-    window.authHeaders = authHeaders;
+    /* expose for other scripts */
+    window.getAuthToken  = getToken;
+    window.clearAuthToken = clearToken;
+    window.authHeaders   = authHeaders;
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', boot);
     } else {
-        init();
+        boot();
     }
-})();
+}());

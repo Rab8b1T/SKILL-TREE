@@ -35,7 +35,7 @@
                     <button type="submit" class="btn btn-primary auth-submit">Log in</button>
                 </form>
             </div>
-            <div id="auth-panel-signup" class="auth-panel" role="tabpanel" aria-labelledby="auth-tab-signup" hidden>
+            <div id="auth-panel-signup" class="auth-panel" role="tabpanel" aria-labelledby="auth-tab-signup" style="display:none">
                 <form id="auth-signup-form" class="auth-form" data-mode="signup">
                     <label for="signup-username" class="visually-hidden">Username</label>
                     <input type="text" id="signup-username" name="username" placeholder="Username (unique)" required autocomplete="username">
@@ -53,7 +53,7 @@
     <a href="#zones-section" class="skip-link">Skip to zones</a>
 
     <!-- Main App Container (hidden until authenticated) -->
-    <div id="app" class="app-container" hidden>
+    <div id="app" class="app-container" style="display:none">
         <!-- Header -->
         <header class="header" role="banner">
             <div class="header-content">
@@ -477,7 +477,7 @@
     <canvas id="confetti-canvas" aria-hidden="true"></canvas>
 
     <!-- Scripts -->
-    <script src="auth-gate.js?v=1"></script>
+    <script src="auth-gate.js?v=3"></script>
     <script src="app.js?v=20260127-1"></script>
 </body>
 </html>
