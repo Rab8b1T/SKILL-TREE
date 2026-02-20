@@ -226,6 +226,60 @@
         }
     }
 
+    /* ---------- forgot / reset password ---------- */
+    function showResetPanel() {
+        document.getElementById('auth-panel-login').style.display  = 'none';
+        document.getElementById('auth-panel-signup').style.display = 'none';
+        document.getElementById('auth-panel-reset').style.display  = 'block';
+        /* hide tabs while in reset view */
+        document.querySelector('.auth-tabs').style.display = 'none';
+    }
+
+    function hideResetPanel() {
+        document.getElementById('auth-panel-reset').style.display = 'none';
+        document.querySelector('.auth-tabs').style.display = '';
+        switchTab('login');
+    }
+
+    async function handleReset(e) {
+        e.preventDefault();
+        var form        = document.getElementById('auth-reset-form');
+        var username    = form.querySelector('[name=username]').value.trim();
+        var newPass     = form.querySelector('[name=newPassword]').value;
+        var confirmPass = form.querySelector('[name=confirmPassword]').value;
+        var btn         = form.querySelector('button[type=submit]');
+
+        if (!username) { showToast('Username is required.', 'error'); return; }
+        if (newPass.length < 4) { showToast('Password must be at least 4 characters.', 'error'); return; }
+        if (newPass !== confirmPass) { showToast('Passwords do not match.', 'error'); return; }
+
+        btn.disabled = true; btn.textContent = 'Resetting…';
+
+        try {
+            var res  = await fetch('/api/auth/reset-password', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify({ username: username, newPassword: newPass })
+            });
+            var data = {};
+            try { data = await res.json(); } catch (_) {}
+
+            if (res.ok) {
+                showToast('Password reset! You can now log in.', 'success');
+                form.reset();
+                hideResetPanel();
+            } else if (res.status === 404) {
+                showToast('No account found for "' + esc(username) + '". Please sign up first.', 'error');
+            } else {
+                showToast(data.error || 'Reset failed — try again.', 'error');
+            }
+        } catch (err) {
+            showToast('Network error: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false; btn.textContent = 'Reset password';
+        }
+    }
+
     /* ---------- boot ---------- */
     function boot() {
         /* wire tabs */
@@ -239,6 +293,11 @@
         /* wire forms */
         document.getElementById('auth-login-form').addEventListener('submit', handleLogin);
         document.getElementById('auth-signup-form').addEventListener('submit', handleSignup);
+        document.getElementById('auth-reset-form').addEventListener('submit', handleReset);
+
+        /* forgot password link */
+        document.getElementById('auth-forgot-btn').addEventListener('click', showResetPanel);
+        document.getElementById('auth-reset-back').addEventListener('click', hideResetPanel);
 
         /* start on login panel */
         switchTab('login');
@@ -250,9 +309,10 @@
     }
 
     /* expose for other scripts */
-    window.getAuthToken  = getToken;
+    window.getAuthToken   = getToken;
     window.clearAuthToken = clearToken;
-    window.authHeaders   = authHeaders;
+    window.authHeaders    = authHeaders;
+    window.showAuthToast  = showToast;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);

@@ -1476,19 +1476,86 @@
     function init() {
         cacheDOMElements();
 
-        // Username and logout
+        // Username, logout, change-password
         const headerUsername = document.getElementById('header-username');
-        const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtn      = document.getElementById('logout-btn');
+        const changePassBtn  = document.getElementById('change-pass-btn');
+        const changePassModal = document.getElementById('change-pass-modal');
+        const changePassClose = document.getElementById('change-pass-close');
+        const changePassCancel = document.getElementById('change-pass-cancel');
+        const changePassBackdrop = document.getElementById('change-pass-backdrop');
+        const changePassSubmit = document.getElementById('change-pass-submit');
+        const changePassForm  = document.getElementById('change-pass-form');
+        const changePassError = document.getElementById('change-pass-error');
+
         fetch('/api/auth/me', { headers: typeof window.authHeaders === 'function' ? window.authHeaders() : {}, cache: 'no-store' })
             .then((r) => r.ok ? r.json() : null)
             .then((data) => {
                 if (data && data.user && headerUsername) headerUsername.textContent = data.user.username;
             })
             .catch(() => {});
+
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
                 localStorage.removeItem('authToken');
                 location.reload();
+            });
+        }
+
+        function openChangePass() {
+            if (changePassModal) { changePassModal.hidden = false; document.body.style.overflow = 'hidden'; }
+        }
+        function closeChangePass() {
+            if (changePassModal) { changePassModal.hidden = true; document.body.style.overflow = ''; }
+            if (changePassForm) changePassForm.reset();
+            if (changePassError) { changePassError.hidden = true; changePassError.textContent = ''; }
+        }
+
+        if (changePassBtn)     changePassBtn.addEventListener('click', openChangePass);
+        if (changePassClose)   changePassClose.addEventListener('click', closeChangePass);
+        if (changePassCancel)  changePassCancel.addEventListener('click', closeChangePass);
+        if (changePassBackdrop) changePassBackdrop.addEventListener('click', closeChangePass);
+
+        if (changePassSubmit) {
+            changePassSubmit.addEventListener('click', async () => {
+                const currentPassword = changePassForm.querySelector('[name=currentPassword]').value;
+                const newPassword     = changePassForm.querySelector('[name=newPassword]').value;
+                const confirmPassword = changePassForm.querySelector('[name=confirmPassword]').value;
+
+                const showErr = (msg) => { changePassError.textContent = msg; changePassError.hidden = false; };
+                changePassError.hidden = true;
+
+                if (!currentPassword) { showErr('Current password is required.'); return; }
+                if (newPassword.length < 4) { showErr('New password must be at least 4 characters.'); return; }
+                if (newPassword !== confirmPassword) { showErr('New passwords do not match.'); return; }
+
+                changePassSubmit.disabled = true;
+                changePassSubmit.textContent = 'Updating…';
+
+                try {
+                    const headers = { 'Content-Type': 'application/json' };
+                    if (typeof window.authHeaders === 'function') Object.assign(headers, window.authHeaders());
+                    const res = await fetch('/api/auth/change-password', {
+                        method: 'POST', headers,
+                        body: JSON.stringify({ currentPassword, newPassword })
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok) {
+                        closeChangePass();
+                        // Show a quick success toast if available
+                        if (typeof window.showAuthToast === 'function') window.showAuthToast('Password updated successfully!', 'success');
+                        else alert('Password updated successfully!');
+                    } else if (res.status === 401) {
+                        showErr('Current password is incorrect.');
+                    } else {
+                        showErr(data.error || 'Failed to update password.');
+                    }
+                } catch (_) {
+                    showErr('Network error. Please try again.');
+                } finally {
+                    changePassSubmit.disabled = false;
+                    changePassSubmit.textContent = 'Update password';
+                }
             });
         }
 

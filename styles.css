@@ -295,16 +295,85 @@ body {
     margin-top: var(--spacing-sm);
 }
 
+.header-user-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-full);
+    padding: 4px 12px 4px 14px;
+}
+
 .header-username {
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
-    margin-right: var(--spacing-sm);
-    align-self: center;
+    font-weight: 500;
+}
+
+.btn-change-pass {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: color var(--transition-fast);
+}
+.btn-change-pass:hover { color: var(--accent-primary); }
+
+.btn-ghost {
+    background: none;
+    border: none;
+    cursor: pointer;
 }
 
 .btn-logout {
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--font-size-sm);
+}
+
+/* Forgot / Reset password */
+.auth-forgot-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    text-align: center;
+    padding: 0;
+    transition: color var(--transition-fast);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.auth-forgot-link:hover { color: var(--accent-primary-light); }
+
+.auth-reset-header { margin-bottom: var(--spacing-md); }
+
+.auth-back-btn {
+    background: none;
+    border: none;
+    color: var(--accent-primary-light);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    margin-bottom: var(--spacing-sm);
+    transition: color var(--transition-fast);
+}
+.auth-back-btn:hover { color: var(--accent-primary); }
+
+.auth-reset-hint {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    margin: 0;
 }
 
 /* Focus Styles */
