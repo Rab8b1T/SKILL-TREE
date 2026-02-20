@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "node -e \"process.exit(0)\"",
-    "vercel-build": "node -e \"process.exit(0)\""
+    "vercel-build": "node -e \"process.exit(0)\"",
+    "dev": "npx vercel dev"
   },
   "dependencies": {
     "@upstash/redis": "^1.35.0",

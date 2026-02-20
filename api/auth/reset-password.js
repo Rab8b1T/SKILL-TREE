@@ -48,6 +48,11 @@ export default async function handler(req, res) {
         return sendJson(res, 200, { ok: true });
     } catch (err) {
         console.error('reset-password error:', err);
-        return sendJson(res, 500, { error: 'Server error' });
+        const msg = !process.env.USER_MONGODB_URI
+            ? 'Auth database not configured (USER_MONGODB_URI missing)'
+            : err.message && err.message.includes('ENOTFOUND')
+                ? 'Cannot reach database (check internet / MongoDB Atlas whitelist)'
+                : 'Server error. Check .env and MongoDB connection.';
+        return sendJson(res, 500, { error: msg });
     }
 }

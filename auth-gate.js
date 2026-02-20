@@ -144,15 +144,12 @@
                 return;
             }
 
-            if (res.status === 401) {
-                showToast('No account found for "' + esc(username) + '". Please sign up first!', 'error');
-            } else if (res.status === 404) {
-                showToast('Auth service not reachable (404). Please check deployment.', 'error');
-            } else {
-                showToast(data.error || 'Login failed — please try again.', 'error');
-            }
+            var errMsg = data.error || ('Login failed (HTTP ' + res.status + ').');
+            if (res.status === 401) errMsg = 'No account found for "' + esc(username) + '". Please sign up first!';
+            else if (res.status === 404) errMsg = 'Auth service not found (404). Run "npx vercel dev" for local testing or deploy to Vercel.';
+            showToast(errMsg, 'error');
         } catch (err) {
-            showToast('Network error: ' + err.message, 'error');
+            showToast('Network error: ' + (err.message || 'Cannot reach server'), 'error');
         } finally {
             btn.disabled    = false;
             btn.textContent = 'Log in';
@@ -196,15 +193,12 @@
                 return;
             }
 
-            if (res.status === 409) {
-                showToast('Username "' + esc(username) + '" is already taken. Try another.', 'error');
-            } else if (res.status === 404) {
-                showToast('Auth service not reachable (404). Please check deployment.', 'error');
-            } else {
-                showToast(data.error || 'Sign-up failed — please try again.', 'error');
-            }
+            var errMsg = data.error || ('Sign-up failed (HTTP ' + res.status + ').');
+            if (res.status === 409) errMsg = 'Username "' + esc(username) + '" is already taken. Try another or log in.';
+            else if (res.status === 404) errMsg = 'Auth service not found (404). Run "npx vercel dev" for local testing or deploy to Vercel.';
+            showToast(errMsg, 'error');
         } catch (err) {
-            showToast('Network error: ' + err.message, 'error');
+            showToast('Network error: ' + (err.message || 'Cannot reach server'), 'error');
         } finally {
             btn.disabled    = false;
             btn.textContent = 'Create account';
@@ -271,10 +265,10 @@
             } else if (res.status === 404) {
                 showToast('No account found for "' + esc(username) + '". Please sign up first.', 'error');
             } else {
-                showToast(data.error || 'Reset failed — try again.', 'error');
+                showToast(data.error || ('Reset failed (HTTP ' + res.status + ').'), 'error');
             }
         } catch (err) {
-            showToast('Network error: ' + err.message, 'error');
+            showToast('Network error: ' + (err.message || 'Cannot reach server'), 'error');
         } finally {
             btn.disabled = false; btn.textContent = 'Reset password';
         }
