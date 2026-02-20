@@ -48,7 +48,7 @@ const state = {
     focusMode: false,
     apiSyncEnabled: true,
     lastSyncTime: null,
-    currentHandle: 'rab8bit',
+    currentHandle: null,
     _syncTimeout: null,
     _cloudActiveContest: null,
     _recommendedProblems: []
@@ -97,8 +97,7 @@ async function syncToAPI() {
         }
 
         const dataToSync = {
-            user: state.currentHandle,
-            cfHandle: state.currentHandle || null,
+            cfHandle: state.currentHandle,
             pastContests: state.pastContests,
             streak: state.streak,
             settings: state.settings,
@@ -139,9 +138,17 @@ function saveToLocalStorage() {
     localStorage.setItem('dailyGoal', JSON.stringify(state.dailyGoal));
 }
 
-async function loadFromAPI() {
+// Load contest data for a specific CF handle from MongoDB.
+async function loadFromAPI(handle) {
+    if (!handle) {
+        loadFromLocalStorage();
+        state.apiSyncEnabled = false;
+        updateSyncStatus('error', 'No profile loaded');
+        return false;
+    }
     try {
-        const response = await fetch(`${API_BASE_URL}/contest/data`, { headers: getAuthHeaders() });
+        const url = `${API_BASE_URL}/contest/data?handle=${encodeURIComponent(handle)}`;
+        const response = await fetch(url, { headers: getAuthHeaders() });
         
         if (!response.ok) throw new Error(`API returned ${response.status}`);
         
@@ -162,16 +169,6 @@ async function loadFromAPI() {
         if (data.activeContest && typeof data.activeContest === 'object') {
             state._cloudActiveContest = data.activeContest;
         }
-        // Restore CF handle only if not already set (i.e. at startup, not during loadUserProfile)
-        if (!state.currentHandle) {
-            if (data.cfHandle && typeof data.cfHandle === 'string') {
-                state.currentHandle = data.cfHandle;
-                localStorage.setItem('lastUser', data.cfHandle);
-            } else {
-                const localHandle = localStorage.getItem('lastUser');
-                if (localHandle) state.currentHandle = localHandle;
-            }
-        }
         
         state.apiSyncEnabled = true;
         updateSyncStatus('synced', 'Cloud \u2601');
@@ -180,10 +177,64 @@ async function loadFromAPI() {
         console.warn('Failed to load from API:', error.message);
         state.apiSyncEnabled = false;
         updateSyncStatus('error', 'Offline');
-        
         loadFromLocalStorage();
         return false;
     }
+}
+
+// Immediately push current state to MongoDB — no debounce.
+// Always call this after contest end to prevent data loss on page refresh.
+async function syncNow() {
+    if (!state.currentHandle) {
+        saveToLocalStorage();
+        return;
+    }
+    updateSyncStatus('syncing', 'Saving...');
+    try {
+        let activeContestData = null;
+        if (state.currentContest) {
+            activeContestData = {
+                currentUser: state.currentUser ? {
+                    handle: state.currentUser.handle,
+                    rating: state.currentUser.rating,
+                    maxRating: state.currentUser.maxRating,
+                    rank: state.currentUser.rank
+                } : null,
+                currentContest: state.currentContest,
+                contestStartTime: state.contestStartTime,
+                contestDuration: state.contestDuration,
+                contestPausedTime: state.contestPausedTime,
+                isPaused: state.isPaused,
+                pauseStartTime: state.pauseStartTime,
+                submissions: state.submissions,
+                selectedDivision: state.selectedDivision
+            };
+        }
+        const payload = {
+            cfHandle: state.currentHandle,
+            pastContests: state.pastContests,
+            streak: state.streak,
+            settings: state.settings,
+            dailyGoal: state.dailyGoal,
+            activeContest: activeContestData,
+            lastSyncTime: new Date().toISOString()
+        };
+        const response = await fetch(`${API_BASE_URL}/contest/data`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+            state.lastSyncTime = Date.now();
+            updateSyncStatus('synced', 'Cloud \u2601');
+        } else {
+            updateSyncStatus('error', 'Save failed');
+        }
+    } catch (err) {
+        console.warn('syncNow error:', err.message);
+        updateSyncStatus('error', 'Offline');
+    }
+    saveToLocalStorage();
 }
 
 function loadFromLocalStorage() {
@@ -300,28 +351,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeTheme();
     updateSyncStatus('syncing', 'Loading...');
 
+    // Restore CF handle from localStorage (per-browser) — used as the DB key
+    const savedHandle = localStorage.getItem('lastUser');
+    if (savedHandle) {
+        state.currentHandle = savedHandle;
+        const handleInput = document.getElementById('handleInput');
+        if (handleInput) handleInput.value = savedHandle;
+    }
+
     showLoading('Loading your contest data...');
-    const apiLoaded = await loadFromAPI();
+    const apiLoaded = await loadFromAPI(state.currentHandle);
     hideLoading();
     
     if (apiLoaded) {
         showToast('Connected to cloud', 'success');
         updateSyncStatus('synced', 'Cloud \u2601');
-    } else {
+    } else if (state.currentHandle) {
         showToast('Using offline mode', 'warning');
         updateSyncStatus('error', 'Offline');
+    } else {
+        updateSyncStatus('error', 'Load a CF profile to sync');
     }
     
     applySettings();
     updateStreakDisplay();
     updateDailyGoalDisplay();
     setupEventListeners();
-    
-    // Populate the handle input from the restored state (set by loadFromAPI from DB, or localStorage fallback)
-    if (state.currentHandle) {
-        const handleInput = document.getElementById('handleInput');
-        if (handleInput) handleInput.value = state.currentHandle;
-    }
 
     // Detect incoming CF Picker contest
     const isFromPicker = new URLSearchParams(window.location.search).get('from') === 'picker';
@@ -945,11 +1000,9 @@ async function loadUserProfile() {
         state.currentUser = userData.result[0];
         state.currentHandle = handle;
         localStorage.setItem('lastUser', handle);
-        // Persist the CF handle per login account so it's restored on next session
-        debouncedSync();
         
         showLoading('Loading your contest data...');
-        await loadFromAPI();
+        await loadFromAPI(handle);
 
         const submissionsResponse = await fetch(`https://codeforces.com/api/user.status?handle=${handle}`);
         const submissionsData = await submissionsResponse.json();
@@ -1796,7 +1849,8 @@ function saveContest(results) {
     if (idx !== -1) state.pastContests[idx] = results;
     else state.pastContests.push(results);
     
-    debouncedSync();
+    // Immediate sync (no debounce) to prevent data loss if user refreshes right after
+    syncNow();
 }
 
 function updateInProgressContest() {

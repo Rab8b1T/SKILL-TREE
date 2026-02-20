@@ -59,18 +59,24 @@ export default async function handler(req, res) {
         return sendJson(res, 500, { error: 'MONGODB_URI not configured' });
     }
 
+    // Auth required for all operations to prevent abuse
     const auth = getAuthFromRequest(req);
     if (!auth || !auth.userId) {
         return sendJson(res, 401, { error: 'Authentication required' });
     }
-    const userId = auth.userId;
 
     try {
         const db = await getDb();
         const col = db.collection('contest_data');
 
         if (method === 'GET') {
-            const doc = await col.findOne({ _id: userId });
+            // Data is keyed by CF handle — any authenticated user can read any handle's data
+            const urlObj = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
+            const cfHandle = urlObj.searchParams.get('handle');
+            if (!cfHandle) {
+                return sendJson(res, 200, EMPTY_DATA);
+            }
+            const doc = await col.findOne({ _id: cfHandle });
             if (doc) {
                 const { _id, ...data } = doc;
                 return sendJson(res, 200, data);
@@ -83,10 +89,14 @@ export default async function handler(req, res) {
             if (!payload || typeof payload !== 'object') {
                 return sendJson(res, 400, { error: 'Invalid JSON' });
             }
-
+            const cfHandle = payload.cfHandle;
+            if (!cfHandle || typeof cfHandle !== 'string') {
+                return sendJson(res, 400, { error: 'cfHandle is required in the request body' });
+            }
+            const { cfHandle: _h, ...dataToSave } = payload;
             await col.updateOne(
-                { _id: userId },
-                { $set: { ...payload, savedAt: new Date().toISOString() } },
+                { _id: cfHandle },
+                { $set: { ...dataToSave, savedAt: new Date().toISOString() } },
                 { upsert: true },
             );
             return sendJson(res, 200, { ok: true });
