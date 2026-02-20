@@ -204,6 +204,16 @@ body {
     border-bottom-color: var(--accent-primary);
 }
 
+.auth-panel {
+    display: none;
+}
+.auth-panel.active {
+    display: block;
+}
+.auth-panel[hidden] {
+    display: none !important;
+}
+
 .auth-form {
     display: flex;
     flex-direction: column;

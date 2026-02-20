@@ -82,7 +82,9 @@
                 showApp();
                 return;
             }
-            setError('login', data.error || 'Login failed.');
+            var msg = data.error || 'Login failed.';
+            if (res.status === 401) msg = 'No user found with that username. Please sign up.';
+            setError('login', msg);
         } catch (_) {
             setError('login', 'Network error. Try again.');
         } finally {
@@ -128,8 +130,8 @@
 
     function setupTabs() {
         const tabs = document.querySelectorAll('.auth-tab');
-        const loginForm = document.getElementById('auth-login-form');
-        const signupForm = document.getElementById('auth-signup-form');
+        const panelLogin = document.getElementById('auth-panel-login');
+        const panelSignup = document.getElementById('auth-panel-signup');
         tabs.forEach(function (tab) {
             tab.addEventListener('click', function () {
                 const mode = tab.getAttribute('data-tab');
@@ -138,13 +140,13 @@
                     t.setAttribute('aria-selected', t.getAttribute('data-tab') === mode ? 'true' : 'false');
                 });
                 if (mode === 'login') {
-                    if (loginForm) loginForm.hidden = false;
-                    if (signupForm) signupForm.hidden = true;
+                    if (panelLogin) { panelLogin.classList.add('active'); panelLogin.hidden = false; }
+                    if (panelSignup) { panelSignup.classList.remove('active'); panelSignup.hidden = true; }
                     setError('login', '');
                     setError('signup', '');
                 } else {
-                    if (loginForm) loginForm.hidden = true;
-                    if (signupForm) signupForm.hidden = false;
+                    if (panelLogin) { panelLogin.classList.remove('active'); panelLogin.hidden = true; }
+                    if (panelSignup) { panelSignup.classList.add('active'); panelSignup.hidden = false; }
                     setError('login', '');
                     setError('signup', '');
                 }
