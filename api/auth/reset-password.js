@@ -48,11 +48,9 @@ export default async function handler(req, res) {
         return sendJson(res, 200, { ok: true });
     } catch (err) {
         console.error('reset-password error:', err);
-        const msg = !process.env.USER_MONGODB_URI
-            ? 'Auth database not configured (USER_MONGODB_URI missing)'
-            : err.message && err.message.includes('ENOTFOUND')
-                ? 'Cannot reach database (check internet / MongoDB Atlas whitelist)'
-                : 'Server error. Check .env and MongoDB connection.';
+        let msg = 'Reset failed.';
+        if (!process.env.USER_MONGODB_URI) msg = 'Auth database not configured: set USER_MONGODB_URI in Vercel.';
+        else if (err.message) msg = err.message;
         return sendJson(res, 500, { error: msg });
     }
 }

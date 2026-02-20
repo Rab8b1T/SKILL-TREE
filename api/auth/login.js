@@ -50,11 +50,9 @@ export default async function handler(req, res) {
         });
     } catch (err) {
         console.error('Login error:', err);
-        const msg = !process.env.USER_MONGODB_URI
-            ? 'Auth database not configured (USER_MONGODB_URI missing)'
-            : err.message && err.message.includes('ENOTFOUND')
-                ? 'Cannot reach database (check internet / MongoDB Atlas whitelist)'
-                : 'Login failed. Check server logs or .env (USER_MONGODB_URI).';
+        let msg = 'Login failed.';
+        if (!process.env.USER_MONGODB_URI) msg = 'Auth database not configured: set USER_MONGODB_URI in Vercel.';
+        else if (err.message) msg = err.message;
         return sendJson(res, 500, { error: msg });
     }
 }

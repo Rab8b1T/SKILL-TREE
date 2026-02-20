@@ -67,11 +67,9 @@ export default async function handler(req, res) {
             return sendJson(res, 409, { error: 'Username already exists' });
         }
         console.error('Signup error:', err);
-        const msg = !process.env.USER_MONGODB_URI
-            ? 'Auth database not configured (USER_MONGODB_URI missing)'
-            : err.message && err.message.includes('ENOTFOUND')
-                ? 'Cannot reach database (check internet / MongoDB Atlas whitelist)'
-                : 'Registration failed. Check server logs or .env (USER_MONGODB_URI, USER_DB_NAME).';
+        let msg = 'Registration failed.';
+        if (!process.env.USER_MONGODB_URI) msg = 'Auth database not configured: set USER_MONGODB_URI in Vercel.';
+        else if (err.message) msg = err.message;
         return sendJson(res, 500, { error: msg });
     }
 }
