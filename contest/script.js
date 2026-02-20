@@ -98,6 +98,7 @@ async function syncToAPI() {
 
         const dataToSync = {
             user: state.currentHandle,
+            cfHandle: state.currentHandle || null,
             pastContests: state.pastContests,
             streak: state.streak,
             settings: state.settings,
@@ -139,9 +140,6 @@ function saveToLocalStorage() {
 }
 
 async function loadFromAPI() {
-    const savedHandle = localStorage.getItem('lastUser') || 'rab8bit';
-    state.currentHandle = savedHandle;
-    
     try {
         const response = await fetch(`${API_BASE_URL}/contest/data`, { headers: getAuthHeaders() });
         
@@ -163,6 +161,16 @@ async function loadFromAPI() {
         }
         if (data.activeContest && typeof data.activeContest === 'object') {
             state._cloudActiveContest = data.activeContest;
+        }
+        // Restore CF handle only if not already set (i.e. at startup, not during loadUserProfile)
+        if (!state.currentHandle) {
+            if (data.cfHandle && typeof data.cfHandle === 'string') {
+                state.currentHandle = data.cfHandle;
+                localStorage.setItem('lastUser', data.cfHandle);
+            } else {
+                const localHandle = localStorage.getItem('lastUser');
+                if (localHandle) state.currentHandle = localHandle;
+            }
         }
         
         state.apiSyncEnabled = true;
@@ -309,10 +317,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateDailyGoalDisplay();
     setupEventListeners();
     
-    const savedUser = localStorage.getItem('lastUser');
-    if (savedUser) {
-        document.getElementById('handleInput').value = savedUser;
-        state.currentHandle = savedUser;
+    // Populate the handle input from the restored state (set by loadFromAPI from DB, or localStorage fallback)
+    if (state.currentHandle) {
+        const handleInput = document.getElementById('handleInput');
+        if (handleInput) handleInput.value = state.currentHandle;
     }
 
     // Detect incoming CF Picker contest
@@ -937,6 +945,8 @@ async function loadUserProfile() {
         state.currentUser = userData.result[0];
         state.currentHandle = handle;
         localStorage.setItem('lastUser', handle);
+        // Persist the CF handle per login account so it's restored on next session
+        debouncedSync();
         
         showLoading('Loading your contest data...');
         await loadFromAPI();

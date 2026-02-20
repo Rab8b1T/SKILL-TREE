@@ -33,8 +33,35 @@ function withDefaults(data) {
   return data;
 }
 
+// Reset all level statuses to default — first level of zone 0 unlocked, all others locked.
+// This is called for NEW users so they start fresh rather than inheriting progress.json's data.
+function cleanSeedForNewUser(data) {
+  if (!data || !Array.isArray(data.zones)) return data;
+  data.zones = data.zones.map((zone, zi) => {
+    zone.levels = (zone.levels || []).map((level, li) => {
+      const fresh = { ...level };
+      delete fresh.status;
+      fresh.status = (zi === 0 && li === 0) ? 'unlocked' : 'locked';
+      return fresh;
+    });
+    return zone;
+  });
+  // Always reset user progress fields for a new user
+  data.user = {
+    current_xp: 0,
+    level: 1,
+    badges: [],
+    notes: {},
+    journal: {},
+    lastVisit: null,
+    streakDays: 0,
+  };
+  data.settings = data.settings || { shortcutsEnabled: true, view: 'grid' };
+  return data;
+}
+
 async function readSeedFromStatic(origin) {
-  // Prefer progress.json if present, else fall back to the exported seed.
+  // Load zone/level structure from static files, then clean progress for new user.
   const candidates = [`${origin}/progress.json`, `${origin}/skilltree-progress-2025-11-26.json`];
 
   for (const url of candidates) {
@@ -43,7 +70,7 @@ async function readSeedFromStatic(origin) {
       if (!res.ok) continue;
       const data = await res.json();
       const normalized = withDefaults(data);
-      if (normalized) return normalized;
+      if (normalized) return cleanSeedForNewUser(normalized);
     } catch {
       // try next
     }
@@ -53,15 +80,7 @@ async function readSeedFromStatic(origin) {
     version: '1.0',
     updatedAt: new Date().toISOString(),
     zones: [],
-    user: {
-      current_xp: 0,
-      level: 1,
-      badges: [],
-      notes: {},
-      journal: {},
-      lastVisit: null,
-      streakDays: 0,
-    },
+    user: { current_xp: 0, level: 1, badges: [], notes: {}, journal: {}, lastVisit: null, streakDays: 0 },
     settings: { shortcutsEnabled: true, view: 'grid' },
   });
 }

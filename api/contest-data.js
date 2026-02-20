@@ -45,6 +45,7 @@ const EMPTY_DATA = {
     pastContests: [],
     streak: { current: 0, lastDate: null, best: 0, history: [] },
     settings: { soundEnabled: false, autoRefresh: true, showTags: false },
+    cfHandle: null,
 };
 
 export default async function handler(req, res) {
