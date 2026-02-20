@@ -1,107 +1,99 @@
-import { Redis } from '@upstash/redis';
+import { MongoClient } from 'mongodb';
 import { getAuthFromRequest } from './lib/auth.js';
 
-const redis = Redis.fromEnv();
+const uri = process.env.MONGODB_URI;
+const dbName = process.env.DB_NAME || 'skilltree';
+
+let cachedClient = null;
+
+async function getDb() {
+    if (cachedClient && cachedClient.topology && cachedClient.topology.isConnected()) {
+        return cachedClient.db(dbName);
+    }
+    const client = new MongoClient(uri);
+    await client.connect();
+    cachedClient = client;
+    return client.db(dbName);
+}
 
 function sendJson(res, status, body) {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.end(JSON.stringify(body));
+    res.statusCode = status;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.end(JSON.stringify(body));
 }
 
 async function readJsonBody(req) {
-  if (req.body && typeof req.body === 'object') return req.body;
-  if (typeof req.body === 'string') {
-    try {
-      return JSON.parse(req.body);
-    } catch {
-      return null;
+    if (req.body && typeof req.body === 'object') return req.body;
+    if (typeof req.body === 'string') {
+        try { return JSON.parse(req.body); } catch { return null; }
     }
-  }
-
-  const raw = await new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', (chunk) => (data += chunk));
-    req.on('end', () => resolve(data));
-    req.on('error', reject);
-  });
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+    const raw = await new Promise((resolve, reject) => {
+        let data = '';
+        req.on('data', (chunk) => (data += chunk));
+        req.on('end', () => resolve(data));
+        req.on('error', reject);
+    });
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
 }
 
+const EMPTY_DATA = {
+    pastContests: [],
+    streak: { current: 0, lastDate: null, best: 0, history: [] },
+    settings: { soundEnabled: false, autoRefresh: true, showTags: false },
+};
+
 export default async function handler(req, res) {
-  const method = req.method || 'GET';
+    const method = req.method || 'GET';
 
-  // Handle CORS preflight
-  if (method === 'OPTIONS') {
-    return sendJson(res, 200, { ok: true });
-  }
+    if (method === 'OPTIONS') {
+        return sendJson(res, 200, { ok: true });
+    }
 
-  const auth = getAuthFromRequest(req);
-  if (!auth || !auth.userId) {
-    return sendJson(res, 401, { error: 'Authentication required' });
-  }
-  const userId = auth.userId;
-  const key = `contest:data:${userId}`;
+    if (!uri) {
+        return sendJson(res, 500, { error: 'MONGODB_URI not configured' });
+    }
 
-  if (method === 'GET') {
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+        return sendJson(res, 401, { error: 'Authentication required' });
+    }
+    const userId = auth.userId;
+
     try {
-      const existing = await redis.get(key);
-      
-      if (!existing) {
-        // Return empty data structure
-        return sendJson(res, 200, {
-          pastContests: [],
-          streak: { current: 0, lastDate: null, best: 0, history: [] },
-          settings: { soundEnabled: false, autoRefresh: true, showTags: false },
-        });
-      }
+        const db = await getDb();
+        const col = db.collection('contest_data');
 
-      // Parse if it's a string
-      let data = existing;
-      if (typeof existing === 'string') {
-        try {
-          data = JSON.parse(existing);
-        } catch {
-          return sendJson(res, 500, { error: 'Failed to parse stored data' });
+        if (method === 'GET') {
+            const doc = await col.findOne({ _id: userId });
+            if (doc) {
+                const { _id, ...data } = doc;
+                return sendJson(res, 200, data);
+            }
+            return sendJson(res, 200, EMPTY_DATA);
         }
-      }
 
-      return sendJson(res, 200, data);
-    } catch (error) {
-      console.error('Redis GET error:', error);
-      return sendJson(res, 500, { error: 'Failed to retrieve contest data' });
+        if (method === 'POST') {
+            const payload = await readJsonBody(req);
+            if (!payload || typeof payload !== 'object') {
+                return sendJson(res, 400, { error: 'Invalid JSON' });
+            }
+
+            await col.updateOne(
+                { _id: userId },
+                { $set: { ...payload, savedAt: new Date().toISOString() } },
+                { upsert: true },
+            );
+            return sendJson(res, 200, { ok: true });
+        }
+
+        return sendJson(res, 405, { error: 'Method Not Allowed' });
+    } catch (err) {
+        console.error('contest-data error:', err);
+        return sendJson(res, 500, { error: 'Database error' });
     }
-  }
-
-  if (method === 'POST') {
-    try {
-      const payload = await readJsonBody(req);
-      if (!payload) {
-        return sendJson(res, 400, { error: 'Invalid JSON' });
-      }
-
-      // Validate payload structure
-      if (typeof payload !== 'object') {
-        return sendJson(res, 400, { error: 'Invalid payload structure' });
-      }
-
-      // Save to Redis
-      await redis.set(key, JSON.stringify(payload));
-      return sendJson(res, 200, { ok: true, message: 'Contest data saved successfully' });
-    } catch (error) {
-      console.error('Redis POST error:', error);
-      return sendJson(res, 500, { error: 'Failed to save contest data' });
-    }
-  }
-
-  return sendJson(res, 405, { error: 'Method Not Allowed' });
 }
