@@ -5,9 +5,11 @@
 (function () {
     'use strict';
 
-    var API_ME     = '/api/auth/me';
-    var API_LOGIN  = '/api/auth/login';
-    var API_SIGNUP = '/api/auth/signup';
+    var API_ME             = '/api/auth/me';
+    var API_LOGIN          = '/api/auth/login';
+    var API_SIGNUP         = '/api/auth/signup';
+    var API_RESET_REQUEST  = '/api/auth/reset-request';
+    var API_RESET_CONFIRM  = '/api/auth/reset-confirm';
 
     /* ---------- token helpers ---------- */
     function getToken()      { return localStorage.getItem('authToken'); }
@@ -161,8 +163,11 @@
         e.preventDefault();
         var form     = document.getElementById('auth-signup-form');
         var username = form.querySelector('[name=username]').value.trim();
+        var email    = form.querySelector('[name=email]').value.trim();
         var password = form.querySelector('[name=password]').value;
         var btn      = form.querySelector('button[type=submit]');
+
+        if (!email) { showToast('Email is required for password reset.', 'error'); return; }
 
         if (!username) {
             showToast('Username is required.', 'error');
@@ -180,7 +185,7 @@
             var res  = await fetch(API_SIGNUP, {
                 method : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body   : JSON.stringify({ username: username, password: password })
+                body   : JSON.stringify({ username: username, email: email, password: password })
             });
 
             var data = {};
@@ -237,40 +242,34 @@
 
     async function handleReset(e) {
         e.preventDefault();
-        var form        = document.getElementById('auth-reset-form');
-        var username    = form.querySelector('[name=username]').value.trim();
-        var newPass     = form.querySelector('[name=newPassword]').value;
-        var confirmPass = form.querySelector('[name=confirmPassword]').value;
-        var btn         = form.querySelector('button[type=submit]');
+        var form     = document.getElementById('auth-reset-form');
+        var username = form.querySelector('[name=username]').value.trim();
+        var btn      = form.querySelector('button[type=submit]');
 
         if (!username) { showToast('Username is required.', 'error'); return; }
-        if (newPass.length < 4) { showToast('Password must be at least 4 characters.', 'error'); return; }
-        if (newPass !== confirmPass) { showToast('Passwords do not match.', 'error'); return; }
 
-        btn.disabled = true; btn.textContent = 'Resetting…';
+        btn.disabled = true; btn.textContent = 'Sending…';
 
         try {
-            var res  = await fetch('/api/auth/reset-password', {
+            var res  = await fetch(API_RESET_REQUEST, {
                 method : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body   : JSON.stringify({ username: username, newPassword: newPass })
+                body   : JSON.stringify({ username: username })
             });
             var data = {};
             try { data = await res.json(); } catch (_) {}
 
             if (res.ok) {
-                showToast('Password reset! You can now log in.', 'success');
+                showToast(data.message || 'Reset link sent! Check your email.', 'success');
                 form.reset();
                 hideResetPanel();
-            } else if (res.status === 404) {
-                showToast('No account found for "' + esc(username) + '". Please sign up first.', 'error');
             } else {
                 showToast(data.error || ('Reset failed (HTTP ' + res.status + ').'), 'error');
             }
         } catch (err) {
             showToast('Network error: ' + (err.message || 'Cannot reach server'), 'error');
         } finally {
-            btn.disabled = false; btn.textContent = 'Reset password';
+            btn.disabled = false; btn.textContent = 'Send reset link';
         }
     }
 

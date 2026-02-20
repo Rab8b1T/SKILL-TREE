@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis';
-import { getAuthFromRequest } from './lib/auth.js';
+import { getAuthFromRequest } from './auth-shared.js';
 
 const redis = Redis.fromEnv();
 

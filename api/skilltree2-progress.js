@@ -1,5 +1,5 @@
 import { MongoClient } from 'mongodb';
-import { getAuthFromRequest } from './lib/auth.js';
+import { getAuthFromRequest } from './auth-shared.js';
 
 const uri = process.env.SKILLTREE2_MONGODB_URI;
 const dbName = process.env.SKILLTREE2_DB_NAME || 'skilltree2';
