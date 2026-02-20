@@ -1431,6 +1431,13 @@
     const API_ENDPOINT = '/api/skilltree2-progress';
     let _saveTimer = null;
 
+    function getAuthHeaders() {
+        const token = typeof localStorage !== 'undefined' && localStorage.getItem('authToken');
+        const h = { 'Content-Type': 'application/json' };
+        if (token) h['Authorization'] = 'Bearer ' + token;
+        return h;
+    }
+
     function saveLocal() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -1461,7 +1468,7 @@
         try {
             const res = await fetch(API_ENDPOINT, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 cache: 'no-store',
                 body: JSON.stringify({
                     topicStatus: state.topicStatus,
@@ -1487,7 +1494,12 @@
     async function load() {
         loadLocal();
         try {
-            const res = await fetch(API_ENDPOINT, { cache: 'no-store' });
+            const res = await fetch(API_ENDPOINT, { headers: getAuthHeaders(), cache: 'no-store' });
+            if (res.status === 401) {
+                localStorage.removeItem('authToken');
+                window.location.href = '../';
+                return;
+            }
             if (res.ok) {
                 const data = await res.json();
                 if (data && data.topicStatus && Object.keys(data.topicStatus).length > 0) {
@@ -1935,6 +1947,22 @@
     // ========================================================================
 
     async function init() {
+        const token = typeof localStorage !== 'undefined' && localStorage.getItem('authToken');
+        if (!token) {
+            window.location.href = '../';
+            return;
+        }
+        try {
+            const meRes = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
+            if (!meRes.ok) {
+                localStorage.removeItem('authToken');
+                window.location.href = '../';
+                return;
+            }
+        } catch (_) {
+            window.location.href = '../';
+            return;
+        }
         loadLocal();
         bindEvents();
         render();

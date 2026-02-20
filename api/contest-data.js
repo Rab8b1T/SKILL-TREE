@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+import { getAuthFromRequest } from './lib/auth.js';
 
 const redis = Redis.fromEnv();
 
@@ -36,27 +37,19 @@ async function readJsonBody(req) {
   }
 }
 
-function getOrigin(req) {
-  const proto = req.headers['x-forwarded-proto'] || 'https';
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
-  return `${proto}://${host}`;
-}
-
-function getUserId(req, origin) {
-  const url = new URL(req.url, origin);
-  return url.searchParams.get('user') || 'rab8bit';
-}
-
 export default async function handler(req, res) {
   const method = req.method || 'GET';
-  
+
   // Handle CORS preflight
   if (method === 'OPTIONS') {
     return sendJson(res, 200, { ok: true });
   }
 
-  const origin = getOrigin(req);
-  const userId = getUserId(req, origin);
+  const auth = getAuthFromRequest(req);
+  if (!auth || !auth.userId) {
+    return sendJson(res, 401, { error: 'Authentication required' });
+  }
+  const userId = auth.userId;
   const key = `contest:data:${userId}`;
 
   if (method === 'GET') {
@@ -69,7 +62,6 @@ export default async function handler(req, res) {
           pastContests: [],
           streak: { current: 0, lastDate: null, best: 0, history: [] },
           settings: { soundEnabled: false, autoRefresh: true, showTags: false },
-          lastUser: userId
         });
       }
 

@@ -9,12 +9,47 @@
     <link rel="stylesheet" href="styles.css?v=20260127-1">
 </head>
 <body>
+    <!-- Auth Gate: shown until user logs in -->
+    <div id="auth-gate" class="auth-gate" role="main" aria-label="Sign in">
+        <div class="auth-gate-card">
+            <div class="auth-gate-brand">
+                <div class="auth-gate-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <h1>Skill Tree</h1>
+                <p class="auth-gate-tagline">Sign in to continue</p>
+            </div>
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab active" data-tab="login" aria-selected="true">Log in</button>
+                <button type="button" class="auth-tab" data-tab="signup" aria-selected="false">Sign up</button>
+            </div>
+            <form id="auth-login-form" class="auth-form" data-mode="login">
+                <label for="login-username" class="visually-hidden">Username</label>
+                <input type="text" id="login-username" name="username" placeholder="Username" required autocomplete="username">
+                <label for="login-password" class="visually-hidden">Password</label>
+                <input type="password" id="login-password" name="password" placeholder="Password" required minlength="4" autocomplete="current-password">
+                <p id="auth-login-error" class="auth-error" hidden></p>
+                <button type="submit" class="btn btn-primary auth-submit">Log in</button>
+            </form>
+            <form id="auth-signup-form" class="auth-form" data-mode="signup" hidden>
+                <label for="signup-username" class="visually-hidden">Username</label>
+                <input type="text" id="signup-username" name="username" placeholder="Username (unique)" required autocomplete="username">
+                <label for="signup-password" class="visually-hidden">Password</label>
+                <input type="password" id="signup-password" name="password" placeholder="Password (min 4 characters)" required minlength="4" autocomplete="new-password">
+                <p id="auth-signup-error" class="auth-error" hidden></p>
+                <button type="submit" class="btn btn-primary auth-submit">Create account</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Skip Links for Accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <a href="#zones-section" class="skip-link">Skip to zones</a>
 
-    <!-- Main App Container -->
-    <div id="app" class="app-container">
+    <!-- Main App Container (hidden until authenticated) -->
+    <div id="app" class="app-container" hidden>
         <!-- Header -->
         <header class="header" role="banner">
             <div class="header-content">
@@ -58,6 +93,8 @@
 
                 <!-- Actions -->
                 <div class="header-actions">
+                    <span class="header-username" id="header-username" aria-label="Logged in user"></span>
+                    <button class="btn btn-secondary btn-logout" id="logout-btn" aria-label="Log out" title="Log out">Log out</button>
                     <button class="btn btn-icon" id="shortcuts-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <rect x="2" y="4" width="20" height="16" rx="2"/>
@@ -436,6 +473,7 @@
     <canvas id="confetti-canvas" aria-hidden="true"></canvas>
 
     <!-- Scripts -->
+    <script src="auth-gate.js?v=1"></script>
     <script src="app.js?v=20260127-1"></script>
 </body>
 </html>

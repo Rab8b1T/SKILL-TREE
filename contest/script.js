@@ -1,7 +1,14 @@
 // ===== Configuration =====
-const API_BASE_URL = window.location.hostname === 'localhost' 
+const API_BASE_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
     : '/api';
+
+function getAuthHeaders() {
+    const token = localStorage.getItem('authToken');
+    const h = { 'Content-Type': 'application/json' };
+    if (token) h['Authorization'] = 'Bearer ' + token;
+    return h;
+}
 
 // ===== State Management =====
 const state = {
@@ -101,7 +108,7 @@ async function syncToAPI() {
 
         const response = await fetch(`${API_BASE_URL}/contest/data`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(dataToSync)
         });
 
@@ -136,7 +143,7 @@ async function loadFromAPI() {
     state.currentHandle = savedHandle;
     
     try {
-        const response = await fetch(`${API_BASE_URL}/contest/data?user=${encodeURIComponent(savedHandle)}`);
+        const response = await fetch(`${API_BASE_URL}/contest/data`, { headers: getAuthHeaders() });
         
         if (!response.ok) throw new Error(`API returned ${response.status}`);
         
@@ -264,9 +271,27 @@ const AVAILABLE_TAGS = [
 
 // ===== Initialization =====
 document.addEventListener('DOMContentLoaded', async () => {
+    // Require auth: redirect to main page to log in
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        window.location.href = (window.location.pathname.includes('/contest') ? '../' : '/') + '?redirect=' + encodeURIComponent(window.location.pathname);
+        return;
+    }
+    try {
+        const meRes = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
+        if (!meRes.ok) {
+            localStorage.removeItem('authToken');
+            window.location.href = (window.location.pathname.includes('/contest') ? '../' : '/');
+            return;
+        }
+    } catch (_) {
+        window.location.href = (window.location.pathname.includes('/contest') ? '../' : '/');
+        return;
+    }
+
     initializeTheme();
     updateSyncStatus('syncing', 'Loading...');
-    
+
     showLoading('Loading your contest data...');
     const apiLoaded = await loadFromAPI();
     hideLoading();

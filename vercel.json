@@ -15,6 +15,7 @@
   ],
   "routes": [
     { "src": "/api/health", "dest": "contest_server.py" },
+    { "src": "/api/contest/data", "dest": "api/contest-data.js" },
     { "src": "/api/contest/(.*)", "dest": "contest_server.py" },
     { "src": "/progress", "dest": "api/progress.js" },
     { "src": "/api/progress", "dest": "api/progress.js" },

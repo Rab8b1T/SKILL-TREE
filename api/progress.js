@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+import { getAuthFromRequest } from './lib/auth.js';
 
 const redis = Redis.fromEnv();
 
@@ -6,12 +7,6 @@ function getOrigin(req) {
   const proto = req.headers['x-forwarded-proto'] || 'https';
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   return `${proto}://${host}`;
-}
-
-function getId(req, origin) {
-  // Optional: allow multiple progress “files” via ?id=
-  const url = new URL(req.url, origin);
-  return url.searchParams.get('id') || 'default';
 }
 
 function shouldForceSeed(req, origin) {
@@ -105,7 +100,11 @@ async function readJsonBody(req) {
 export default async function handler(req, res) {
   const method = req.method || 'GET';
   const origin = getOrigin(req);
-  const id = getId(req, origin);
+  const auth = getAuthFromRequest(req);
+  if (!auth || !auth.userId) {
+    return sendJson(res, 401, { error: 'Authentication required' });
+  }
+  const id = auth.userId;
   const key = `skilltree:progress:${id}`;
 
   if (method === 'GET') {

@@ -1,4 +1,5 @@
 import { MongoClient } from 'mongodb';
+import { getAuthFromRequest } from './lib/auth.js';
 
 const uri = process.env.SKILLTREE2_MONGODB_URI;
 const dbName = process.env.SKILLTREE2_DB_NAME || 'skilltree2';
@@ -42,6 +43,12 @@ export default async function handler(req, res) {
         return sendJson(res, 500, { error: 'SKILLTREE2_MONGODB_URI not configured' });
     }
 
+    const auth = getAuthFromRequest(req);
+    if (!auth || !auth.userId) {
+        return sendJson(res, 401, { error: 'Authentication required' });
+    }
+    const userId = auth.userId;
+
     const method = req.method || 'GET';
 
     try {
@@ -49,7 +56,7 @@ export default async function handler(req, res) {
         const col = db.collection('progress');
 
         if (method === 'GET') {
-            const doc = await col.findOne({ _id: 'default' });
+            const doc = await col.findOne({ _id: userId });
             if (doc) {
                 const { _id, ...data } = doc;
                 return sendJson(res, 200, data);
@@ -71,7 +78,7 @@ export default async function handler(req, res) {
             };
 
             await col.updateOne(
-                { _id: 'default' },
+                { _id: userId },
                 { $set: doc },
                 { upsert: true },
             );

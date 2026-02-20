@@ -203,9 +203,13 @@
     async function saveToServer() {
         try {
             const payload = buildPersistedPayload();
+            const headers = { 'Content-Type': 'application/json' };
+            if (typeof window.authHeaders === 'function') {
+                Object.assign(headers, window.authHeaders());
+            }
             await fetch(CONFIG.PROGRESS_ENDPOINT, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 cache: 'no-store',
                 body: JSON.stringify(payload),
             });
@@ -217,7 +221,11 @@
     const debouncedSave = debounce(saveToServer, CONFIG.AUTOSAVE_DEBOUNCE);
 
     async function loadFromServer() {
-        const res = await fetch(CONFIG.PROGRESS_ENDPOINT, { cache: 'no-store' });
+        const headers = { };
+        if (typeof window.authHeaders === 'function') {
+            Object.assign(headers, window.authHeaders());
+        }
+        const res = await fetch(CONFIG.PROGRESS_ENDPOINT, { headers, cache: 'no-store' });
         if (!res.ok) throw new Error(`Failed to load progress: ${res.status}`);
         return res.json();
     }
@@ -1468,6 +1476,22 @@
     function init() {
         cacheDOMElements();
 
+        // Username and logout
+        const headerUsername = document.getElementById('header-username');
+        const logoutBtn = document.getElementById('logout-btn');
+        fetch('/api/auth/me', { headers: typeof window.authHeaders === 'function' ? window.authHeaders() : {}, cache: 'no-store' })
+            .then((r) => r.ok ? r.json() : null)
+            .then((data) => {
+                if (data && data.user && headerUsername) headerUsername.textContent = data.user.username;
+            })
+            .catch(() => {});
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('authToken');
+                location.reload();
+            });
+        }
+
         setupEventListeners();
 
         // Load progress from server BEFORE first render.
@@ -1523,11 +1547,7 @@
         },
     };
 
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    // Initialize only when auth gate has confirmed the user is logged in
+    document.addEventListener('skilltree:auth-ready', init);
 })();
 
