@@ -7,7 +7,7 @@
     "vercel-build": "node -e \"process.exit(0)\""
   },
   "dependencies": {
-    "@upstash/redis": "^1.35.0"
+    "@upstash/redis": "^1.35.0",
+    "mongodb": "^7.1.0"
   }
 }
-

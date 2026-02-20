@@ -10,7 +10,8 @@
     { "src": "contest/**", "use": "@vercel/static" },
     { "src": "A2OJ/**", "use": "@vercel/static" },
     { "src": "analysis/**", "use": "@vercel/static" },
-    { "src": "codeforces/**", "use": "@vercel/static" }
+    { "src": "codeforces/**", "use": "@vercel/static" },
+    { "src": "skilltree2/**", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/health", "dest": "contest_server.py" },
@@ -18,6 +19,7 @@
     { "src": "/progress", "dest": "api/progress.js" },
     { "src": "/api/progress", "dest": "api/progress.js" },
     { "src": "/api/contest-data", "dest": "api/contest-data.js" },
+    { "src": "/api/skilltree2-progress", "dest": "api/skilltree2-progress.js" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }

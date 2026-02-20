@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SKILL TREE 2.0 - Complete AI/ML Mastery Roadmap">
+    <meta name="theme-color" content="#f59e0b">
+    <title>SKILL TREE 2.0 — AI/ML Mastery Roadmap</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app" class="app">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="header-top">
+                <div class="header-left">
+                    <a href="../" class="back-btn" aria-label="Back to Skill Tree">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+                    </a>
+                    <div class="brand">
+                        <div class="brand-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1>SKILL TREE <span class="version-badge">2.0</span></h1>
+                            <span class="brand-tagline">AI / ML Mastery Roadmap</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="global-stats">
+                        <div class="stat-chip" id="stat-completed">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span id="completed-count">0</span> / <span id="total-count">0</span>
+                        </div>
+                        <div class="stat-chip" id="stat-hours">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span id="total-hours">0</span>h est.
+                        </div>
+                        <div class="stat-chip xp-chip">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            <span id="total-xp">0</span> XP
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="icon-btn" id="search-toggle-btn" aria-label="Search" title="Search (/)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        </button>
+                        <button class="icon-btn" id="export-btn" aria-label="Export progress" title="Export">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </button>
+                        <button class="icon-btn" id="import-btn" aria-label="Import progress" title="Import">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </button>
+                        <button class="icon-btn danger" id="reset-btn" aria-label="Reset progress" title="Reset">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Progress -->
+            <div class="global-progress">
+                <div class="progress-info">
+                    <span class="progress-label">Mastery Progress</span>
+                    <span class="progress-pct" id="global-pct">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="global-fill"></div>
+                </div>
+            </div>
+
+            <!-- Search Bar (hidden by default) -->
+            <div class="search-bar" id="search-bar" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="search" id="search-input" placeholder="Search topics, resources, concepts..." autocomplete="off">
+                <div class="filter-pills" id="filter-pills">
+                    <button class="pill active" data-filter="all">All</button>
+                    <button class="pill" data-filter="not-started">Not Started</button>
+                    <button class="pill" data-filter="in-progress">In Progress</button>
+                    <button class="pill" data-filter="completed">Completed</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Phase Navigation -->
+        <nav class="phase-nav" id="phase-nav" aria-label="Phase Navigation">
+            <!-- Rendered by JS -->
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main" id="main-content">
+            <!-- Rendered by JS -->
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span>SKILL TREE 2.0 — Your AI/ML Mastery Journey</span>
+            <span id="last-saved"></span>
+        </footer>
+    </div>
+
+    <!-- Topic Detail Panel -->
+    <div id="topic-panel" class="topic-panel" hidden>
+        <div class="panel-backdrop" id="panel-backdrop"></div>
+        <div class="panel-content">
+            <header class="panel-header">
+                <div>
+                    <span class="panel-phase-badge" id="panel-phase"></span>
+                    <h2 id="panel-title"></h2>
+                </div>
+                <button class="icon-btn" id="panel-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </header>
+            <div class="panel-body" id="panel-body">
+                <!-- Rendered by JS -->
+            </div>
+            <footer class="panel-footer" id="panel-footer">
+                <!-- Rendered by JS -->
+            </footer>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="import-modal" class="modal" hidden>
+        <div class="modal-backdrop" id="import-modal-backdrop"></div>
+        <div class="modal-box">
+            <h2>Import Progress</h2>
+            <p>Select a previously exported SKILL TREE 2.0 progress file.</p>
+            <label class="file-drop">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                <span>Choose JSON file</span>
+                <input type="file" id="import-file" accept=".json" hidden>
+            </label>
+            <div class="modal-actions">
+                <button class="btn secondary" id="import-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" hidden>
+        <span id="toast-icon"></span>
+        <span id="toast-msg"></span>
+    </div>
+
+    <input type="file" id="import-file-hidden" accept=".json" style="display:none">
+    <script src="app.js"></script>
+</body>
+</html>
