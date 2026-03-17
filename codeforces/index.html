@@ -248,7 +248,15 @@
                         Create Virtual Contest
                         <span class="contest-btn-meta" id="contestBtnMeta"></span>
                     </button>
-                    <p class="contest-btn-hint">Starts a timed virtual contest with these problems &mdash; 30 min per problem</p>
+                    <button class="btn-outline btn-lg" onclick="createWarmUpContest()" id="createWarmUpBtn" style="margin-top:10px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        Create Warm Up Contest
+                        <span class="contest-btn-meta">60 min &middot; fixed</span>
+                    </button>
+                    <p class="contest-btn-hint">Starts a timed virtual contest with these problems &mdash; 30 min per problem &nbsp;|&nbsp; <strong>Warm Up</strong> is always 60 min</p>
                 </div>
 
                 <!-- Export -->
@@ -278,7 +286,7 @@
                 <!-- Toggle Problem Links -->
                 <div class="extra-options">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="showLinksCheck" onchange="toggleProblemLinks()">
+                        <input type="checkbox" id="showLinksCheck" onchange="toggleProblemLinks()" checked>
                         <span>Show problem links</span>
                     </label>
                 </div>
