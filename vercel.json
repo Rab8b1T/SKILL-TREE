@@ -10,6 +10,7 @@
     { "src": "api/progress.js",                "use": "@vercel/node" },
     { "src": "api/contest-data.js",            "use": "@vercel/node" },
     { "src": "api/skilltree2-progress.js",     "use": "@vercel/node" },
+    { "src": "api/upsolve-data.js",            "use": "@vercel/node" },
     { "src": "index.html",                     "use": "@vercel/static" },
     { "src": "app.js",                         "use": "@vercel/static" },
     { "src": "auth-gate.js",                   "use": "@vercel/static" },
@@ -37,6 +38,7 @@
     { "src": "/api/progress",             "dest": "api/progress.js" },
     { "src": "/api/contest-data",         "dest": "api/contest-data.js" },
     { "src": "/api/skilltree2-progress",  "dest": "api/skilltree2-progress.js" },
+    { "src": "/api/upsolve-data",         "dest": "api/upsolve-data.js" },
     { "src": "/(.*)",                     "dest": "/$1" }
   ]
 }

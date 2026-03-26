@@ -33,6 +33,9 @@
     --radius-md: 10px;
     --radius-lg: 16px;
     --radius-xl: 24px;
+
+    --bg-glass: rgba(255, 255, 255, 0.72);
+    --accent-glow: rgba(59, 130, 246, 0.25);
     
     /* Codeforces Rank Colors */
     --rank-newbie: #808080;
@@ -48,7 +51,7 @@
 }
 
 [data-theme="dark"] {
-    --bg-primary: #0f172a;
+    --bg-primary: #080c16;
     --bg-secondary: #1e293b;
     --bg-tertiary: #334155;
     --bg-card: #1e293b;
@@ -66,6 +69,9 @@
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+
+    --bg-glass: rgba(15, 22, 41, 0.7);
+    --accent-glow: rgba(59, 130, 246, 0.25);
 }
 
 /* ===== Base Styles ===== */
@@ -85,7 +91,16 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] body {
+    background-image: radial-gradient(ellipse 80% 60% at 50% -20%, rgba(99, 102, 241, 0.08), transparent);
+    background-attachment: fixed;
+}
+
+h1, h2, h3 {
+    font-family: 'Space Grotesk', sans-serif;
 }
 
 .container {
@@ -100,12 +115,26 @@ body {
 
 /* ===== Header ===== */
 .header {
-    background: var(--bg-secondary);
+    background: var(--bg-glass);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 100;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, var(--accent-primary) 25%, var(--accent-secondary) 75%, transparent);
+    opacity: 0.4;
 }
 
 .header-content {
@@ -131,7 +160,7 @@ body {
     border-radius: 50%;
     color: var(--text-secondary);
     text-decoration: none;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .back-link:hover,
@@ -171,7 +200,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-toggle:hover {
@@ -193,10 +222,24 @@ body {
 /* ===== Main Content ===== */
 .main {
     padding: 40px 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .section {
     margin-bottom: 48px;
+    animation: fadeSlideUp 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .section-header {
@@ -221,12 +264,15 @@ body {
 }
 
 .search-card {
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: var(--radius-xl);
     padding: 48px;
     text-align: center;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-card h2 {
@@ -274,13 +320,13 @@ body {
     border-radius: var(--radius-lg);
     background: var(--bg-tertiary);
     color: var(--text-primary);
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .input-wrapper input:focus {
     outline: none;
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
 .input-wrapper input::placeholder {
@@ -294,12 +340,13 @@ body {
     padding: 16px 32px;
     font-size: 1rem;
     font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
     color: white;
     background: var(--accent-gradient);
     border: none;
     border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .analyze-btn:hover {
@@ -356,11 +403,19 @@ body {
 .profile-card {
     display: flex;
     gap: 32px;
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: var(--radius-xl);
     padding: 32px;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
 }
 
 .profile-avatar {
@@ -405,12 +460,16 @@ body {
     padding: 16px;
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .stat-value {
     display: block;
     font-size: 1.75rem;
     font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
     color: var(--accent-primary);
 }
 
@@ -436,11 +495,13 @@ body {
     background: var(--bg-tertiary);
     color: var(--text-primary);
     cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .date-input:focus {
     outline: none;
     border-color: var(--accent-primary);
+    box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
 .date-separator {
@@ -453,7 +514,7 @@ body {
     font-weight: 600;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .filter-btn {
@@ -501,11 +562,14 @@ body {
 }
 
 .day-card {
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     margin-bottom: 16px;
     overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .day-header {
@@ -515,7 +579,7 @@ body {
     padding: 16px 20px;
     background: var(--bg-tertiary);
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .day-header:hover {
@@ -584,7 +648,7 @@ body {
     font-size: 0.85rem;
     color: var(--text-secondary);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .problem-chip:hover {
@@ -601,11 +665,13 @@ body {
 }
 
 .topic-card {
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 20px;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .topic-card:hover {
@@ -631,7 +697,7 @@ body {
     height: 100%;
     background: var(--accent-gradient);
     border-radius: 4px;
-    transition: width 0.5s ease;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .topic-count {
@@ -640,10 +706,13 @@ body {
 }
 
 .topic-chart {
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ===== Analytics Charts Section ===== */
@@ -654,9 +723,12 @@ body {
     margin-bottom: 24px;
     flex-wrap: wrap;
     padding: 16px;
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .date-filter-section label {
@@ -671,10 +743,33 @@ body {
 }
 
 .chart-card {
-    background: var(--bg-card);
+    position: relative;
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: 24px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chart-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.chart-card:hover::before {
+    opacity: 0.45;
 }
 
 .chart-header {
@@ -697,6 +792,7 @@ body {
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     min-width: 90px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .chart-stat.highlight {
@@ -711,6 +807,7 @@ body {
 .chart-stat-value {
     font-size: 1.35rem;
     font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
     color: var(--accent-primary);
 }
 
@@ -760,10 +857,13 @@ body {
 }
 
 .rating-bar-item {
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .rating-bar-header {
@@ -793,7 +893,7 @@ body {
 
 .rating-bar-fill {
     height: 100%;
-    transition: width 0.5s ease;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -824,10 +924,30 @@ body {
 }
 
 .mentoring-card {
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
+    border-left-width: 4px;
     border-radius: var(--radius-lg);
     overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mentoring-card.strengths {
+    border-left-color: var(--success);
+}
+
+.mentoring-card.improvements {
+    border-left-color: var(--warning);
+}
+
+.mentoring-card.advice {
+    border-left-color: var(--accent-primary);
+}
+
+.mentoring-card.priorities {
+    border-left-color: #8b5cf6;
 }
 
 .mentoring-card .card-header {
@@ -894,6 +1014,7 @@ body {
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     margin-bottom: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mentor-item:last-child {
@@ -928,10 +1049,13 @@ body {
 
 /* ===== Suggestions Section ===== */
 .suggestions-section {
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .suggestions-header {
@@ -957,7 +1081,7 @@ body {
     border-radius: var(--radius-md);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .refresh-btn:hover {
@@ -980,7 +1104,7 @@ body {
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     padding: 20px;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .suggestion-card:hover {
@@ -1030,6 +1154,7 @@ body {
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .suggestion-link:hover {
@@ -1038,10 +1163,13 @@ body {
 
 /* ===== Verdict Section ===== */
 .verdict-container {
-    background: var(--bg-card);
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-xl);
     padding: 40px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .verdict-comparison {
@@ -1059,6 +1187,7 @@ body {
     padding: 32px;
     border-radius: var(--radius-lg);
     border: 2px solid var(--border-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .verdict-card.virtual-rank {
@@ -1130,6 +1259,7 @@ body {
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     margin-bottom: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .recommendation-item:last-child {
@@ -1158,12 +1288,15 @@ body {
 
 /* ===== Footer ===== */
 .footer {
-    background: var(--bg-secondary);
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--border-color);
     padding: 24px 0;
     text-align: center;
     color: var(--text-tertiary);
     font-size: 0.9rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ===== Responsive Design ===== */

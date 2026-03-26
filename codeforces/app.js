@@ -557,11 +557,15 @@ function renderResults() {
             `;
         }).join('');
 
-    // Update virtual contest button meta
     const meta = $('#contestBtnMeta');
     if (meta) {
         const dur = selectedProblems.length * 30;
         meta.textContent = `${selectedProblems.length} problems · ${dur} min`;
+    }
+
+    const practiceMeta = $('#practiceBtnMeta');
+    if (practiceMeta) {
+        practiceMeta.textContent = `${selectedProblems.length} problems · 1h each`;
     }
 
     showElement('#resultsSection');
@@ -781,29 +785,31 @@ function pickProblems() {
 // =====================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize theme
     initTheme();
 
-    // Theme toggle
     const themeToggle = $('#themeToggle');
     if (themeToggle) {
         themeToggle.addEventListener('click', toggleTheme);
     }
 
-    // Check if privacy notice was dismissed
     if (localStorage.getItem('cf_privacy_dismissed')) {
         hideElement('#privacyNotice');
     }
 
-    // Update cache info
     updateCacheInfo();
 
-    // Handle Enter key in input
-    $('#handleInput').addEventListener('keypress', (e) => {
+    const handleInput = $('#handleInput');
+    if (handleInput && !handleInput.value) {
+        handleInput.value = 'rab8bit';
+    }
+
+    handleInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             fetchData();
         }
     });
+
+    loadUpsolveCounts();
 });
 
 // =====================================================
@@ -849,11 +855,62 @@ function createWarmUpContest() {
     window.location.href = '../contest/?from=picker';
 }
 
+// =====================================================
+// Practice Mode
+// =====================================================
+
+function startPractice() {
+    if (!state.selectedProblems || state.selectedProblems.length === 0) {
+        showMessage('No problems selected. Please pick problems first.', 'warning');
+        return;
+    }
+
+    const practiceData = {
+        problems: state.selectedProblems,
+        handle: state.handle,
+        timestamp: Date.now()
+    };
+
+    localStorage.setItem('cf_practice_data', JSON.stringify(practiceData));
+    localStorage.setItem('cf_upsolve_handle', state.handle);
+    window.location.href = 'practice/';
+}
+
+// =====================================================
+// Upsolve Dashboard
+// =====================================================
+
+async function loadUpsolveCounts() {
+    const handle = $('#handleInput').value.trim() || 'rab8bit';
+    try {
+        const token = localStorage.getItem('authToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+        const resp = await fetch(`${apiBase}/api/upsolve-data?handle=${encodeURIComponent(handle)}`, { headers });
+        const data = await resp.json();
+
+        const todoEl = document.getElementById('upsolveTodoCount');
+        const doneEl = document.getElementById('upsolveDoneCount');
+        if (todoEl) todoEl.textContent = (data.todo || []).length;
+        if (doneEl) doneEl.textContent = (data.solved || []).length;
+    } catch (e) {
+        const local = JSON.parse(localStorage.getItem('cf_upsolve_todo') || '[]');
+        const solved = JSON.parse(localStorage.getItem('cf_upsolve_solved') || '[]');
+        const todoEl = document.getElementById('upsolveTodoCount');
+        const doneEl = document.getElementById('upsolveDoneCount');
+        if (todoEl) todoEl.textContent = local.length;
+        if (doneEl) doneEl.textContent = solved.length;
+    }
+}
+
 // Make functions available globally for onclick handlers
 window.fetchData = fetchData;
 window.pickProblems = pickProblems;
 window.createVirtualContest = createVirtualContest;
 window.createWarmUpContest = createWarmUpContest;
+window.startPractice = startPractice;
 window.addSegment = addSegment;
 window.removeSegment = removeSegment;
 window.updateSegment = updateSegment;
