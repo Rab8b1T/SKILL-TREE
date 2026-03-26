@@ -829,10 +829,31 @@ function createVirtualContest() {
     window.location.href = '../contest/?from=picker';
 }
 
+function createWarmUpContest() {
+    if (!state.selectedProblems || state.selectedProblems.length === 0) {
+        showMessage('No problems selected. Please pick problems first.', 'warning');
+        return;
+    }
+
+    // Warm Up Contest is always 60 minutes (1 hour), regardless of problem count
+    const duration = 60;
+
+    const pickerData = {
+        problems: state.selectedProblems,
+        handle: state.handle,
+        duration,
+        timestamp: Date.now()
+    };
+
+    localStorage.setItem('cf_picker_contest_data', JSON.stringify(pickerData));
+    window.location.href = '../contest/?from=picker';
+}
+
 // Make functions available globally for onclick handlers
 window.fetchData = fetchData;
 window.pickProblems = pickProblems;
 window.createVirtualContest = createVirtualContest;
+window.createWarmUpContest = createWarmUpContest;
 window.addSegment = addSegment;
 window.removeSegment = removeSegment;
 window.updateSegment = updateSegment;
