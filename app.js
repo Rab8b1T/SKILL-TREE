@@ -1,6 +1,7 @@
 /**
  * SKILL TREE DASHBOARD - Main Application
  * A data-driven, accessible skill tree tracker with gamification
+ * 
  */
 
 (function () {

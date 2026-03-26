@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Mode - Codeforces</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <a href="../" class="back-link" title="Back to Problem Picker">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        <span>Back</span>
+                    </a>
+                    <div class="logo">
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <h1>Practice Mode</h1>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="handle-display" id="handleDisplay"></div>
+                    <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- No Data State -->
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <h2>No Problems Selected</h2>
+                <p>Go to the Problem Picker, select problems, then click "Start Practicing".</p>
+                <a href="../" class="btn-gradient btn-lg">Go to Problem Picker</a>
+            </div>
+
+            <!-- Practice Area -->
+            <div class="practice-area hidden" id="practiceArea">
+                <!-- Progress Bar -->
+                <div class="session-progress">
+                    <div class="progress-label">
+                        <span>Problem <span id="currentIndex">1</span> of <span id="totalCount">0</span></span>
+                        <span class="progress-pct" id="progressPct">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="sessionProgress"></div>
+                    </div>
+                </div>
+
+                <!-- Current Problem Card -->
+                <div class="problem-card" id="problemCard">
+                    <div class="problem-header">
+                        <span class="problem-phase-badge" id="phaseBadge">Ready</span>
+                        <span class="problem-rating" id="problemRating"></span>
+                    </div>
+                    <h2 class="problem-name" id="problemName"></h2>
+                    <a class="problem-link" id="problemLink" href="#" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                        Open on Codeforces
+                    </a>
+                    <div class="problem-tags" id="problemTags"></div>
+                </div>
+
+                <!-- Timer Section -->
+                <div class="timer-section" id="timerSection">
+                    <div class="timer-ring-container">
+                        <div class="timer-glow" id="timerGlow"></div>
+                        <svg class="timer-ring" viewBox="0 0 260 260">
+                            <defs>
+                                <linearGradient id="ringGradSolve" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#10b981"/>
+                                    <stop offset="100%" stop-color="#34d399"/>
+                                </linearGradient>
+                                <linearGradient id="ringGradTutorial" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#f59e0b"/>
+                                    <stop offset="100%" stop-color="#fbbf24"/>
+                                </linearGradient>
+                                <linearGradient id="ringGradFinal" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#ef4444"/>
+                                    <stop offset="100%" stop-color="#f87171"/>
+                                </linearGradient>
+                                <filter id="ringGlow">
+                                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                </filter>
+                            </defs>
+                            <circle class="timer-ring-track" cx="130" cy="130" r="110" fill="none" stroke-width="4" opacity="0.08"/>
+                            <circle class="timer-ring-bg" cx="130" cy="130" r="110" fill="none" stroke-width="12"/>
+                            <circle class="timer-ring-progress" id="timerRingProgress" cx="130" cy="130" r="110" fill="none" stroke-width="12"
+                                stroke-dasharray="691.15" stroke-dashoffset="0" stroke-linecap="round" filter="url(#ringGlow)"/>
+                        </svg>
+                        <div class="timer-display">
+                            <div class="timer-time" id="timerTime">30:00</div>
+                            <div class="timer-phase" id="timerPhase">Solve Phase</div>
+                        </div>
+                    </div>
+
+                    <div class="timer-phase-dots" id="phaseDots">
+                        <div class="phase-dot active" data-phase="0"><span class="dot-pip"></span><span class="dot-label">Solve</span></div>
+                        <div class="phase-connector"></div>
+                        <div class="phase-dot" data-phase="1"><span class="dot-pip"></span><span class="dot-label">Tutorial</span></div>
+                        <div class="phase-connector"></div>
+                        <div class="phase-dot" data-phase="2"><span class="dot-pip"></span><span class="dot-label">Final</span></div>
+                    </div>
+
+                    <div class="timer-controls">
+                        <button class="btn-timer btn-start" id="startPauseBtn" onclick="toggleTimer()">
+                            <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                            <svg class="icon-pause hidden" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                                <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                            </svg>
+                            <span id="startPauseText">Start</span>
+                        </button>
+                        <button class="btn-timer btn-refresh" id="refreshBtn" onclick="checkSubmission()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <path d="M23 4v6h-6M1 20v-6h6"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            <span>Check Submission</span>
+                        </button>
+                    </div>
+
+                    <div class="submission-status hidden" id="submissionStatus">
+                        <span class="status-icon" id="statusIcon"></span>
+                        <span class="status-text" id="statusText"></span>
+                    </div>
+                </div>
+
+                <!-- Post-Timer Actions -->
+                <div class="post-timer hidden" id="postTimer">
+                    <h3>Time's Up!</h3>
+                    <p>Did you solve the problem?</p>
+                    <div class="post-timer-actions">
+                        <button class="btn-completed" id="completedBtn" onclick="markCompleted()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Completed
+                        </button>
+                        <button class="btn-upsolve" id="upsolveBtn" onclick="markUpsolve()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Upsolve Later
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Queue Section -->
+                <div class="queue-section">
+                    <h3 class="queue-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                        </svg>
+                        Problem Queue
+                    </h3>
+                    <div class="queue-list" id="queueList"></div>
+                </div>
+
+                <!-- Session Complete -->
+                <div class="session-complete hidden" id="sessionComplete">
+                    <div class="complete-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="64" height="64">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                    <h2>Session Complete!</h2>
+                    <p>You've gone through all problems in your queue.</p>
+                    <div class="session-stats" id="sessionStats"></div>
+                    <a href="../" class="btn-gradient btn-lg">Back to Problem Picker</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Phase Transition Modal -->
+    <div class="modal hidden" id="phaseModal">
+        <div class="modal-content" id="phaseModalContent">
+            <div class="modal-icon" id="phaseModalIcon"></div>
+            <h2 id="phaseModalTitle"></h2>
+            <p id="phaseModalText"></p>
+            <button class="btn-gradient" onclick="dismissPhaseModal()">Continue</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

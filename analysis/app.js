@@ -17,6 +17,9 @@ const App = {
      */
     init() {
         this.cacheElements();
+        if (!this.elements.usernameInput.value.trim()) {
+            this.elements.usernameInput.value = 'rab8bit';
+        }
         this.bindEvents();
         this.loadTheme();
         this.setDefaultDates();

@@ -1,0 +1,131 @@
+:root {
+    --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-tertiary: #f1f5f9; --bg-card: #ffffff;
+    --bg-glass: rgba(255,255,255,0.7);
+    --text-primary: #0f172a; --text-secondary: #475569; --text-tertiary: #64748b; --text-muted: #94a3b8;
+    --border-color: #e2e8f0;
+    --accent: #3b82f6; --accent-2: #6366f1;
+    --accent-gradient: linear-gradient(135deg, #3b82f6, #6366f1);
+    --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1); --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    --radius-md: 10px; --radius-lg: 16px; --radius-xl: 24px;
+    --transition: 0.3s ease;
+}
+[data-theme="dark"] {
+    --bg-primary: #0a0f1e; --bg-secondary: #111827; --bg-tertiary: #1e293b; --bg-card: #151d2e;
+    --bg-glass: rgba(21,29,46,0.8);
+    --text-primary: #f1f5f9; --text-secondary: #cbd5e1; --text-tertiary: #94a3b8; --text-muted: #64748b;
+    --border-color: #1e293b;
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4); --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4);
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-primary); color: var(--text-primary);
+    line-height: 1.6; min-height: 100vh;
+    transition: background var(--transition), color var(--transition);
+}
+[data-theme="dark"] body {
+    background-image:
+        radial-gradient(ellipse 80% 60% at 50% -20%, rgba(16,185,129,0.05), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59,130,246,0.04), transparent);
+}
+.hidden { display: none !important; }
+.container { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+
+.header {
+    background: var(--bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 100;
+}
+.header .container { max-width: 800px; }
+.header-content { display: flex; justify-content: space-between; align-items: center; height: 64px; }
+.header-left { display: flex; align-items: center; gap: 16px; }
+.back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--text-tertiary); text-decoration: none; font-size: 0.85rem; font-weight: 500;
+    padding: 6px 12px; border-radius: var(--radius-md); transition: all var(--transition);
+}
+.back-link:hover { color: var(--accent); background: rgba(59,130,246,0.1); }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 28px; height: 28px; color: var(--success); }
+.logo h1 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 700;
+    background: linear-gradient(135deg, #10b981, #059669);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.count-badge {
+    background: var(--success); color: white; font-size: 0.8rem; font-weight: 700;
+    padding: 2px 10px; border-radius: 20px; font-family: 'JetBrains Mono', monospace;
+}
+.theme-toggle {
+    width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border-color);
+    background: var(--bg-tertiary); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all var(--transition); color: var(--text-secondary);
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.theme-toggle svg { width: 18px; height: 18px; }
+[data-theme="light"] .moon-icon, [data-theme="dark"] .sun-icon { display: none; }
+
+.main { padding: 32px 0 64px; }
+.page-header { margin-bottom: 32px; }
+.page-header h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+.page-header p { color: var(--text-tertiary); font-size: 0.9rem; }
+
+.loading-state {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    padding: 48px; color: var(--text-tertiary);
+}
+.spinner {
+    width: 24px; height: 24px; border: 3px solid var(--border-color); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state {
+    text-align: center; padding: 60px 24px; color: var(--text-muted);
+}
+.empty-state svg { margin-bottom: 16px; opacity: 0.5; }
+.empty-state h3 { font-family: 'Space Grotesk', sans-serif; margin-bottom: 8px; color: var(--text-secondary); }
+
+.problems-list { display: flex; flex-direction: column; gap: 12px; }
+
+.problem-item {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px 24px; background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+    transition: all var(--transition); animation: slideUp 0.3s ease;
+    border-left: 4px solid var(--success);
+}
+.problem-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+.solved-check {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(16,185,129,0.15); color: var(--success);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.problem-info { flex: 1; min-width: 0; }
+.problem-title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
+.problem-title {
+    font-weight: 600; font-size: 0.95rem; color: var(--text-primary);
+    text-decoration: none; transition: color var(--transition);
+}
+.problem-title:hover { color: var(--accent); }
+
+.problem-rating {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.8rem;
+    padding: 2px 10px; border-radius: 6px; background: var(--bg-tertiary);
+}
+.rating-gray { color: #808080; } .rating-green { color: #10b981; } .rating-cyan { color: #06b6d4; }
+.rating-blue { color: #3b82f6; } .rating-violet { color: #8b5cf6; } .rating-orange { color: #f59e0b; }
+.rating-red { color: #ef4444; }
+
+.problem-meta { display: flex; gap: 12px; }
+.meta-date { font-size: 0.8rem; color: var(--text-muted); }
+
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 600px) {
+    .container { padding: 0 16px; }
+    .problem-item { padding: 16px 20px; }
+}

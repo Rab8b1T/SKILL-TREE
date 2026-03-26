@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Codeforces Problem Picker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -239,24 +239,37 @@
                     </table>
                 </div>
 
-                <!-- Create Virtual Contest -->
+                <!-- Action Buttons -->
                 <div class="virtual-contest-section">
-                    <button class="btn-gradient btn-lg" onclick="createVirtualContest()" id="createContestBtn">
+                    <button class="btn-practice btn-lg" onclick="startPractice()" id="startPracticeBtn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            <polygon points="5 3 19 12 5 21 5 3"/>
                         </svg>
-                        Create Virtual Contest
-                        <span class="contest-btn-meta" id="contestBtnMeta"></span>
+                        Start Practicing
+                        <span class="contest-btn-meta" id="practiceBtnMeta"></span>
                     </button>
-                    <button class="btn-outline btn-lg" onclick="createWarmUpContest()" id="createWarmUpBtn" style="margin-top:10px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 14"/>
-                        </svg>
-                        Create Warm Up Contest
-                        <span class="contest-btn-meta">60 min &middot; fixed</span>
-                    </button>
-                    <p class="contest-btn-hint">Starts a timed virtual contest with these problems &mdash; 30 min per problem &nbsp;|&nbsp; <strong>Warm Up</strong> is always 60 min</p>
+                    <div class="action-buttons-row">
+                        <button class="btn-gradient btn-lg" onclick="createVirtualContest()" id="createContestBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            Virtual Contest
+                            <span class="contest-btn-meta" id="contestBtnMeta"></span>
+                        </button>
+                        <button class="btn-outline btn-lg" onclick="createWarmUpContest()" id="createWarmUpBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            Warm Up
+                            <span class="contest-btn-meta">60 min</span>
+                        </button>
+                    </div>
+                    <p class="contest-btn-hint">
+                        <strong>Practice:</strong> Solve one-by-one with timed phases &nbsp;|&nbsp;
+                        <strong>Contest:</strong> All at once, 30 min/problem &nbsp;|&nbsp;
+                        <strong>Warm Up:</strong> 60 min fixed
+                    </p>
                 </div>
 
                 <!-- Export -->
@@ -293,6 +306,38 @@
             </section>
         </div>
     </main>
+
+    <!-- Upsolve Section -->
+    <section class="upsolve-dashboard" id="upsolveDashboard">
+        <div class="container">
+            <div class="upsolve-cards">
+                <a href="upsolve/" class="upsolve-card upsolve-todo">
+                    <div class="upsolve-card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="upsolve-card-info">
+                        <h3>Upsolve Todo</h3>
+                        <p>Problems to upsolve</p>
+                    </div>
+                    <span class="upsolve-count" id="upsolveTodoCount">0</span>
+                </a>
+                <a href="upsolved/" class="upsolve-card upsolve-done">
+                    <div class="upsolve-card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                    <div class="upsolve-card-info">
+                        <h3>Upsolved</h3>
+                        <p>Completed upsolves</p>
+                    </div>
+                    <span class="upsolve-count done" id="upsolveDoneCount">0</span>
+                </a>
+            </div>
+        </div>
+    </section>
 
     <!-- Footer -->
     <footer class="footer">
