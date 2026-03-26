@@ -7,7 +7,7 @@ const CONFIG = {
         { name: 'Tutorial Phase', duration: 15 * 60, color: '#f59e0b', cssClass: 'phase-tutorial' },
         { name: 'Final Attempt', duration: 15 * 60, color: '#ef4444', cssClass: 'phase-final' }
     ],
-    RING_CIRCUMFERENCE: 2 * Math.PI * 90 // ~565.48
+    RING_CIRCUMFERENCE: 2 * Math.PI * 110 // ~691.15
 };
 
 const state = {
@@ -210,14 +210,17 @@ function resumeTimer() {
 }
 
 function updateControlUI() {
+    const section = $('#timerSection');
     if (state.isRunning && !state.isPaused) {
         $('#startPauseText').textContent = 'Pause';
         hideEl('.icon-play');
         showEl('.icon-pause');
+        section.classList.add('running');
     } else {
         $('#startPauseText').textContent = state.isPaused ? 'Resume' : 'Start';
         showEl('.icon-play');
         hideEl('.icon-pause');
+        section.classList.remove('running');
     }
 }
 
@@ -242,10 +245,23 @@ function updateTimerUI() {
     const offset = CONFIG.RING_CIRCUMFERENCE * progress;
     const ring = $('#timerRingProgress');
     ring.style.strokeDashoffset = offset;
-    ring.style.stroke = phase.color;
 
-    const bg = $('#timerRingProgress').previousElementSibling;
+    const gradIds = ['url(#ringGradSolve)', 'url(#ringGradTutorial)', 'url(#ringGradFinal)'];
+    ring.setAttribute('stroke', gradIds[state.currentPhase] || gradIds[0]);
+
+    const bg = ring.previousElementSibling;
     bg.style.stroke = phase.color + '22';
+
+    const section = $('#timerSection');
+    section.className = 'timer-section ' + phase.cssClass;
+    if (state.isRunning && !state.isPaused) section.classList.add('running');
+
+    const dots = document.querySelectorAll('.phase-dot');
+    dots.forEach((dot, i) => {
+        dot.classList.remove('active', 'completed');
+        if (i === state.currentPhase) dot.classList.add('active');
+        else if (i < state.currentPhase) dot.classList.add('completed');
+    });
 
     $('#phaseBadge').textContent = phase.name;
     $('#phaseBadge').className = 'problem-phase-badge ' + phase.cssClass;

@@ -87,15 +87,43 @@
                 <!-- Timer Section -->
                 <div class="timer-section" id="timerSection">
                     <div class="timer-ring-container">
-                        <svg class="timer-ring" viewBox="0 0 200 200">
-                            <circle class="timer-ring-bg" cx="100" cy="100" r="90" fill="none" stroke-width="8"/>
-                            <circle class="timer-ring-progress" id="timerRingProgress" cx="100" cy="100" r="90" fill="none" stroke-width="8"
-                                stroke-dasharray="565.48" stroke-dashoffset="0" stroke-linecap="round"/>
+                        <div class="timer-glow" id="timerGlow"></div>
+                        <svg class="timer-ring" viewBox="0 0 260 260">
+                            <defs>
+                                <linearGradient id="ringGradSolve" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#10b981"/>
+                                    <stop offset="100%" stop-color="#34d399"/>
+                                </linearGradient>
+                                <linearGradient id="ringGradTutorial" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#f59e0b"/>
+                                    <stop offset="100%" stop-color="#fbbf24"/>
+                                </linearGradient>
+                                <linearGradient id="ringGradFinal" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#ef4444"/>
+                                    <stop offset="100%" stop-color="#f87171"/>
+                                </linearGradient>
+                                <filter id="ringGlow">
+                                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                </filter>
+                            </defs>
+                            <circle class="timer-ring-track" cx="130" cy="130" r="110" fill="none" stroke-width="4" opacity="0.08"/>
+                            <circle class="timer-ring-bg" cx="130" cy="130" r="110" fill="none" stroke-width="12"/>
+                            <circle class="timer-ring-progress" id="timerRingProgress" cx="130" cy="130" r="110" fill="none" stroke-width="12"
+                                stroke-dasharray="691.15" stroke-dashoffset="0" stroke-linecap="round" filter="url(#ringGlow)"/>
                         </svg>
                         <div class="timer-display">
                             <div class="timer-time" id="timerTime">30:00</div>
                             <div class="timer-phase" id="timerPhase">Solve Phase</div>
                         </div>
+                    </div>
+
+                    <div class="timer-phase-dots" id="phaseDots">
+                        <div class="phase-dot active" data-phase="0"><span class="dot-pip"></span><span class="dot-label">Solve</span></div>
+                        <div class="phase-connector"></div>
+                        <div class="phase-dot" data-phase="1"><span class="dot-pip"></span><span class="dot-label">Tutorial</span></div>
+                        <div class="phase-connector"></div>
+                        <div class="phase-dot" data-phase="2"><span class="dot-pip"></span><span class="dot-label">Final</span></div>
                     </div>
 
                     <div class="timer-controls">

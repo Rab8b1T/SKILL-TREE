@@ -52,6 +52,11 @@ body {
     min-height: 100vh;
     transition: background var(--transition), color var(--transition);
 }
+[data-theme="dark"] body {
+    background-image:
+        radial-gradient(ellipse 80% 60% at 50% -20%, rgba(99,102,241,0.06), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59,130,246,0.05), transparent);
+}
 
 .hidden { display: none !important; }
 .container { max-width: 800px; margin: 0 auto; padding: 0 24px; }
@@ -235,28 +240,51 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 32px;
+    padding: 40px 32px;
     background: var(--bg-card);
     border-radius: var(--radius-xl);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);
     margin-bottom: 24px;
     animation: slideUp 0.5s ease 0.1s both;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.6s ease;
 }
+.timer-section.phase-solve { border-color: rgba(16,185,129,0.3); }
+.timer-section.phase-tutorial { border-color: rgba(245,158,11,0.3); }
+.timer-section.phase-final { border-color: rgba(239,68,68,0.3); }
 
 .timer-ring-container {
     position: relative;
-    width: 200px;
-    height: 200px;
-    margin-bottom: 24px;
+    width: 260px;
+    height: 260px;
+    margin-bottom: 28px;
+}
+
+.timer-glow {
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%);
+    transition: background 0.6s ease;
+    pointer-events: none;
+}
+.timer-section.running .timer-glow { animation: glowPulse 2.5s ease-in-out infinite; }
+.timer-section.phase-tutorial .timer-glow { background: radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%); }
+.timer-section.phase-final .timer-glow { background: radial-gradient(circle, rgba(239,68,68,0.15) 0%, transparent 70%); }
+
+@keyframes glowPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.08); }
 }
 
 .timer-ring { width: 100%; height: 100%; transform: rotate(-90deg); }
-.timer-ring-bg { stroke: var(--bg-tertiary); }
+.timer-ring-track { stroke: var(--text-muted); }
+.timer-ring-bg { stroke: var(--bg-tertiary); transition: stroke 0.4s ease; }
 .timer-ring-progress {
     stroke: var(--success);
-    transition: stroke 0.4s ease, stroke-dashoffset 0.3s linear;
-    filter: drop-shadow(0 0 6px currentColor);
+    transition: stroke 0.6s ease, stroke-dashoffset 0.3s linear;
 }
 
 .timer-display {
@@ -268,19 +296,83 @@ body {
 
 .timer-time {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 2.5rem;
+    font-size: 3.2rem;
     font-weight: 700;
     line-height: 1;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    background: linear-gradient(180deg, var(--text-primary) 40%, var(--text-tertiary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .timer-phase {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-tertiary);
-    margin-top: 4px;
-    font-weight: 500;
+    margin-top: 8px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+}
+
+/* Phase indicator dots */
+.timer-phase-dots {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 28px;
+}
+.phase-dot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.4;
+    transition: all 0.4s ease;
+}
+.phase-dot.active { opacity: 1; }
+.phase-dot.completed { opacity: 0.7; }
+.dot-pip {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    transition: all 0.4s ease;
+}
+.phase-dot.active .dot-pip {
+    background: var(--success);
+    border-color: var(--success);
+    box-shadow: 0 0 8px rgba(16,185,129,0.5);
+}
+.phase-dot.completed .dot-pip {
+    background: var(--text-muted);
+    border-color: var(--text-muted);
+}
+.phase-dot[data-phase="1"].active .dot-pip {
+    background: var(--warning);
+    border-color: var(--warning);
+    box-shadow: 0 0 8px rgba(245,158,11,0.5);
+}
+.phase-dot[data-phase="2"].active .dot-pip {
+    background: var(--danger);
+    border-color: var(--danger);
+    box-shadow: 0 0 8px rgba(239,68,68,0.5);
+}
+.dot-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+}
+.phase-dot.active .dot-label { color: var(--text-primary); }
+.phase-connector {
+    width: 40px;
+    height: 2px;
+    background: var(--border-color);
+    margin: 0 4px;
+    margin-bottom: 20px;
+    transition: background 0.4s ease;
 }
 
 .timer-controls { display: flex; gap: 12px; margin-bottom: 16px; }
@@ -531,13 +623,23 @@ body {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
 /* ===== Responsive ===== */
 @media (max-width: 600px) {
     .container { padding: 0 16px; }
     .problem-card { padding: 24px 20px; }
     .problem-name { font-size: 1.15rem; }
-    .timer-ring-container { width: 160px; height: 160px; }
-    .timer-time { font-size: 2rem; }
+    .timer-ring-container { width: 200px; height: 200px; }
+    .timer-ring-container svg { viewBox: 0 0 260 260; }
+    .timer-time { font-size: 2.2rem; }
+    .timer-phase-dots { margin-bottom: 20px; }
+    .phase-connector { width: 24px; }
+    .dot-label { font-size: 0.6rem; }
     .timer-controls { flex-direction: column; width: 100%; }
     .btn-timer { width: 100%; justify-content: center; }
     .post-timer-actions { flex-direction: column; }

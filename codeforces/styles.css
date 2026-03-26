@@ -258,6 +258,7 @@ body {
     content: ''; position: absolute; inset: 0;
     background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
     opacity: 0; transition: opacity var(--transition);
+    pointer-events: none;
 }
 .btn-gradient:hover::before { opacity: 1; }
 .btn-gradient:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px var(--accent-glow); }
@@ -527,6 +528,7 @@ body {
     content: ''; position: absolute; inset: 0;
     background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
     opacity: 0; transition: opacity var(--transition);
+    pointer-events: none;
 }
 .problem-tag:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 6px 20px var(--accent-glow); }
 .problem-tag:hover::before { opacity: 1; }
