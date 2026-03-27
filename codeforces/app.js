@@ -810,6 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     loadUpsolveCounts();
+    checkActivePractice();
 });
 
 // =====================================================
@@ -873,6 +874,37 @@ function startPractice() {
 
     localStorage.setItem('cf_practice_data', JSON.stringify(practiceData));
     localStorage.setItem('cf_upsolve_handle', state.handle);
+
+    // Also create the active practice session in MongoDB
+    const token = localStorage.getItem('authToken');
+    if (token && state.handle) {
+        const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+        const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+        fetch(`${apiBase}/api/practice/data`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                cfHandle: state.handle,
+                activePractice: {
+                    problems: state.selectedProblems,
+                    handle: state.handle,
+                    currentProblemIndex: 0,
+                    currentPhase: 0,
+                    phaseStartTime: null,
+                    phasePausedElapsed: 0,
+                    isPaused: false,
+                    pauseStartTime: null,
+                    isRunning: false,
+                    sessionStarted: false,
+                    completed: 0,
+                    upsolveCount: 0,
+                    problemResults: []
+                },
+                lastSyncTime: new Date().toISOString()
+            })
+        }).catch(e => console.warn('Could not sync practice start:', e));
+    }
+
     window.location.href = 'practice/';
 }
 
@@ -902,6 +934,40 @@ async function loadUpsolveCounts() {
         const doneEl = document.getElementById('upsolveDoneCount');
         if (todoEl) todoEl.textContent = local.length;
         if (doneEl) doneEl.textContent = solved.length;
+    }
+}
+
+// =====================================================
+// Active Practice Session Check
+// =====================================================
+
+async function checkActivePractice() {
+    const handle = $('#handleInput').value.trim() || 'rab8bit';
+    const token = localStorage.getItem('authToken');
+    if (!token || !handle) return;
+
+    try {
+        const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+        const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+        const resp = await fetch(`${apiBase}/api/practice/data?handle=${encodeURIComponent(handle)}`, { headers });
+        const data = await resp.json();
+
+        if (data.activePractice && data.activePractice.problems && data.activePractice.problems.length > 0) {
+            const ap = data.activePractice;
+            const total = ap.problems.length;
+            const current = (ap.currentProblemIndex || 0) + 1;
+            const completed = ap.completed || 0;
+
+            const banner = document.getElementById('activePracticeBanner');
+            const detail = document.getElementById('activePracticeDetail');
+            if (banner && detail) {
+                detail.textContent = `Problem ${current} of ${total} · ${completed} completed${ap.isPaused ? ' · Paused' : ap.isRunning ? ' · Running' : ''}`;
+                banner.classList.remove('hidden');
+            }
+        }
+    } catch (e) {
+        // Silently fail — not critical
+        console.warn('Could not check active practice:', e);
     }
 }
 

@@ -26,6 +26,10 @@
                     </div>
                 </div>
                 <div class="header-actions">
+                    <div class="sync-status syncing" id="syncStatus">
+                        <span class="sync-dot"></span>
+                        <span class="sync-text">Loading...</span>
+                    </div>
                     <div class="handle-display" id="handleDisplay"></div>
                     <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
                         <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -40,8 +44,32 @@
         </div>
     </header>
 
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <main class="main">
         <div class="container">
+            <!-- Session Restored Banner -->
+            <div class="restore-banner hidden" id="restoreBanner">
+                <div class="restore-banner-content">
+                    <div class="restore-banner-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                            <path d="M23 4v6h-6M1 20v-6h6"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                    </div>
+                    <div class="restore-banner-text">
+                        <strong>Session Restored</strong>
+                        <span>Your practice session has been resumed from the cloud.</span>
+                    </div>
+                    <button class="restore-banner-dismiss" onclick="dismissRestoreBanner()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
             <!-- No Data State -->
             <div class="empty-state" id="emptyState">
                 <div class="empty-icon">
@@ -181,6 +209,16 @@
                         Problem Queue
                     </h3>
                     <div class="queue-list" id="queueList"></div>
+                </div>
+
+                <!-- Abandon Session Button -->
+                <div class="abandon-section">
+                    <button class="btn-abandon" onclick="abandonSession()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                        Abandon Session
+                    </button>
                 </div>
 
                 <!-- Session Complete -->

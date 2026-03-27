@@ -1,4 +1,4 @@
-// Practice Mode Application
+// Practice Mode Application — MongoDB-backed with server-timestamp timers
 const CONFIG = {
     API_BASE: 'https://codeforces.com/api',
     CORS_PROXY: 'https://corsproxy.io/?',
@@ -10,20 +10,37 @@ const CONFIG = {
     RING_CIRCUMFERENCE: 2 * Math.PI * 110 // ~691.15
 };
 
+const PRACTICE_API = window.location.hostname === 'localhost'
+    ? 'http://localhost:5000/api'
+    : '/api';
+
+function getAuthHeaders() {
+    const token = localStorage.getItem('authToken');
+    const h = { 'Content-Type': 'application/json' };
+    if (token) h['Authorization'] = 'Bearer ' + token;
+    return h;
+}
+
 const state = {
     problems: [],
     handle: '',
     currentProblemIndex: 0,
     currentPhase: 0,
-    timeRemaining: 0,
-    totalPhaseTime: 0,
-    timerInterval: null,
+    // Server-timestamp fields (replaces setInterval tick counting)
+    phaseStartTime: null,     // Wall-clock ms when current phase timer started
+    phasePausedElapsed: 0,    // Total ms spent paused in current phase
     isPaused: false,
+    pauseStartTime: null,     // Wall-clock ms when pause started (null if not paused)
     isRunning: false,
     useCorsProxy: false,
     completed: 0,
     upsolveCount: 0,
-    sessionStarted: false
+    sessionStarted: false,
+    problemResults: [],       // Track results per problem
+    // Sync
+    apiSyncEnabled: true,
+    _syncTimeout: null,
+    animFrameId: null
 };
 
 let audioCtx = null;
@@ -32,7 +49,7 @@ function $(sel) { return document.querySelector(sel); }
 function showEl(el) { if (typeof el === 'string') el = $(el); if (el) el.classList.remove('hidden'); }
 function hideEl(el) { if (typeof el === 'string') el = $(el); if (el) el.classList.add('hidden'); }
 
-// Theme
+// ===== Theme =====
 function initTheme() {
     const saved = localStorage.getItem('cf_picker_theme');
     if (saved) document.documentElement.setAttribute('data-theme', saved);
@@ -43,7 +60,37 @@ function toggleTheme() {
     localStorage.setItem('cf_picker_theme', next);
 }
 
-// Audio alarm using Web Audio API
+// ===== Toast System =====
+function showToast(message, type = 'info') {
+    const container = $('#toastContainer');
+    if (!container) return;
+    const icons = { success: '\u2713', error: '\u2715', warning: '\u26A0', info: '\u2139' };
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || icons.info}</span>
+        <span class="toast-text">${message}</span>
+        <button class="toast-close-btn" onclick="this.parentElement.remove()">&times;</button>
+    `;
+
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 300);
+    }, type === 'error' ? 5000 : 3000);
+}
+
+// ===== Sync Status =====
+function updateSyncStatus(status, text) {
+    const syncEl = $('#syncStatus');
+    if (!syncEl) return;
+    const syncText = syncEl.querySelector('.sync-text');
+    syncEl.className = 'sync-status ' + status;
+    if (syncText) syncText.textContent = text;
+}
+
+// ===== Audio alarm =====
 function playAlarm() {
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -66,36 +113,303 @@ function playAlarm() {
     }
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
-    $('#themeToggle').addEventListener('click', toggleTheme);
+// ===== API Sync =====
+function debouncedSync() {
+    if (state._syncTimeout) clearTimeout(state._syncTimeout);
+    state._syncTimeout = setTimeout(() => syncToAPI(), 1500);
+}
 
-    const raw = localStorage.getItem('cf_practice_data');
-    if (!raw) {
-        showEl('#emptyState');
+async function syncToAPI() {
+    if (!state.apiSyncEnabled || !state.handle) {
         return;
     }
 
+    updateSyncStatus('syncing', 'Syncing...');
+
     try {
-        const data = JSON.parse(raw);
-        if (!data.problems || data.problems.length === 0) {
-            showEl('#emptyState');
-            return;
+        let activePractice = null;
+        if (state.sessionStarted && state.problems.length > 0) {
+            activePractice = {
+                problems: state.problems,
+                handle: state.handle,
+                currentProblemIndex: state.currentProblemIndex,
+                currentPhase: state.currentPhase,
+                phaseStartTime: state.phaseStartTime,
+                phasePausedElapsed: state.phasePausedElapsed,
+                isPaused: state.isPaused,
+                pauseStartTime: state.pauseStartTime,
+                isRunning: state.isRunning,
+                sessionStarted: state.sessionStarted,
+                completed: state.completed,
+                upsolveCount: state.upsolveCount,
+                problemResults: state.problemResults
+            };
         }
-        state.problems = data.problems;
-        state.handle = data.handle || '';
+
+        const response = await fetch(`${PRACTICE_API}/practice/data`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                cfHandle: state.handle,
+                activePractice,
+                lastSyncTime: new Date().toISOString()
+            })
+        });
+
+        if (response.ok) {
+            updateSyncStatus('synced', 'Cloud \u2601');
+        } else {
+            updateSyncStatus('error', 'Local only');
+        }
+    } catch (error) {
+        console.warn('Sync error:', error.message);
+        updateSyncStatus('error', 'Offline');
+        state.apiSyncEnabled = false;
+    }
+}
+
+async function syncNow() {
+    if (!state.handle) return;
+    updateSyncStatus('syncing', 'Saving...');
+    try {
+        let activePractice = null;
+        if (state.sessionStarted && state.problems.length > 0) {
+            activePractice = {
+                problems: state.problems,
+                handle: state.handle,
+                currentProblemIndex: state.currentProblemIndex,
+                currentPhase: state.currentPhase,
+                phaseStartTime: state.phaseStartTime,
+                phasePausedElapsed: state.phasePausedElapsed,
+                isPaused: state.isPaused,
+                pauseStartTime: state.pauseStartTime,
+                isRunning: state.isRunning,
+                sessionStarted: state.sessionStarted,
+                completed: state.completed,
+                upsolveCount: state.upsolveCount,
+                problemResults: state.problemResults
+            };
+        }
+        const response = await fetch(`${PRACTICE_API}/practice/data`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                cfHandle: state.handle,
+                activePractice,
+                lastSyncTime: new Date().toISOString()
+            })
+        });
+        if (response.ok) {
+            updateSyncStatus('synced', 'Cloud \u2601');
+        } else {
+            updateSyncStatus('error', 'Save failed');
+        }
+    } catch (err) {
+        console.warn('syncNow error:', err.message);
+        updateSyncStatus('error', 'Offline');
+    }
+}
+
+async function loadFromAPI(handle) {
+    if (!handle) {
+        state.apiSyncEnabled = false;
+        updateSyncStatus('error', 'No handle');
+        return null;
+    }
+    try {
+        const url = `${PRACTICE_API}/practice/data?handle=${encodeURIComponent(handle)}`;
+        const response = await fetch(url, { headers: getAuthHeaders() });
+
+        if (!response.ok) throw new Error(`API returned ${response.status}`);
+
+        const data = await response.json();
+        state.apiSyncEnabled = true;
+        updateSyncStatus('synced', 'Cloud \u2601');
+        return data;
+    } catch (error) {
+        console.warn('Failed to load from API:', error.message);
+        state.apiSyncEnabled = false;
+        updateSyncStatus('error', 'Offline');
+        return null;
+    }
+}
+
+// ===== Initialize =====
+document.addEventListener('DOMContentLoaded', async () => {
+    initTheme();
+    $('#themeToggle').addEventListener('click', toggleTheme);
+
+    // Auth check
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        // Still allow usage, but disable sync
+        state.apiSyncEnabled = false;
+        updateSyncStatus('error', 'Not logged in');
+    }
+
+    // Try to get handle from localStorage data first
+    const raw = localStorage.getItem('cf_practice_data');
+    let localData = null;
+    if (raw) {
+        try {
+            localData = JSON.parse(raw);
+            state.handle = localData.handle || '';
+        } catch (e) {
+            console.error('Failed to parse local practice data:', e);
+        }
+    }
+
+    if (!state.handle) {
+        state.handle = localStorage.getItem('cf_upsolve_handle') || '';
+    }
+
+    $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
+
+    // Try to load from API first
+    let apiData = null;
+    if (state.handle && token) {
+        apiData = await loadFromAPI(state.handle);
+    }
+
+    // Restore active session from API if it exists
+    if (apiData && apiData.activePractice && apiData.activePractice.problems && apiData.activePractice.problems.length > 0) {
+        const ap = apiData.activePractice;
+        state.problems = ap.problems;
+        state.handle = ap.handle || state.handle;
+        state.currentProblemIndex = ap.currentProblemIndex || 0;
+        state.currentPhase = ap.currentPhase || 0;
+        state.phaseStartTime = ap.phaseStartTime;
+        state.phasePausedElapsed = ap.phasePausedElapsed || 0;
+        state.isPaused = ap.isPaused || false;
+        state.pauseStartTime = ap.pauseStartTime;
+        state.isRunning = ap.isRunning || false;
+        state.sessionStarted = ap.sessionStarted || false;
+        state.completed = ap.completed || 0;
+        state.upsolveCount = ap.upsolveCount || 0;
+        state.problemResults = ap.problemResults || [];
+
+        // Clear local data since we're using cloud data
+        localStorage.removeItem('cf_practice_data');
+
+        $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
+        $('#totalCount').textContent = state.problems.length;
+        hideEl('#emptyState');
+        showEl('#practiceArea');
+
+        // Show restore banner
+        showEl('#restoreBanner');
+        showToast('Practice session restored from cloud!', 'success');
+
+        // Restore the session state
+        restoreSession();
+        return;
+    }
+
+    // Fall back to localStorage data
+    if (localData && localData.problems && localData.problems.length > 0) {
+        state.problems = localData.problems;
+        state.handle = localData.handle || '';
         $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
         $('#totalCount').textContent = state.problems.length;
         hideEl('#emptyState');
         showEl('#practiceArea');
         loadCurrentProblem();
-    } catch (e) {
-        console.error('Failed to parse practice data:', e);
-        showEl('#emptyState');
+        return;
     }
+
+    // No data at all
+    showEl('#emptyState');
 });
 
+function restoreSession() {
+    if (state.currentProblemIndex >= state.problems.length) {
+        showSessionComplete();
+        return;
+    }
+
+    // If was paused, account for time since page was closed while paused
+    if (state.isPaused && state.pauseStartTime) {
+        // Pause time already accumulated, pauseStartTime is when pause began
+        // We keep it as-is; elapsed will be computed correctly
+    }
+
+    // If was running (not paused), check if the phase has expired
+    if (state.isRunning && !state.isPaused && state.phaseStartTime) {
+        const elapsed = getPhaseElapsedMs();
+        const phaseDurationMs = CONFIG.PHASES[state.currentPhase].duration * 1000;
+
+        if (elapsed >= phaseDurationMs) {
+            // Phase expired while we were away — handle phase transitions
+            handleMissedPhaseTransitions();
+            return;
+        }
+    }
+
+    loadCurrentProblem();
+
+    // Restore timer visual state
+    if (state.sessionStarted && state.isRunning) {
+        updateControlUI();
+        updateTimerUI();
+
+        if (!state.isPaused) {
+            startAnimationLoop();
+        }
+    }
+}
+
+function handleMissedPhaseTransitions() {
+    // Walk through phases that may have elapsed while page was closed
+    while (state.currentPhase < CONFIG.PHASES.length) {
+        const elapsed = getPhaseElapsedMs();
+        const phaseDurationMs = CONFIG.PHASES[state.currentPhase].duration * 1000;
+
+        if (elapsed >= phaseDurationMs) {
+            if (state.currentPhase < CONFIG.PHASES.length - 1) {
+                // Move to next phase
+                const overshoot = elapsed - phaseDurationMs;
+                state.currentPhase++;
+                state.phaseStartTime = Date.now() - overshoot;
+                state.phasePausedElapsed = 0;
+            } else {
+                // All phases done
+                state.isRunning = false;
+                loadCurrentProblem();
+                hideEl('#timerSection');
+                showEl('#postTimer');
+                debouncedSync();
+                return;
+            }
+        } else {
+            break;
+        }
+    }
+
+    loadCurrentProblem();
+    updateControlUI();
+    updateTimerUI();
+    startAnimationLoop();
+}
+
+// ===== Timer Computation (server-timestamp based) =====
+function getPhaseElapsedMs() {
+    if (!state.phaseStartTime) return 0;
+
+    let pausedMs = state.phasePausedElapsed || 0;
+    if (state.isPaused && state.pauseStartTime) {
+        pausedMs += (Date.now() - state.pauseStartTime);
+    }
+
+    return Date.now() - state.phaseStartTime - pausedMs;
+}
+
+function getTimeRemainingSeconds() {
+    const phaseDurationMs = CONFIG.PHASES[state.currentPhase].duration * 1000;
+    const elapsed = getPhaseElapsedMs();
+    return Math.max(0, Math.ceil((phaseDurationMs - elapsed) / 1000));
+}
+
+// ===== Problem Loading =====
 function loadCurrentProblem() {
     if (state.currentProblemIndex >= state.problems.length) {
         showSessionComplete();
@@ -116,12 +430,16 @@ function loadCurrentProblem() {
     $('#progressPct').textContent = pct + '%';
     $('#sessionProgress').style.width = pct + '%';
 
-    resetTimer();
+    if (!state.sessionStarted || !state.isRunning) {
+        resetTimerUI();
+    }
+
     hideEl('#postTimer');
     hideEl('#sessionComplete');
     showEl('#timerSection');
     showEl('#problemCard');
     hideEl('#submissionStatus');
+    hideEl('#restoreBanner');
     renderQueue();
 }
 
@@ -153,27 +471,33 @@ function renderQueue() {
     }).join('');
 }
 
-// Timer
-function resetTimer() {
-    clearInterval(state.timerInterval);
+// ===== Timer =====
+function resetTimerUI() {
+    cancelAnimationFrame(state.animFrameId);
     state.currentPhase = 0;
     state.isRunning = false;
     state.isPaused = false;
     state.sessionStarted = false;
-    setPhaseTime(0);
-    updateTimerUI();
+    state.phaseStartTime = null;
+    state.phasePausedElapsed = 0;
+    state.pauseStartTime = null;
+
+    const phase = CONFIG.PHASES[0];
+    const mins = Math.floor(phase.duration / 60);
+    const secs = phase.duration % 60;
+    $('#timerTime').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    $('#timerPhase').textContent = phase.name;
+    $('#timerRingProgress').style.strokeDashoffset = '0';
+
     $('#startPauseText').textContent = 'Start';
     showEl('.icon-play');
     hideEl('.icon-pause');
     $('#phaseBadge').textContent = 'Ready';
     $('#phaseBadge').className = 'problem-phase-badge';
     $('#problemCard').className = 'problem-card';
-}
 
-function setPhaseTime(phaseIndex) {
-    const phase = CONFIG.PHASES[phaseIndex];
-    state.totalPhaseTime = phase.duration;
-    state.timeRemaining = phase.duration;
+    const section = $('#timerSection');
+    section.className = 'timer-section';
 }
 
 function toggleTimer() {
@@ -189,24 +513,37 @@ function toggleTimer() {
 function startTimer() {
     if (!state.sessionStarted) {
         state.sessionStarted = true;
-        setPhaseTime(0);
+        state.currentPhase = 0;
+        state.phaseStartTime = Date.now();
+        state.phasePausedElapsed = 0;
+        state.pauseStartTime = null;
     }
     state.isRunning = true;
     state.isPaused = false;
     updateControlUI();
-    state.timerInterval = setInterval(tick, 1000);
+    startAnimationLoop();
+    debouncedSync();
 }
 
 function pauseTimer() {
     state.isPaused = true;
-    clearInterval(state.timerInterval);
+    state.pauseStartTime = Date.now();
+    cancelAnimationFrame(state.animFrameId);
     updateControlUI();
+    syncNow();
+    showToast('Timer paused', 'warning');
 }
 
 function resumeTimer() {
+    if (state.pauseStartTime) {
+        state.phasePausedElapsed += (Date.now() - state.pauseStartTime);
+    }
     state.isPaused = false;
+    state.pauseStartTime = null;
     updateControlUI();
-    state.timerInterval = setInterval(tick, 1000);
+    startAnimationLoop();
+    debouncedSync();
+    showToast('Timer resumed', 'success');
 }
 
 function updateControlUI() {
@@ -224,24 +561,34 @@ function updateControlUI() {
     }
 }
 
-function tick() {
-    state.timeRemaining--;
-    updateTimerUI();
+// ===== Animation Frame Loop (replaces setInterval) =====
+function startAnimationLoop() {
+    cancelAnimationFrame(state.animFrameId);
 
-    if (state.timeRemaining <= 0) {
-        clearInterval(state.timerInterval);
-        onPhaseEnd();
+    function tick() {
+        const remaining = getTimeRemainingSeconds();
+        updateTimerUI();
+
+        if (remaining <= 0) {
+            onPhaseEnd();
+            return;
+        }
+
+        state.animFrameId = requestAnimationFrame(tick);
     }
+
+    state.animFrameId = requestAnimationFrame(tick);
 }
 
 function updateTimerUI() {
     const phase = CONFIG.PHASES[state.currentPhase];
-    const mins = Math.floor(Math.abs(state.timeRemaining) / 60);
-    const secs = Math.abs(state.timeRemaining) % 60;
+    const remaining = getTimeRemainingSeconds();
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
     $('#timerTime').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     $('#timerPhase').textContent = phase.name;
 
-    const progress = 1 - (state.timeRemaining / state.totalPhaseTime);
+    const progress = 1 - (remaining / phase.duration);
     const offset = CONFIG.RING_CIRCUMFERENCE * progress;
     const ring = $('#timerRingProgress');
     ring.style.strokeDashoffset = offset;
@@ -269,6 +616,7 @@ function updateTimerUI() {
 }
 
 function onPhaseEnd() {
+    cancelAnimationFrame(state.animFrameId);
     playAlarm();
     const phase = CONFIG.PHASES[state.currentPhase];
 
@@ -280,9 +628,12 @@ function onPhaseEnd() {
             phase.color
         );
         state.currentPhase++;
-        setPhaseTime(state.currentPhase);
+        state.phaseStartTime = Date.now();
+        state.phasePausedElapsed = 0;
+        state.pauseStartTime = null;
         updateTimerUI();
-        state.timerInterval = setInterval(tick, 1000);
+        startAnimationLoop();
+        debouncedSync();
     } else {
         showPhaseModal(
             'All Phases Complete!',
@@ -292,6 +643,7 @@ function onPhaseEnd() {
         state.isRunning = false;
         hideEl('#timerSection');
         showEl('#postTimer');
+        debouncedSync();
     }
 }
 
@@ -310,7 +662,7 @@ function dismissPhaseModal() {
     hideEl('#phaseModal');
 }
 
-// Submission check
+// ===== Submission check =====
 async function checkSubmission() {
     const p = state.problems[state.currentProblemIndex];
     const statusEl = $('#submissionStatus');
@@ -386,6 +738,7 @@ async function markCompleted() {
     }
 
     state.completed++;
+    state.problemResults.push({ contestId: p.contestId, index: p.index, result: 'completed' });
     advanceToNext();
 }
 
@@ -393,12 +746,8 @@ async function markUpsolve() {
     const p = state.problems[state.currentProblemIndex];
 
     try {
-        const token = localStorage.getItem('authToken');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = 'Bearer ' + token;
-
-        const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
-        await fetch(`${apiBase}/api/upsolve-data`, {
+        const headers = getAuthHeaders();
+        await fetch(`${PRACTICE_API}/upsolve-data`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
@@ -422,23 +771,37 @@ async function markUpsolve() {
     }
 
     state.upsolveCount++;
+    state.problemResults.push({ contestId: p.contestId, index: p.index, result: 'upsolve' });
     advanceToNext();
 }
 
 function advanceToNext() {
+    cancelAnimationFrame(state.animFrameId);
     state.currentProblemIndex++;
+
     if (state.currentProblemIndex >= state.problems.length) {
         showSessionComplete();
     } else {
+        // Reset timer state for the next problem
+        state.currentPhase = 0;
+        state.isRunning = false;
+        state.isPaused = false;
+        state.sessionStarted = false;
+        state.phaseStartTime = null;
+        state.phasePausedElapsed = 0;
+        state.pauseStartTime = null;
         loadCurrentProblem();
+        debouncedSync();
     }
 }
 
 function showSessionComplete() {
+    cancelAnimationFrame(state.animFrameId);
     hideEl('#problemCard');
     hideEl('#timerSection');
     hideEl('#postTimer');
     hideEl('.queue-section');
+    hideEl('#restoreBanner');
     showEl('#sessionComplete');
 
     const stats = $('#sessionStats');
@@ -452,7 +815,51 @@ function showSessionComplete() {
     $('#progressPct').textContent = pct + '%';
     $('#sessionProgress').style.width = pct + '%';
 
+    // Clear session from localStorage and MongoDB
     localStorage.removeItem('cf_practice_data');
+
+    // Clear active practice from MongoDB
+    state.sessionStarted = false;
+    state.isRunning = false;
+    syncNow();
+}
+
+// ===== Abandon Session =====
+async function abandonSession() {
+    if (!confirm('Are you sure you want to abandon this practice session? All progress will be lost.')) {
+        return;
+    }
+
+    cancelAnimationFrame(state.animFrameId);
+    state.problems = [];
+    state.currentProblemIndex = 0;
+    state.currentPhase = 0;
+    state.isRunning = false;
+    state.isPaused = false;
+    state.sessionStarted = false;
+    state.phaseStartTime = null;
+    state.phasePausedElapsed = 0;
+    state.pauseStartTime = null;
+    state.completed = 0;
+    state.upsolveCount = 0;
+    state.problemResults = [];
+
+    localStorage.removeItem('cf_practice_data');
+
+    // Clear from MongoDB
+    await syncNow();
+
+    showToast('Practice session abandoned', 'warning');
+
+    // Redirect back to problem picker
+    setTimeout(() => {
+        window.location.href = '../';
+    }, 500);
+}
+
+// ===== Resume Banner =====
+function dismissRestoreBanner() {
+    hideEl('#restoreBanner');
 }
 
 // Globals for onclick handlers
@@ -461,3 +868,5 @@ window.checkSubmission = checkSubmission;
 window.markCompleted = markCompleted;
 window.markUpsolve = markUpsolve;
 window.dismissPhaseModal = dismissPhaseModal;
+window.abandonSession = abandonSession;
+window.dismissRestoreBanner = dismissRestoreBanner;

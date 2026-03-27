@@ -678,6 +678,76 @@ body {
 .rating-color-1900, .rating-color-2000 { color: #ff8c00; }
 .rating-color-2100, .rating-color-2200, .rating-color-2300, .rating-color-2400 { color: #ff0000; }
 
+/* ===== Active Practice Banner ===== */
+.active-practice-banner {
+    margin-bottom: 24px;
+    animation: fadeSlideUp 0.5s ease;
+}
+.active-practice-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 24px;
+    background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(59,130,246,0.06));
+    border: 1.5px solid rgba(16,185,129,0.35);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 4px 20px rgba(16,185,129,0.1);
+    position: relative;
+    overflow: hidden;
+}
+.active-practice-content::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #10b981, #34d399, #10b981);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+}
+.active-practice-pulse {
+    position: absolute;
+    top: 18px; left: 18px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: activePulse 2s infinite;
+}
+@keyframes activePulse {
+    0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+    100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.active-practice-icon {
+    color: var(--success);
+    flex-shrink: 0;
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(16,185,129,0.15);
+    border-radius: 50%;
+    margin-left: 14px;
+}
+.active-practice-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.active-practice-info strong {
+    font-size: 0.95rem;
+    font-family: 'Space Grotesk', sans-serif;
+    color: var(--text-primary);
+}
+.active-practice-info span {
+    font-size: 0.82rem;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', monospace;
+}
+.active-practice-resume {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    text-decoration: none;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
     .header-content { height: 56px; }
@@ -704,6 +774,9 @@ body {
     .upsolve-cards { grid-template-columns: 1fr; }
     .action-buttons-row { flex-direction: column; }
     .btn-outline.btn-lg { width: 100%; }
+    .active-practice-content { flex-wrap: wrap; gap: 12px; padding: 14px 16px; }
+    .active-practice-icon { margin-left: 10px; }
+    .active-practice-resume { width: 100%; text-align: center; }
 }
 
 @media (max-width: 480px) {
