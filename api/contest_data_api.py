@@ -76,7 +76,18 @@ def contest_data():
             if not cf_handle or not isinstance(cf_handle, str):
                 return send_cors_json({'error': 'cfHandle is required in the request body'}, 400)
 
-            data_to_save = {k: v for k, v in payload.items() if k != 'cfHandle'}
+            last_known = payload.get('lastKnownSavedAt')
+            if last_known:
+                existing = col.find_one({'_id': cf_handle})
+                if existing and existing.get('savedAt', '') > last_known:
+                    existing.pop('_id', None)
+                    existing['cfHandle'] = cf_handle
+                    existing['conflict'] = True
+                    return send_cors_json(existing)
+
+            data_to_save = {k: v for k, v in payload.items()
+                           if k not in ('cfHandle', 'lastKnownSavedAt')}
+            data_to_save['userId'] = auth.get('userId', '')
             data_to_save['savedAt'] = datetime.now(timezone.utc).isoformat()
 
             col.update_one(
@@ -84,7 +95,10 @@ def contest_data():
                 {'$set': data_to_save},
                 upsert=True
             )
-            return send_cors_json({'ok': True})
+            return send_cors_json({
+                'ok': True,
+                'savedAt': data_to_save['savedAt']
+            })
 
     except Exception as e:
         print(f'contest-data error: {e}')

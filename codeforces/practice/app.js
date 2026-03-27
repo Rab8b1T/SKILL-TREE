@@ -42,6 +42,7 @@ const state = {
     _syncTimeout: null,
     _periodicSyncId: null,
     _consecutiveFailures: 0,
+    _lastKnownSavedAt: null,
     animFrameId: null
 };
 
@@ -140,23 +141,39 @@ async function syncToAPI() {
             activePractice = buildActivePracticePayload();
         }
 
+        const body = {
+            cfHandle: state.handle,
+            activePractice,
+            lastSyncTime: new Date().toISOString()
+        };
+        if (state._lastKnownSavedAt) {
+            body.lastKnownSavedAt = state._lastKnownSavedAt;
+        }
+
         const response = await fetch(`${PRACTICE_API}/practice/data`, {
             method: 'POST',
             headers: getAuthHeaders(),
-            body: JSON.stringify({
-                cfHandle: state.handle,
-                activePractice,
-                lastSyncTime: new Date().toISOString()
-            })
+            body: JSON.stringify(body)
         });
 
-        if (response.ok) {
-            state.apiSyncEnabled = true;
-            state._consecutiveFailures = 0;
-            updateSyncStatus('synced', 'Cloud \u2601');
-        } else {
+        if (!response.ok) {
             updateSyncStatus('error', 'Local only');
+            return;
         }
+
+        const result = await response.json();
+
+        if (result.conflict) {
+            state._lastKnownSavedAt = result.savedAt || null;
+            applyRemoteState(result);
+            updateSyncStatus('synced', 'Cloud \u2601 (synced)');
+            return;
+        }
+
+        state.apiSyncEnabled = true;
+        state._consecutiveFailures = 0;
+        if (result.savedAt) state._lastKnownSavedAt = result.savedAt;
+        updateSyncStatus('synced', 'Cloud \u2601');
     } catch (error) {
         console.warn('Sync error:', error.message);
         state._consecutiveFailures = (state._consecutiveFailures || 0) + 1;
@@ -230,8 +247,10 @@ async function syncNow() {
             })
         });
         if (response.ok) {
+            const result = await response.json();
             state.apiSyncEnabled = true;
             state._consecutiveFailures = 0;
+            if (result.savedAt) state._lastKnownSavedAt = result.savedAt;
             updateSyncStatus('synced', 'Cloud \u2601');
         } else {
             updateSyncStatus('error', 'Save failed');
@@ -246,7 +265,7 @@ async function syncNow() {
 function startPeriodicSync() {
     if (state._periodicSyncId) clearInterval(state._periodicSyncId);
     state._periodicSyncId = setInterval(() => {
-        if (state.sessionStarted && state.isRunning && !state.isPaused) {
+        if (state.sessionStarted) {
             syncToAPI();
         }
     }, 30000);
@@ -256,6 +275,60 @@ function stopPeriodicSync() {
     if (state._periodicSyncId) {
         clearInterval(state._periodicSyncId);
         state._periodicSyncId = null;
+    }
+}
+
+function applyRemoteState(serverData) {
+    const ap = serverData.activePractice;
+    if (!ap || !ap.problems || ap.problems.length === 0) return;
+
+    const wasPaused = state.isPaused;
+    const wasRunning = state.isRunning;
+
+    state.problems = ap.problems;
+    state.handle = ap.handle || serverData.cfHandle || state.handle;
+    state.currentProblemIndex = ap.currentProblemIndex || 0;
+    state.currentPhase = ap.currentPhase || 0;
+    state.phaseStartTime = ap.phaseStartTime;
+    state.phasePausedElapsed = ap.phasePausedElapsed || 0;
+    state.isPaused = ap.isPaused || false;
+    state.pauseStartTime = ap.pauseStartTime;
+    state.isRunning = ap.isRunning || false;
+    state.sessionStarted = ap.sessionStarted || false;
+    state.completed = ap.completed || 0;
+    state.upsolveCount = ap.upsolveCount || 0;
+    state.problemResults = ap.problemResults || [];
+
+    saveToLocalStorage();
+
+    if (state.currentProblemIndex >= state.problems.length) {
+        showSessionComplete();
+        return;
+    }
+
+    loadCurrentProblem();
+
+    // Reconcile timer UI with the remote state
+    if (state.isRunning && !state.isPaused) {
+        // Remote says running — make sure animation loop is going
+        updateControlUI();
+        updateTimerUI();
+        startAnimationLoop();
+    } else if (state.isPaused) {
+        // Remote says paused — stop any local animation
+        cancelAnimationFrame(state.animFrameId);
+        updateControlUI();
+        updateTimerUI();
+        if (!wasPaused && wasRunning) {
+            showToast('Paused from another device', 'info');
+        }
+    } else if (!state.isRunning) {
+        cancelAnimationFrame(state.animFrameId);
+        updateControlUI();
+        if (state.sessionStarted) {
+            hideEl('#timerSection');
+            showEl('#postTimer');
+        }
     }
 }
 
@@ -275,6 +348,7 @@ async function loadFromAPI(handle) {
         const data = await response.json();
         state.apiSyncEnabled = true;
         state._consecutiveFailures = 0;
+        if (data.savedAt) state._lastKnownSavedAt = data.savedAt;
         updateSyncStatus('synced', 'Cloud \u2601');
         return data;
     } catch (error) {
@@ -617,7 +691,7 @@ function startTimer() {
     updateControlUI();
     startAnimationLoop();
     startPeriodicSync();
-    debouncedSync();
+    syncNow();
 }
 
 function pauseTimer() {
@@ -637,7 +711,7 @@ function resumeTimer() {
     state.pauseStartTime = null;
     updateControlUI();
     startAnimationLoop();
-    debouncedSync();
+    syncNow();
     showToast('Timer resumed', 'success');
 }
 
@@ -877,7 +951,6 @@ function advanceToNext() {
     if (state.currentProblemIndex >= state.problems.length) {
         showSessionComplete();
     } else {
-        // Reset timer state for the next problem
         state.currentPhase = 0;
         state.isRunning = false;
         state.isPaused = false;
@@ -886,7 +959,7 @@ function advanceToNext() {
         state.phasePausedElapsed = 0;
         state.pauseStartTime = null;
         loadCurrentProblem();
-        debouncedSync();
+        syncNow();
     }
 }
 

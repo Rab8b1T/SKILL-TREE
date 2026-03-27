@@ -51,6 +51,7 @@ const state = {
     currentHandle: null,
     _syncTimeout: null,
     _cloudActiveContest: null,
+    _lastKnownSavedAt: null,
     _recommendedProblems: []
 };
 
@@ -105,6 +106,9 @@ async function syncToAPI() {
             activeContest: activeContestData,
             lastSyncTime: new Date().toISOString()
         };
+        if (state._lastKnownSavedAt) {
+            dataToSync.lastKnownSavedAt = state._lastKnownSavedAt;
+        }
 
         const response = await fetch(`${API_BASE_URL}/contest/data`, {
             method: 'POST',
@@ -112,12 +116,25 @@ async function syncToAPI() {
             body: JSON.stringify(dataToSync)
         });
 
-        if (response.ok) {
-            state.lastSyncTime = Date.now();
-            updateSyncStatus('synced', 'Cloud \u2601');
-        } else {
+        if (!response.ok) {
             updateSyncStatus('error', 'Local only');
+            saveToLocalStorage();
+            return;
         }
+
+        const result = await response.json();
+
+        if (result.conflict) {
+            if (result.savedAt) state._lastKnownSavedAt = result.savedAt;
+            applyRemoteContestState(result);
+            updateSyncStatus('synced', 'Cloud \u2601 (synced)');
+            saveToLocalStorage();
+            return;
+        }
+
+        state.lastSyncTime = Date.now();
+        if (result.savedAt) state._lastKnownSavedAt = result.savedAt;
+        updateSyncStatus('synced', 'Cloud \u2601');
     } catch (error) {
         console.warn('Sync error:', error.message);
         updateSyncStatus('error', 'Offline');
@@ -169,6 +186,9 @@ async function loadFromAPI(handle) {
         if (data.activeContest && typeof data.activeContest === 'object') {
             state._cloudActiveContest = data.activeContest;
         }
+        if (data.savedAt) {
+            state._lastKnownSavedAt = data.savedAt;
+        }
         
         state.apiSyncEnabled = true;
         updateSyncStatus('synced', 'Cloud \u2601');
@@ -182,8 +202,8 @@ async function loadFromAPI(handle) {
     }
 }
 
-// Immediately push current state to MongoDB — no debounce.
-// Always call this after contest end to prevent data loss on page refresh.
+// Immediately push current state to MongoDB — no debounce, no conflict check.
+// Used for explicit user actions (pause, resume, end contest).
 async function syncNow() {
     if (!state.currentHandle) {
         saveToLocalStorage();
@@ -225,7 +245,9 @@ async function syncNow() {
             body: JSON.stringify(payload)
         });
         if (response.ok) {
+            const result = await response.json();
             state.lastSyncTime = Date.now();
+            if (result.savedAt) state._lastKnownSavedAt = result.savedAt;
             updateSyncStatus('synced', 'Cloud \u2601');
         } else {
             updateSyncStatus('error', 'Save failed');
@@ -1581,7 +1603,7 @@ function updateTimer() {
     updateSolvedProgress();
     
     if (elapsed % 10 === 0) saveContestState();
-    if (elapsed % 300 === 0 && elapsed > 0) syncActiveContestToCloud();
+    if (elapsed % 30 === 0 && elapsed > 0) syncActiveContestToCloud();
     if (remaining === 0) endContest();
 }
 
@@ -2538,6 +2560,44 @@ function clearActiveContestState() {
     syncToAPI();
 }
 
+function applyRemoteContestState(serverData) {
+    const remote = serverData.activeContest;
+    if (!remote || !remote.currentContest || !state.currentContest) return;
+
+    const wasPaused = state.isPaused;
+    const wasRunning = !!state.timerInterval;
+
+    state.contestStartTime = remote.contestStartTime;
+    state.contestDuration = remote.contestDuration || state.contestDuration;
+    state.contestPausedTime = remote.contestPausedTime || 0;
+    state.isPaused = remote.isPaused || false;
+    state.pauseStartTime = remote.pauseStartTime;
+    state.submissions = remote.submissions || state.submissions;
+
+    if (state.isPaused && !wasPaused) {
+        if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+        if (state.autoRefreshInterval) { clearInterval(state.autoRefreshInterval); state.autoRefreshInterval = null; }
+        document.getElementById('pauseBtn').style.display = 'none';
+        document.getElementById('resumeBtn').style.display = 'inline-flex';
+        document.getElementById('timerDisplay').classList.add('paused');
+        updateTimerDisplayPaused();
+        showToast('Paused from another device', 'info');
+    } else if (!state.isPaused && wasPaused) {
+        document.getElementById('pauseBtn').style.display = 'inline-flex';
+        document.getElementById('resumeBtn').style.display = 'none';
+        document.getElementById('timerDisplay').classList.remove('paused');
+        if (!state.timerInterval) startTimer();
+        if (state.settings.autoRefresh && !state.autoRefreshInterval) {
+            state.autoRefreshInterval = setInterval(refreshSubmissions, 30000);
+        }
+        showToast('Resumed from another device', 'info');
+    } else if (!state.isPaused && !wasPaused) {
+        updateTimer();
+    }
+
+    saveContestState();
+}
+
 // ===== Pause/Resume =====
 function pauseContest() {
     if (!state.currentContest || state.isPaused) return;
@@ -2553,7 +2613,7 @@ function pauseContest() {
     document.getElementById('timerDisplay').classList.add('paused');
     
     saveContestState();
-    syncActiveContestToCloud();
+    syncNow();
     showToast('Contest paused', 'warning');
 }
 
@@ -2574,7 +2634,7 @@ function resumeContest() {
     }
     
     saveContestState();
-    syncActiveContestToCloud();
+    syncNow();
     showSuccess('Contest resumed');
 }
 
