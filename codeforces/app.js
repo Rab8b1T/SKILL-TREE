@@ -942,32 +942,56 @@ async function loadUpsolveCounts() {
 // =====================================================
 
 async function checkActivePractice() {
-    const handle = $('#handleInput').value.trim() || 'rab8bit';
+    // Try multiple sources for the handle
+    const handle = ($('#handleInput') && $('#handleInput').value.trim())
+        || state.handle
+        || localStorage.getItem('cf_upsolve_handle')
+        || '';
+    if (!handle) return;
+
     const token = localStorage.getItem('authToken');
-    if (!token || !handle) return;
 
+    // Check API first
+    if (token) {
+        try {
+            const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+            const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+            const resp = await fetch(`${apiBase}/api/practice/data?handle=${encodeURIComponent(handle)}`, { headers });
+            const data = await resp.json();
+
+            if (data.activePractice && data.activePractice.problems && data.activePractice.problems.length > 0 && data.activePractice.sessionStarted) {
+                showActivePracticeBanner(data.activePractice);
+                return;
+            }
+        } catch (e) {
+            console.warn('Could not check active practice via API:', e);
+        }
+    }
+
+    // Fallback: check localStorage
     try {
-        const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
-        const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
-        const resp = await fetch(`${apiBase}/api/practice/data?handle=${encodeURIComponent(handle)}`, { headers });
-        const data = await resp.json();
-
-        if (data.activePractice && data.activePractice.problems && data.activePractice.problems.length > 0) {
-            const ap = data.activePractice;
-            const total = ap.problems.length;
-            const current = (ap.currentProblemIndex || 0) + 1;
-            const completed = ap.completed || 0;
-
-            const banner = document.getElementById('activePracticeBanner');
-            const detail = document.getElementById('activePracticeDetail');
-            if (banner && detail) {
-                detail.textContent = `Problem ${current} of ${total} · ${completed} completed${ap.isPaused ? ' · Paused' : ap.isRunning ? ' · Running' : ''}`;
-                banner.classList.remove('hidden');
+        const raw = localStorage.getItem('cf_practice_data');
+        if (raw) {
+            const localData = JSON.parse(raw);
+            if (localData && localData.problems && localData.problems.length > 0 && localData.sessionStarted) {
+                showActivePracticeBanner(localData);
             }
         }
     } catch (e) {
-        // Silently fail — not critical
-        console.warn('Could not check active practice:', e);
+        console.warn('Could not check active practice via localStorage:', e);
+    }
+}
+
+function showActivePracticeBanner(ap) {
+    const total = ap.problems.length;
+    const current = (ap.currentProblemIndex || 0) + 1;
+    const completed = ap.completed || 0;
+
+    const banner = document.getElementById('activePracticeBanner');
+    const detail = document.getElementById('activePracticeDetail');
+    if (banner && detail) {
+        detail.textContent = `Problem ${current} of ${total} \u00b7 ${completed} completed${ap.isPaused ? ' \u00b7 Paused' : ap.isRunning ? ' \u00b7 Running' : ''}`;
+        banner.classList.remove('hidden');
     }
 }
 

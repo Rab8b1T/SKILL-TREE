@@ -120,6 +120,9 @@ function debouncedSync() {
 }
 
 async function syncToAPI() {
+    // Always save to localStorage as fallback
+    saveToLocalStorage();
+
     if (!state.apiSyncEnabled || !state.handle) {
         return;
     }
@@ -129,21 +132,7 @@ async function syncToAPI() {
     try {
         let activePractice = null;
         if (state.sessionStarted && state.problems.length > 0) {
-            activePractice = {
-                problems: state.problems,
-                handle: state.handle,
-                currentProblemIndex: state.currentProblemIndex,
-                currentPhase: state.currentPhase,
-                phaseStartTime: state.phaseStartTime,
-                phasePausedElapsed: state.phasePausedElapsed,
-                isPaused: state.isPaused,
-                pauseStartTime: state.pauseStartTime,
-                isRunning: state.isRunning,
-                sessionStarted: state.sessionStarted,
-                completed: state.completed,
-                upsolveCount: state.upsolveCount,
-                problemResults: state.problemResults
-            };
+            activePractice = buildActivePracticePayload();
         }
 
         const response = await fetch(`${PRACTICE_API}/practice/data`, {
@@ -168,27 +157,58 @@ async function syncToAPI() {
     }
 }
 
+function buildActivePracticePayload() {
+    return {
+        problems: state.problems,
+        handle: state.handle,
+        currentProblemIndex: state.currentProblemIndex,
+        currentPhase: state.currentPhase,
+        phaseStartTime: state.phaseStartTime,
+        phasePausedElapsed: state.phasePausedElapsed,
+        isPaused: state.isPaused,
+        pauseStartTime: state.pauseStartTime,
+        isRunning: state.isRunning,
+        sessionStarted: state.sessionStarted,
+        completed: state.completed,
+        upsolveCount: state.upsolveCount,
+        problemResults: state.problemResults
+    };
+}
+
+function saveToLocalStorage() {
+    try {
+        const data = {
+            problems: state.problems,
+            handle: state.handle,
+            currentProblemIndex: state.currentProblemIndex,
+            currentPhase: state.currentPhase,
+            phaseStartTime: state.phaseStartTime,
+            phasePausedElapsed: state.phasePausedElapsed,
+            isPaused: state.isPaused,
+            pauseStartTime: state.pauseStartTime,
+            isRunning: state.isRunning,
+            sessionStarted: state.sessionStarted,
+            completed: state.completed,
+            upsolveCount: state.upsolveCount,
+            problemResults: state.problemResults,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('cf_practice_data', JSON.stringify(data));
+    } catch (e) {
+        console.warn('Failed to save to localStorage:', e);
+    }
+}
+
 async function syncNow() {
+    // Always save to localStorage as fallback
+    saveToLocalStorage();
+
     if (!state.handle) return;
     updateSyncStatus('syncing', 'Saving...');
     try {
         let activePractice = null;
         if (state.sessionStarted && state.problems.length > 0) {
-            activePractice = {
-                problems: state.problems,
-                handle: state.handle,
-                currentProblemIndex: state.currentProblemIndex,
-                currentPhase: state.currentPhase,
-                phaseStartTime: state.phaseStartTime,
-                phasePausedElapsed: state.phasePausedElapsed,
-                isPaused: state.isPaused,
-                pauseStartTime: state.pauseStartTime,
-                isRunning: state.isRunning,
-                sessionStarted: state.sessionStarted,
-                completed: state.completed,
-                upsolveCount: state.upsolveCount,
-                problemResults: state.problemResults
-            };
+            activePractice = buildActivePracticePayload();
         }
         const response = await fetch(`${PRACTICE_API}/practice/data`, {
             method: 'POST',
@@ -305,15 +325,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Fall back to localStorage data
+    // Fall back to localStorage data (includes full timer state)
     if (localData && localData.problems && localData.problems.length > 0) {
         state.problems = localData.problems;
         state.handle = localData.handle || '';
+        state.currentProblemIndex = localData.currentProblemIndex || 0;
+        state.currentPhase = localData.currentPhase || 0;
+        state.phaseStartTime = localData.phaseStartTime || null;
+        state.phasePausedElapsed = localData.phasePausedElapsed || 0;
+        state.isPaused = localData.isPaused || false;
+        state.pauseStartTime = localData.pauseStartTime || null;
+        state.isRunning = localData.isRunning || false;
+        state.sessionStarted = localData.sessionStarted || false;
+        state.completed = localData.completed || 0;
+        state.upsolveCount = localData.upsolveCount || 0;
+        state.problemResults = localData.problemResults || [];
+
         $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
         $('#totalCount').textContent = state.problems.length;
         hideEl('#emptyState');
         showEl('#practiceArea');
-        loadCurrentProblem();
+
+        // If session was in progress, restore it properly
+        if (state.sessionStarted && state.phaseStartTime) {
+            showEl('#restoreBanner');
+            showToast('Practice session restored from local storage', 'info');
+            restoreSession();
+        } else {
+            loadCurrentProblem();
+        }
         return;
     }
 
