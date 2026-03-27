@@ -1,5 +1,7 @@
 // Upsolved History Page
-const handle = localStorage.getItem('cf_upsolve_handle') || 'rab8bit';
+const handle = localStorage.getItem('cf_upsolve_handle')
+    || localStorage.getItem('lastUser')
+    || '';
 
 function $(sel) { return document.querySelector(sel); }
 function showEl(el) { if (typeof el === 'string') el = $(el); if (el) el.classList.remove('hidden'); }

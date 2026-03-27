@@ -80,6 +80,14 @@
                 <h2>No Problems Selected</h2>
                 <p>Go to the Problem Picker, select problems, then click "Start Practicing".</p>
                 <a href="../" class="btn-gradient btn-lg">Go to Problem Picker</a>
+
+                <div class="cross-device-section">
+                    <p class="cross-device-hint">Have an active session on another device?</p>
+                    <div class="handle-input-row">
+                        <input type="text" id="handleInput" class="handle-input" placeholder="Enter your CF handle" autocomplete="off">
+                        <button class="btn-gradient btn-sm" onclick="loadWithHandle()">Load Session</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Practice Area -->
@@ -211,14 +219,27 @@
                     <div class="queue-list" id="queueList"></div>
                 </div>
 
-                <!-- Abandon Session Button -->
-                <div class="abandon-section">
+                <!-- Session Actions -->
+                <div class="session-actions">
+                    <button class="btn-skip" onclick="skipProblem()" title="Skip this problem (S)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
+                        </svg>
+                        Skip Problem
+                    </button>
                     <button class="btn-abandon" onclick="abandonSession()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                             <path d="M18 6L6 18M6 6l12 12"/>
                         </svg>
                         Abandon Session
                     </button>
+                </div>
+
+                <!-- Keyboard Shortcuts Hint -->
+                <div class="shortcuts-hint">
+                    <span><kbd>Space</kbd> Start/Pause</span>
+                    <span><kbd>S</kbd> Skip</span>
+                    <span><kbd>C</kbd> Check</span>
                 </div>
 
                 <!-- Session Complete -->

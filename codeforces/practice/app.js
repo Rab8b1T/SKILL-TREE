@@ -40,6 +40,8 @@ const state = {
     // Sync
     apiSyncEnabled: true,
     _syncTimeout: null,
+    _periodicSyncId: null,
+    _consecutiveFailures: 0,
     animFrameId: null
 };
 
@@ -120,10 +122,13 @@ function debouncedSync() {
 }
 
 async function syncToAPI() {
-    // Always save to localStorage as fallback
     saveToLocalStorage();
 
-    if (!state.apiSyncEnabled || !state.handle) {
+    if (!state.handle) return;
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        updateSyncStatus('error', 'Not logged in');
         return;
     }
 
@@ -146,14 +151,16 @@ async function syncToAPI() {
         });
 
         if (response.ok) {
+            state.apiSyncEnabled = true;
+            state._consecutiveFailures = 0;
             updateSyncStatus('synced', 'Cloud \u2601');
         } else {
             updateSyncStatus('error', 'Local only');
         }
     } catch (error) {
         console.warn('Sync error:', error.message);
+        state._consecutiveFailures = (state._consecutiveFailures || 0) + 1;
         updateSyncStatus('error', 'Offline');
-        state.apiSyncEnabled = false;
     }
 }
 
@@ -200,10 +207,13 @@ function saveToLocalStorage() {
 }
 
 async function syncNow() {
-    // Always save to localStorage as fallback
     saveToLocalStorage();
 
     if (!state.handle) return;
+
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
     updateSyncStatus('syncing', 'Saving...');
     try {
         let activePractice = null;
@@ -220,35 +230,55 @@ async function syncNow() {
             })
         });
         if (response.ok) {
+            state.apiSyncEnabled = true;
+            state._consecutiveFailures = 0;
             updateSyncStatus('synced', 'Cloud \u2601');
         } else {
             updateSyncStatus('error', 'Save failed');
         }
     } catch (err) {
         console.warn('syncNow error:', err.message);
+        state._consecutiveFailures = (state._consecutiveFailures || 0) + 1;
         updateSyncStatus('error', 'Offline');
     }
 }
 
+function startPeriodicSync() {
+    if (state._periodicSyncId) clearInterval(state._periodicSyncId);
+    state._periodicSyncId = setInterval(() => {
+        if (state.sessionStarted && state.isRunning && !state.isPaused) {
+            syncToAPI();
+        }
+    }, 30000);
+}
+
+function stopPeriodicSync() {
+    if (state._periodicSyncId) {
+        clearInterval(state._periodicSyncId);
+        state._periodicSyncId = null;
+    }
+}
+
 async function loadFromAPI(handle) {
-    if (!handle) {
-        state.apiSyncEnabled = false;
-        updateSyncStatus('error', 'No handle');
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        updateSyncStatus('error', 'Not logged in');
         return null;
     }
     try {
-        const url = `${PRACTICE_API}/practice/data?handle=${encodeURIComponent(handle)}`;
+        let url = `${PRACTICE_API}/practice/data`;
+        if (handle) url += `?handle=${encodeURIComponent(handle)}`;
         const response = await fetch(url, { headers: getAuthHeaders() });
 
         if (!response.ok) throw new Error(`API returned ${response.status}`);
 
         const data = await response.json();
         state.apiSyncEnabled = true;
+        state._consecutiveFailures = 0;
         updateSyncStatus('synced', 'Cloud \u2601');
         return data;
     } catch (error) {
         console.warn('Failed to load from API:', error.message);
-        state.apiSyncEnabled = false;
         updateSyncStatus('error', 'Offline');
         return null;
     }
@@ -258,16 +288,22 @@ async function loadFromAPI(handle) {
 document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     $('#themeToggle').addEventListener('click', toggleTheme);
+    setupKeyboardShortcuts();
 
-    // Auth check
+    const handleInput = $('#handleInput');
+    if (handleInput) {
+        handleInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loadWithHandle();
+        });
+    }
+
     const token = localStorage.getItem('authToken');
     if (!token) {
-        // Still allow usage, but disable sync
         state.apiSyncEnabled = false;
         updateSyncStatus('error', 'Not logged in');
     }
 
-    // Try to get handle from localStorage data first
+    // Gather handle from all local sources
     const raw = localStorage.getItem('cf_practice_data');
     let localData = null;
     if (raw) {
@@ -278,88 +314,106 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Failed to parse local practice data:', e);
         }
     }
-
     if (!state.handle) {
-        state.handle = localStorage.getItem('cf_upsolve_handle') || '';
+        state.handle = localStorage.getItem('cf_upsolve_handle')
+            || localStorage.getItem('lastUser')
+            || '';
     }
 
     $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
 
-    // Try to load from API first
+    // --- Try to load from API (with handle if known, without for cross-device) ---
     let apiData = null;
-    if (state.handle && token) {
-        apiData = await loadFromAPI(state.handle);
+    if (token) {
+        apiData = await loadFromAPI(state.handle || '');
     }
 
-    // Restore active session from API if it exists
-    if (apiData && apiData.activePractice && apiData.activePractice.problems && apiData.activePractice.problems.length > 0) {
-        const ap = apiData.activePractice;
-        state.problems = ap.problems;
-        state.handle = ap.handle || state.handle;
-        state.currentProblemIndex = ap.currentProblemIndex || 0;
-        state.currentPhase = ap.currentPhase || 0;
-        state.phaseStartTime = ap.phaseStartTime;
-        state.phasePausedElapsed = ap.phasePausedElapsed || 0;
-        state.isPaused = ap.isPaused || false;
-        state.pauseStartTime = ap.pauseStartTime;
-        state.isRunning = ap.isRunning || false;
-        state.sessionStarted = ap.sessionStarted || false;
-        state.completed = ap.completed || 0;
-        state.upsolveCount = ap.upsolveCount || 0;
-        state.problemResults = ap.problemResults || [];
-
-        // Clear local data since we're using cloud data
-        localStorage.removeItem('cf_practice_data');
-
-        $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
-        $('#totalCount').textContent = state.problems.length;
-        hideEl('#emptyState');
-        showEl('#practiceArea');
-
-        // Show restore banner
-        showEl('#restoreBanner');
-        showToast('Practice session restored from cloud!', 'success');
-
-        // Restore the session state
-        restoreSession();
+    if (tryRestoreFromAPI(apiData)) {
+        startPeriodicSync();
         return;
     }
 
-    // Fall back to localStorage data (includes full timer state)
-    if (localData && localData.problems && localData.problems.length > 0) {
-        state.problems = localData.problems;
-        state.handle = localData.handle || '';
-        state.currentProblemIndex = localData.currentProblemIndex || 0;
-        state.currentPhase = localData.currentPhase || 0;
-        state.phaseStartTime = localData.phaseStartTime || null;
-        state.phasePausedElapsed = localData.phasePausedElapsed || 0;
-        state.isPaused = localData.isPaused || false;
-        state.pauseStartTime = localData.pauseStartTime || null;
-        state.isRunning = localData.isRunning || false;
-        state.sessionStarted = localData.sessionStarted || false;
-        state.completed = localData.completed || 0;
-        state.upsolveCount = localData.upsolveCount || 0;
-        state.problemResults = localData.problemResults || [];
-
-        $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
-        $('#totalCount').textContent = state.problems.length;
-        hideEl('#emptyState');
-        showEl('#practiceArea');
-
-        // If session was in progress, restore it properly
-        if (state.sessionStarted && state.phaseStartTime) {
-            showEl('#restoreBanner');
-            showToast('Practice session restored from local storage', 'info');
-            restoreSession();
-        } else {
-            loadCurrentProblem();
-        }
+    // --- Fall back to localStorage ---
+    if (tryRestoreFromLocal(localData)) {
+        startPeriodicSync();
         return;
     }
 
-    // No data at all
+    // No data at all — show empty state with handle input for cross-device
     showEl('#emptyState');
 });
+
+function tryRestoreFromAPI(apiData) {
+    if (!apiData || !apiData.activePractice
+        || !apiData.activePractice.problems
+        || apiData.activePractice.problems.length === 0) {
+        return false;
+    }
+
+    const ap = apiData.activePractice;
+    state.problems = ap.problems;
+    state.handle = ap.handle || apiData.cfHandle || state.handle;
+    state.currentProblemIndex = ap.currentProblemIndex || 0;
+    state.currentPhase = ap.currentPhase || 0;
+    state.phaseStartTime = ap.phaseStartTime;
+    state.phasePausedElapsed = ap.phasePausedElapsed || 0;
+    state.isPaused = ap.isPaused || false;
+    state.pauseStartTime = ap.pauseStartTime;
+    state.isRunning = ap.isRunning || false;
+    state.sessionStarted = ap.sessionStarted || false;
+    state.completed = ap.completed || 0;
+    state.upsolveCount = ap.upsolveCount || 0;
+    state.problemResults = ap.problemResults || [];
+
+    // Persist handle locally so future loads on this device are faster
+    if (state.handle) {
+        localStorage.setItem('cf_upsolve_handle', state.handle);
+    }
+    localStorage.removeItem('cf_practice_data');
+
+    $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
+    $('#totalCount').textContent = state.problems.length;
+    hideEl('#emptyState');
+    showEl('#practiceArea');
+    showEl('#restoreBanner');
+    showToast('Practice session restored from cloud!', 'success');
+    restoreSession();
+    return true;
+}
+
+function tryRestoreFromLocal(localData) {
+    if (!localData || !localData.problems || localData.problems.length === 0) {
+        return false;
+    }
+
+    state.problems = localData.problems;
+    state.handle = localData.handle || '';
+    state.currentProblemIndex = localData.currentProblemIndex || 0;
+    state.currentPhase = localData.currentPhase || 0;
+    state.phaseStartTime = localData.phaseStartTime || null;
+    state.phasePausedElapsed = localData.phasePausedElapsed || 0;
+    state.isPaused = localData.isPaused || false;
+    state.pauseStartTime = localData.pauseStartTime || null;
+    state.isRunning = localData.isRunning || false;
+    state.sessionStarted = localData.sessionStarted || false;
+    state.completed = localData.completed || 0;
+    state.upsolveCount = localData.upsolveCount || 0;
+    state.problemResults = localData.problemResults || [];
+
+    $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
+    $('#totalCount').textContent = state.problems.length;
+    hideEl('#emptyState');
+    showEl('#practiceArea');
+
+    if (state.sessionStarted && state.phaseStartTime) {
+        showEl('#restoreBanner');
+        showToast('Practice session restored from local storage', 'info');
+        restoreSession();
+    } else {
+        loadCurrentProblem();
+    }
+    return true;
+}
 
 function restoreSession() {
     if (state.currentProblemIndex >= state.problems.length) {
@@ -562,6 +616,7 @@ function startTimer() {
     state.isPaused = false;
     updateControlUI();
     startAnimationLoop();
+    startPeriodicSync();
     debouncedSync();
 }
 
@@ -837,6 +892,7 @@ function advanceToNext() {
 
 function showSessionComplete() {
     cancelAnimationFrame(state.animFrameId);
+    stopPeriodicSync();
     hideEl('#problemCard');
     hideEl('#timerSection');
     hideEl('#postTimer');
@@ -844,11 +900,13 @@ function showSessionComplete() {
     hideEl('#restoreBanner');
     showEl('#sessionComplete');
 
+    const skipped = state.problemResults.filter(r => r.result === 'skipped').length;
     const stats = $('#sessionStats');
     stats.innerHTML = `
         <div class="stat-item"><span class="stat-val">${state.problems.length}</span><span class="stat-lbl">Total</span></div>
         <div class="stat-item completed"><span class="stat-val">${state.completed}</span><span class="stat-lbl">Completed</span></div>
         <div class="stat-item upsolve"><span class="stat-val">${state.upsolveCount}</span><span class="stat-lbl">To Upsolve</span></div>
+        ${skipped > 0 ? `<div class="stat-item skipped"><span class="stat-val">${skipped}</span><span class="stat-lbl">Skipped</span></div>` : ''}
     `;
 
     const pct = 100;
@@ -871,6 +929,7 @@ async function abandonSession() {
     }
 
     cancelAnimationFrame(state.animFrameId);
+    stopPeriodicSync();
     state.problems = [];
     state.currentProblemIndex = 0;
     state.currentPhase = 0;
@@ -897,9 +956,69 @@ async function abandonSession() {
     }, 500);
 }
 
+// ===== Skip Problem =====
+function skipProblem() {
+    if (!state.sessionStarted && state.currentProblemIndex === 0) {
+        showToast('Start the timer first before skipping', 'warning');
+        return;
+    }
+    const p = state.problems[state.currentProblemIndex];
+    state.problemResults.push({ contestId: p.contestId, index: p.index, result: 'skipped' });
+    advanceToNext();
+    showToast('Problem skipped', 'info');
+}
+
 // ===== Resume Banner =====
 function dismissRestoreBanner() {
     hideEl('#restoreBanner');
+}
+
+// ===== Keyboard Shortcuts =====
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        switch (e.code) {
+            case 'Space':
+                e.preventDefault();
+                if (state.problems.length > 0) toggleTimer();
+                break;
+            case 'KeyS':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    if (state.sessionStarted) skipProblem();
+                }
+                break;
+            case 'KeyC':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    if (state.sessionStarted) checkSubmission();
+                }
+                break;
+        }
+    });
+}
+
+// ===== Handle Input (cross-device) =====
+async function loadWithHandle() {
+    const input = $('#handleInput');
+    if (!input) return;
+    const handle = input.value.trim();
+    if (!handle) {
+        showToast('Please enter your Codeforces handle', 'warning');
+        return;
+    }
+    state.handle = handle;
+    localStorage.setItem('cf_upsolve_handle', handle);
+    $('#handleDisplay').textContent = `@${handle}`;
+
+    const apiData = await loadFromAPI(handle);
+    if (tryRestoreFromAPI(apiData)) {
+        startPeriodicSync();
+        showToast('Session loaded!', 'success');
+    } else {
+        showToast('No active session found for this handle', 'info');
+    }
 }
 
 // Globals for onclick handlers
@@ -910,3 +1029,5 @@ window.markUpsolve = markUpsolve;
 window.dismissPhaseModal = dismissPhaseModal;
 window.abandonSession = abandonSession;
 window.dismissRestoreBanner = dismissRestoreBanner;
+window.skipProblem = skipProblem;
+window.loadWithHandle = loadWithHandle;

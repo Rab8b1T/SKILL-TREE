@@ -57,11 +57,17 @@ def practice_data():
 
         if request.method == 'GET':
             cf_handle = request.args.get('handle')
-            if not cf_handle:
-                return send_cors_json(EMPTY_DATA)
-            doc = col.find_one({'_id': cf_handle})
+            if cf_handle:
+                doc = col.find_one({'_id': cf_handle})
+            else:
+                # No handle provided — look up by userId for cross-device restore
+                doc = col.find_one({
+                    'userId': auth['userId'],
+                    'activePractice': {'$ne': None}
+                })
             if doc:
-                doc.pop('_id', None)
+                found_handle = doc.pop('_id', None)
+                doc['cfHandle'] = found_handle
                 return send_cors_json(doc)
             return send_cors_json(EMPTY_DATA)
 
@@ -74,6 +80,7 @@ def practice_data():
                 return send_cors_json({'error': 'cfHandle is required in the request body'}, 400)
 
             data_to_save = {k: v for k, v in payload.items() if k != 'cfHandle'}
+            data_to_save['userId'] = auth['userId']
             data_to_save['savedAt'] = datetime.now(timezone.utc).isoformat()
 
             col.update_one(

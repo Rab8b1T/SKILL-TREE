@@ -800,7 +800,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const handleInput = $('#handleInput');
     if (handleInput && !handleInput.value) {
-        handleInput.value = 'rab8bit';
+        handleInput.value = localStorage.getItem('cf_upsolve_handle')
+            || localStorage.getItem('lastUser')
+            || '';
     }
 
     handleInput.addEventListener('keypress', (e) => {
@@ -913,7 +915,10 @@ function startPractice() {
 // =====================================================
 
 async function loadUpsolveCounts() {
-    const handle = $('#handleInput').value.trim() || 'rab8bit';
+    const handle = ($('#handleInput') && $('#handleInput').value.trim())
+        || localStorage.getItem('cf_upsolve_handle')
+        || localStorage.getItem('lastUser')
+        || '';
     try {
         const token = localStorage.getItem('authToken');
         const headers = { 'Content-Type': 'application/json' };
