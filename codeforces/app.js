@@ -1211,6 +1211,14 @@ async function loadPracticeHistorySummary() {
 
     if (sessions.length === 0) return;
 
+    const seen = new Set();
+    sessions = sessions.filter(s => {
+        if (!s.sessionId) return true;
+        if (seen.has(s.sessionId)) return false;
+        seen.add(s.sessionId);
+        return true;
+    });
+
     let totalSolved = 0;
     sessions.forEach(s => { totalSolved += (s.completed || 0); });
 

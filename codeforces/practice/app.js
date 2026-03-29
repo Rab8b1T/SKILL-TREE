@@ -241,6 +241,10 @@ function buildActivePracticePayload() {
 
 function saveToLocalStorage() {
     try {
+        if (!state.problems || state.problems.length === 0) {
+            localStorage.removeItem('cf_practice_data');
+            return;
+        }
         const data = {
             problems: state.problems,
             handle: state.handle,
@@ -406,12 +410,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('#themeToggle').addEventListener('click', toggleTheme);
     setupKeyboardShortcuts();
 
-    const handleInput = $('#handleInput');
-    if (handleInput) {
-        handleInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') loadWithHandle();
-        });
-    }
+    document.addEventListener('keypress', (e) => {
+        if (e.target.id === 'handleInput' && e.key === 'Enter') loadWithHandle();
+    });
 
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -1085,7 +1086,7 @@ function advanceToNext() {
     state.currentProblemIndex++;
 
     if (state.currentProblemIndex >= state.problems.length) {
-        showSessionComplete();
+        showSessionComplete(true);
     } else {
         state.currentPhase = 0;
         state.isRunning = false;
@@ -1147,12 +1148,19 @@ async function saveSessionToHistory(status) {
     }
 }
 
-async function showSessionComplete() {
+async function showSessionComplete(saveHistory = false) {
     cancelAnimationFrame(state.animFrameId);
     stopWatchdog();
     stopPeriodicSync();
 
-    await saveSessionToHistory('completed');
+    if (saveHistory && state.problems.length > 0) {
+        await saveSessionToHistory('completed');
+    }
+
+    const totalProblems = state.problems.length;
+    const completed = state.completed;
+    const upsolveCount = state.upsolveCount;
+    const skipped = state.problemResults.filter(r => r.result === 'skipped').length;
 
     hideEl('#problemCard');
     hideEl('#timerSection');
@@ -1162,12 +1170,11 @@ async function showSessionComplete() {
     hideEl('#completedSection');
     showEl('#sessionComplete');
 
-    const skipped = state.problemResults.filter(r => r.result === 'skipped').length;
     const stats = $('#sessionStats');
     stats.innerHTML = `
-        <div class="stat-item"><span class="stat-val">${state.problems.length}</span><span class="stat-lbl">Total</span></div>
-        <div class="stat-item completed"><span class="stat-val">${state.completed}</span><span class="stat-lbl">Completed</span></div>
-        <div class="stat-item upsolve"><span class="stat-val">${state.upsolveCount}</span><span class="stat-lbl">To Upsolve</span></div>
+        <div class="stat-item"><span class="stat-val">${totalProblems}</span><span class="stat-lbl">Total</span></div>
+        <div class="stat-item completed"><span class="stat-val">${completed}</span><span class="stat-lbl">Completed</span></div>
+        <div class="stat-item upsolve"><span class="stat-val">${upsolveCount}</span><span class="stat-lbl">To Upsolve</span></div>
         ${skipped > 0 ? `<div class="stat-item skipped"><span class="stat-val">${skipped}</span><span class="stat-lbl">Skipped</span></div>` : ''}
     `;
 
@@ -1175,11 +1182,13 @@ async function showSessionComplete() {
     $('#progressPct').textContent = pct + '%';
     $('#sessionProgress').style.width = pct + '%';
 
-    localStorage.removeItem('cf_practice_data');
-
     state.sessionStarted = false;
     state.isRunning = false;
-    syncNow();
+    state.problems = [];
+    localStorage.removeItem('cf_practice_data');
+
+    try { await syncNow(); } catch (e) {}
+    localStorage.removeItem('cf_practice_data');
 }
 
 // ===== Save & Exit Session =====
@@ -1322,6 +1331,28 @@ async function loadWithHandle() {
 }
 
 // ===== Practice Hub =====
+function goToPracticeHub() {
+    state.problems = [];
+    state.currentProblemIndex = 0;
+    state.currentPhase = 0;
+    state.isRunning = false;
+    state.isPaused = false;
+    state.sessionStarted = false;
+    state.sessionStartedAt = null;
+    state.phaseStartTime = null;
+    state.phasePausedElapsed = 0;
+    state.pauseStartTime = null;
+    state.completed = 0;
+    state.upsolveCount = 0;
+    state.problemResults = [];
+
+    localStorage.removeItem('cf_practice_data');
+
+    hideEl('#practiceArea');
+    hideEl('#sessionComplete');
+    showPracticeHub();
+}
+
 function timeAgo(dateStr) {
     if (!dateStr) return '';
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -1347,7 +1378,18 @@ function getPastSessions() {
     }
 }
 
+function deduplicateSessions(sessions) {
+    const seen = new Set();
+    return sessions.filter(s => {
+        if (!s.sessionId) return true;
+        if (seen.has(s.sessionId)) return false;
+        seen.add(s.sessionId);
+        return true;
+    });
+}
+
 function computeStats(sessions) {
+    sessions = deduplicateSessions(sessions);
     if (!sessions || sessions.length === 0) {
         return { totalSessions: 0, totalSolved: 0, solveRate: 0, currentStreak: 0, bestStreak: 0 };
     }
@@ -1410,12 +1452,25 @@ function computeStats(sessions) {
     return { totalSessions: sessions.length, totalSolved, solveRate, currentStreak, bestStreak };
 }
 
-function showPracticeHub() {
+async function showPracticeHub() {
     hideEl('#practiceArea');
     const emptyState = $('#emptyState');
     if (!emptyState) return;
 
-    const sessions = getPastSessions();
+    if (state.pastSessions.length === 0) {
+        const token = localStorage.getItem('authToken');
+        const handle = state.handle || localStorage.getItem('cf_upsolve_handle') || '';
+        if (token && handle) {
+            try {
+                const apiData = await loadFromAPI(handle);
+                if (apiData && apiData.pastSessions) {
+                    state.pastSessions = apiData.pastSessions;
+                }
+            } catch (e) { /* ignore */ }
+        }
+    }
+
+    const sessions = deduplicateSessions(getPastSessions());
     const stats = computeStats(sessions);
     const pausedSessions = sessions.filter(s => s.status === 'paused');
     const recentSessions = [...sessions].reverse().slice(0, 10);
@@ -1762,3 +1817,4 @@ window.loadWithHandle = loadWithHandle;
 window.resumePausedSession = resumePausedSession;
 window.loadUpsolveForPractice = loadUpsolveForPractice;
 window.startSessionFromProblems = startSessionFromProblems;
+window.goToPracticeHub = goToPracticeHub;
