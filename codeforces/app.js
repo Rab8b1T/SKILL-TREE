@@ -960,24 +960,17 @@ async function loadUpsolveCounts() {
 
 function processSubmissionsForCalendar(submissions) {
     const solvedByDate = {};
-    const seenPerDay = {};
+    const seen = new Set();
 
     for (const sub of submissions) {
-        if (sub.verdict === 'OK' && sub.problem) {
-            const date = new Date(sub.creationTimeSeconds * 1000);
-            const y = date.getFullYear();
-            const m = String(date.getMonth() + 1).padStart(2, '0');
-            const d = String(date.getDate()).padStart(2, '0');
-            const dateStr = `${y}-${m}-${d}`;
-            const cid = sub.problem.contestId || sub.contestId || 0;
-            const idx = sub.problem.index || '';
-            const problemKey = cid ? `${cid}-${idx}` : sub.problem.name;
+        if (sub.verdict !== 'OK' || !sub.problem) continue;
 
-            if (!seenPerDay[dateStr]) seenPerDay[dateStr] = new Set();
-            if (!seenPerDay[dateStr].has(problemKey)) {
-                seenPerDay[dateStr].add(problemKey);
-                solvedByDate[dateStr] = (solvedByDate[dateStr] || 0) + 1;
-            }
+        const problemKey = `${sub.problem.contestId}-${sub.problem.index}`;
+
+        if (!seen.has(problemKey)) {
+            seen.add(problemKey);
+            const dateStr = new Date(sub.creationTimeSeconds * 1000).toISOString().split('T')[0];
+            solvedByDate[dateStr] = (solvedByDate[dateStr] || 0) + 1;
         }
     }
 
