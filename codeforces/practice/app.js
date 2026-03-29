@@ -615,6 +615,24 @@ function getTimeRemainingSeconds() {
     return Math.max(0, Math.ceil((phaseDurationMs - elapsed) / 1000));
 }
 
+function getTotalProblemElapsedMs() {
+    if (!state.sessionStarted || !state.phaseStartTime) return 0;
+    let total = 0;
+    for (let i = 0; i < state.currentPhase; i++) {
+        total += CONFIG.PHASES[i].duration * 1000;
+    }
+    total += getPhaseElapsedMs();
+    return total;
+}
+
+function formatSolveTime(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    if (minutes === 0) return `${seconds}s`;
+    return `${minutes}m ${seconds}s`;
+}
+
 // ===== Problem Loading =====
 function loadCurrentProblem() {
     if (state.currentProblemIndex >= state.problems.length) {
@@ -647,6 +665,7 @@ function loadCurrentProblem() {
     hideEl('#submissionStatus');
     hideEl('#restoreBanner');
     renderQueue();
+    renderCompleted();
 }
 
 function getRatingClass(rating) {
@@ -673,6 +692,45 @@ function renderQueue() {
             <span class="queue-num">${idx}</span>
             <span class="queue-name">${p.contestId}${p.index} - ${p.name}</span>
             <span class="queue-rating ${getRatingClass(p.rating)}">${p.rating || '?'}</span>
+        </div>`;
+    }).join('');
+}
+
+function renderCompleted() {
+    const section = $('#completedSection');
+    const list = $('#completedList');
+    const count = $('#completedCount');
+
+    if (state.problemResults.length === 0) {
+        hideEl(section);
+        return;
+    }
+
+    showEl(section);
+    count.textContent = state.problemResults.length;
+
+    list.innerHTML = state.problemResults.map(r => {
+        const timeStr = r.timeTakenMs ? formatSolveTime(r.timeTakenMs) : '';
+        let icon, resultLabel, resultClass;
+
+        if (r.result === 'completed') {
+            icon = '\u2713'; resultLabel = 'Solved'; resultClass = 'result-solved';
+        } else if (r.result === 'upsolve') {
+            icon = '\u2691'; resultLabel = 'Upsolve'; resultClass = 'result-upsolve';
+        } else {
+            icon = '\u00BB'; resultLabel = 'Skipped'; resultClass = 'result-skipped';
+        }
+
+        return `<div class="completed-item ${resultClass}">
+            <span class="completed-icon">${icon}</span>
+            <div class="completed-info">
+                <a href="${r.url || '#'}" target="_blank" rel="noopener" class="completed-name">${r.contestId}${r.index} - ${r.name || 'Unknown'}</a>
+                <div class="completed-meta">
+                    <span class="completed-result-badge ${resultClass}">${resultLabel}</span>
+                    ${timeStr ? `<span class="completed-time">\u23F1 ${timeStr}</span>` : ''}
+                </div>
+            </div>
+            <span class="completed-rating ${getRatingClass(r.rating)}">${r.rating || '?'}</span>
         </div>`;
     }).join('');
 }
@@ -903,15 +961,22 @@ async function checkSubmission() {
         );
 
         if (accepted) {
+            const timeTakenMs = getTotalProblemElapsedMs();
+            const timeStr = timeTakenMs > 0 ? ` in ${formatSolveTime(timeTakenMs)}` : '';
+
             statusEl.className = 'submission-status accepted';
             iconEl.textContent = '\u2714';
-            textEl.textContent = 'Accepted! Moving to next problem\u2026';
-            showToast('Problem solved! Advancing\u2026', 'success');
+            textEl.textContent = `Accepted${timeStr}! Moving to next\u2026`;
+            showToast(`Problem solved${timeStr}!`, 'success');
 
             cancelAnimationFrame(state.animFrameId);
             stopWatchdog();
             state.completed++;
-            state.problemResults.push({ contestId: p.contestId, index: p.index, result: 'completed' });
+            state.problemResults.push({
+                contestId: p.contestId, index: p.index, name: p.name,
+                rating: p.rating, url: p.url,
+                result: 'completed', timeTakenMs
+            });
             setTimeout(() => advanceToNext(), 1500);
             return;
         } else {
@@ -959,8 +1024,13 @@ async function markCompleted() {
         console.warn('Could not verify, proceeding anyway:', e);
     }
 
+    const timeTakenMs = getTotalProblemElapsedMs();
     state.completed++;
-    state.problemResults.push({ contestId: p.contestId, index: p.index, result: 'completed' });
+    state.problemResults.push({
+        contestId: p.contestId, index: p.index, name: p.name,
+        rating: p.rating, url: p.url,
+        result: 'completed', timeTakenMs
+    });
     advanceToNext();
 }
 
@@ -992,8 +1062,13 @@ async function markUpsolve() {
         localStorage.setItem('cf_upsolve_todo', JSON.stringify(local));
     }
 
+    const timeTakenMs = getTotalProblemElapsedMs();
     state.upsolveCount++;
-    state.problemResults.push({ contestId: p.contestId, index: p.index, result: 'upsolve' });
+    state.problemResults.push({
+        contestId: p.contestId, index: p.index, name: p.name,
+        rating: p.rating, url: p.url,
+        result: 'upsolve', timeTakenMs
+    });
     advanceToNext();
 }
 
@@ -1091,9 +1166,24 @@ function skipProblem() {
         return;
     }
     const p = state.problems[state.currentProblemIndex];
-    state.problemResults.push({ contestId: p.contestId, index: p.index, result: 'skipped' });
+    state.problemResults.push({
+        contestId: p.contestId, index: p.index, name: p.name,
+        rating: p.rating, url: p.url, result: 'skipped'
+    });
     advanceToNext();
     showToast('Problem skipped', 'info');
+}
+
+// ===== Mark for Upsolve (during active timer) =====
+function markUpsolveEarly() {
+    if (!state.sessionStarted && state.currentProblemIndex === 0) {
+        showToast('Start the timer first', 'warning');
+        return;
+    }
+    cancelAnimationFrame(state.animFrameId);
+    stopWatchdog();
+    showToast('Problem marked for upsolve', 'info');
+    markUpsolve();
 }
 
 // ===== Resume Banner =====
@@ -1110,6 +1200,12 @@ function setupKeyboardShortcuts() {
             case 'Space':
                 e.preventDefault();
                 if (state.problems.length > 0) toggleTimer();
+                break;
+            case 'KeyU':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    if (state.sessionStarted) markUpsolveEarly();
+                }
                 break;
             case 'KeyS':
                 if (!e.ctrlKey && !e.metaKey) {
@@ -1170,4 +1266,5 @@ window.dismissPhaseModal = dismissPhaseModal;
 window.abandonSession = abandonSession;
 window.dismissRestoreBanner = dismissRestoreBanner;
 window.skipProblem = skipProblem;
+window.markUpsolveEarly = markUpsolveEarly;
 window.loadWithHandle = loadWithHandle;

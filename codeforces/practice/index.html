@@ -219,8 +219,27 @@
                     <div class="queue-list" id="queueList"></div>
                 </div>
 
+                <!-- Completed Section -->
+                <div class="completed-section hidden" id="completedSection">
+                    <h3 class="completed-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        Session Progress
+                        <span class="completed-count" id="completedCount">0</span>
+                    </h3>
+                    <div class="completed-list" id="completedList"></div>
+                </div>
+
                 <!-- Session Actions -->
                 <div class="session-actions">
+                    <button class="btn-upsolve-early" onclick="markUpsolveEarly()" title="Mark for upsolve (U)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Mark for Upsolve
+                    </button>
                     <button class="btn-skip" onclick="skipProblem()" title="Skip this problem (S)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                             <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
@@ -238,6 +257,7 @@
                 <!-- Keyboard Shortcuts Hint -->
                 <div class="shortcuts-hint">
                     <span><kbd>Space</kbd> Start/Pause</span>
+                    <span><kbd>U</kbd> Upsolve</span>
                     <span><kbd>S</kbd> Skip</span>
                     <span><kbd>C</kbd> Check</span>
                 </div>
