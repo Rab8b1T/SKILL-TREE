@@ -47,6 +47,7 @@ const state = {
 };
 
 let audioCtx = null;
+let watchdogId = null;
 
 function $(sel) { return document.querySelector(sel); }
 function showEl(el) { if (typeof el === 'string') el = $(el); if (el) el.classList.remove('hidden'); }
@@ -114,6 +115,43 @@ function playAlarm() {
     } catch (e) {
         console.warn('Audio not available:', e);
     }
+}
+
+// ===== Background Notifications & Watchdog =====
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+function sendNotification(title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+        const n = new Notification(title, {
+            body,
+            tag: 'practice-phase',
+            requireInteraction: true
+        });
+        n.onclick = () => { window.focus(); n.close(); };
+    } catch (e) { console.warn('Notification error:', e); }
+}
+
+function startWatchdog() {
+    stopWatchdog();
+    watchdogId = setInterval(() => {
+        if (!state.isRunning || state.isPaused) return;
+        const remaining = getTimeRemainingSeconds();
+        const phase = CONFIG.PHASES[state.currentPhase];
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        document.title = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} | ${phase.name} - Practice`;
+        if (remaining <= 0) onPhaseEnd();
+    }, 1000);
+}
+
+function stopWatchdog() {
+    if (watchdogId) { clearInterval(watchdogId); watchdogId = null; }
+    document.title = 'Practice Mode - Codeforces';
 }
 
 // ===== API Sync =====
@@ -642,6 +680,7 @@ function renderQueue() {
 // ===== Timer =====
 function resetTimerUI() {
     cancelAnimationFrame(state.animFrameId);
+    stopWatchdog();
     state.currentPhase = 0;
     state.isRunning = false;
     state.isPaused = false;
@@ -679,6 +718,7 @@ function toggleTimer() {
 }
 
 function startTimer() {
+    requestNotificationPermission();
     if (!state.sessionStarted) {
         state.sessionStarted = true;
         state.currentPhase = 0;
@@ -698,6 +738,7 @@ function pauseTimer() {
     state.isPaused = true;
     state.pauseStartTime = Date.now();
     cancelAnimationFrame(state.animFrameId);
+    stopWatchdog();
     updateControlUI();
     syncNow();
     showToast('Timer paused', 'warning');
@@ -733,6 +774,7 @@ function updateControlUI() {
 // ===== Animation Frame Loop (replaces setInterval) =====
 function startAnimationLoop() {
     cancelAnimationFrame(state.animFrameId);
+    startWatchdog();
 
     function tick() {
         const remaining = getTimeRemainingSeconds();
@@ -791,11 +833,12 @@ function onPhaseEnd() {
 
     if (state.currentPhase < CONFIG.PHASES.length - 1) {
         const nextPhase = CONFIG.PHASES[state.currentPhase + 1];
-        showPhaseModal(
-            phase.name + ' Complete!',
-            `Moving to ${nextPhase.name} (${nextPhase.duration / 60} minutes)`,
-            phase.color
-        );
+        const title = phase.name + ' Complete!';
+        const text = `Moving to ${nextPhase.name} (${nextPhase.duration / 60} minutes)`;
+
+        if (document.hidden) sendNotification(title, text);
+        showPhaseModal(title, text, phase.color);
+
         state.currentPhase++;
         state.phaseStartTime = Date.now();
         state.phasePausedElapsed = 0;
@@ -804,12 +847,14 @@ function onPhaseEnd() {
         startAnimationLoop();
         debouncedSync();
     } else {
-        showPhaseModal(
-            'All Phases Complete!',
-            'Time to decide: Did you solve it or need to upsolve?',
-            '#ef4444'
-        );
+        const title = 'All Phases Complete!';
+        const text = 'Time to decide: Did you solve it or need to upsolve?';
+
+        if (document.hidden) sendNotification(title, text);
+        showPhaseModal(title, text, '#ef4444');
+
         state.isRunning = false;
+        stopWatchdog();
         hideEl('#timerSection');
         showEl('#postTimer');
         debouncedSync();
@@ -860,7 +905,15 @@ async function checkSubmission() {
         if (accepted) {
             statusEl.className = 'submission-status accepted';
             iconEl.textContent = '\u2714';
-            textEl.textContent = 'Accepted!';
+            textEl.textContent = 'Accepted! Moving to next problem\u2026';
+            showToast('Problem solved! Advancing\u2026', 'success');
+
+            cancelAnimationFrame(state.animFrameId);
+            stopWatchdog();
+            state.completed++;
+            state.problemResults.push({ contestId: p.contestId, index: p.index, result: 'completed' });
+            setTimeout(() => advanceToNext(), 1500);
+            return;
         } else {
             statusEl.className = 'submission-status not-solved';
             iconEl.textContent = '\u2718';
@@ -965,6 +1018,7 @@ function advanceToNext() {
 
 function showSessionComplete() {
     cancelAnimationFrame(state.animFrameId);
+    stopWatchdog();
     stopPeriodicSync();
     hideEl('#problemCard');
     hideEl('#timerSection');
@@ -1002,6 +1056,7 @@ async function abandonSession() {
     }
 
     cancelAnimationFrame(state.animFrameId);
+    stopWatchdog();
     stopPeriodicSync();
     state.problems = [];
     state.currentProblemIndex = 0;
@@ -1071,6 +1126,18 @@ function setupKeyboardShortcuts() {
         }
     });
 }
+
+// ===== Visibility Change (re-sync on tab focus) =====
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && state.isRunning && !state.isPaused) {
+        const remaining = getTimeRemainingSeconds();
+        if (remaining <= 0) {
+            onPhaseEnd();
+        } else {
+            startAnimationLoop();
+        }
+    }
+});
 
 // ===== Handle Input (cross-device) =====
 async function loadWithHandle() {
