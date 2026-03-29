@@ -93,6 +93,32 @@
                 </div>
             </div>
 
+            <!-- Activity Calendar -->
+            <section class="card hidden" id="calendarSection">
+                <h2 class="card-title">Activity Calendar</h2>
+                <p class="card-subtitle">Track your daily problem-solving consistency</p>
+                <div class="cal-container">
+                    <div class="cal-nav">
+                        <button class="cal-nav-btn" onclick="changeCalendarMonth(-1)" aria-label="Previous month">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                        </button>
+                        <div class="cal-nav-center">
+                            <h3 id="calendarMonthYear"></h3>
+                            <button class="cal-today-btn" onclick="goToCurrentMonth()">Today</button>
+                        </div>
+                        <button class="cal-nav-btn" onclick="changeCalendarMonth(1)" aria-label="Next month">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="cal-grid" id="calendarGrid"></div>
+                    <div class="cal-stats" id="calendarStats"></div>
+                </div>
+            </section>
+
             <!-- Step 2: Configure Selection -->
             <section class="card hidden" id="selectionSection">
                 <h2 class="card-title">Configure Selection</h2>

@@ -52,6 +52,12 @@ const PRESETS = {
 // Initialize with default segment
 let segments = [{ min: 800, max: 899, count: 2 }];
 
+let calendarState = {
+    month: new Date().getMonth(),
+    year: new Date().getFullYear(),
+    solvedByDate: {}
+};
+
 // =====================================================
 // Utility Functions
 // =====================================================
@@ -690,6 +696,7 @@ async function fetchData() {
         showLoading('Fetching your submissions...', 50);
         const submissions = await fetchUserSubmissions(handle);
         state.solvedProblems = processSubmissions(submissions);
+        processSubmissionsForCalendar(submissions);
         updateProgress(80);
 
         showLoading('Processing data...', 90);
@@ -699,6 +706,11 @@ async function fetchData() {
 
         updateProgress(100);
         hideLoading();
+
+        calendarState.month = new Date().getMonth();
+        calendarState.year = new Date().getFullYear();
+        renderCalendar();
+        showElement('#calendarSection');
 
         showElement('#selectionSection');
         hideElement('#resultsSection');
@@ -943,6 +955,163 @@ async function loadUpsolveCounts() {
 }
 
 // =====================================================
+// Activity Calendar
+// =====================================================
+
+function processSubmissionsForCalendar(submissions) {
+    const solvedByDate = {};
+    const seenPerDay = {};
+
+    for (const sub of submissions) {
+        if (sub.verdict === 'OK' && sub.problem && sub.problem.contestId) {
+            const date = new Date(sub.creationTimeSeconds * 1000);
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${y}-${m}-${d}`;
+            const problemKey = `${sub.problem.contestId}-${sub.problem.index}`;
+
+            if (!seenPerDay[dateStr]) seenPerDay[dateStr] = new Set();
+            if (!seenPerDay[dateStr].has(problemKey)) {
+                seenPerDay[dateStr].add(problemKey);
+                solvedByDate[dateStr] = (solvedByDate[dateStr] || 0) + 1;
+            }
+        }
+    }
+
+    calendarState.solvedByDate = solvedByDate;
+}
+
+function renderCalendar() {
+    const { month, year, solvedByDate } = calendarState;
+    const now = new Date();
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDow = firstDay.getDay();
+    const daysInMonth = lastDay.getDate();
+
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                         'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const headerEl = document.getElementById('calendarMonthYear');
+    if (headerEl) headerEl.textContent = `${monthNames[month]} ${year}`;
+
+    const grid = document.getElementById('calendarGrid');
+    if (!grid) return;
+
+    let html = '';
+    const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    dayHeaders.forEach(d => {
+        html += `<div class="cal-header-cell">${d}</div>`;
+    });
+
+    for (let i = 0; i < startDow; i++) {
+        html += `<div class="cal-day cal-empty"></div>`;
+    }
+
+    let stats = { red: 0, yellow: 0, green: 0, cyan: 0, future: 0 };
+    let totalSolved = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const m = String(month + 1).padStart(2, '0');
+        const d = String(day).padStart(2, '0');
+        const dateStr = `${year}-${m}-${d}`;
+        const cellDate = new Date(year, month, day);
+        const isFuture = cellDate > todayMidnight;
+        const isToday = cellDate.getTime() === todayMidnight.getTime();
+        const count = solvedByDate[dateStr] || 0;
+
+        let colorClass;
+        if (isFuture) {
+            colorClass = 'cal-future';
+            stats.future++;
+        } else if (count === 0) {
+            colorClass = 'cal-red';
+            stats.red++;
+        } else if (count < 5) {
+            colorClass = 'cal-yellow';
+            stats.yellow++;
+        } else if (count <= 10) {
+            colorClass = 'cal-green';
+            stats.green++;
+        } else {
+            colorClass = 'cal-cyan';
+            stats.cyan++;
+        }
+
+        if (!isFuture) totalSolved += count;
+
+        const todayClass = isToday ? ' cal-today' : '';
+        const tooltip = isFuture
+            ? `${monthNames[month]} ${day}: Upcoming`
+            : `${monthNames[month]} ${day}: ${count} problem${count !== 1 ? 's' : ''} solved`;
+
+        html += `<div class="cal-day ${colorClass}${todayClass}" title="${tooltip}">
+            <span class="cal-day-num">${day}</span>
+            ${!isFuture && count > 0 ? `<span class="cal-day-count">${count}</span>` : ''}
+        </div>`;
+    }
+
+    grid.innerHTML = html;
+
+    grid.classList.remove('cal-grid-animate');
+    void grid.offsetHeight;
+    grid.classList.add('cal-grid-animate');
+
+    renderCalendarStats(stats, totalSolved);
+}
+
+function renderCalendarStats(stats, totalSolved) {
+    const statsEl = document.getElementById('calendarStats');
+    if (!statsEl) return;
+
+    const items = [
+        { cls: 'red', label: '0 solved', count: stats.red },
+        { cls: 'yellow', label: '1\u20134 solved', count: stats.yellow },
+        { cls: 'green', label: '5\u201310 solved', count: stats.green },
+        { cls: 'cyan', label: '11+ solved', count: stats.cyan },
+        { cls: 'future', label: 'Upcoming', count: stats.future },
+    ];
+
+    const statHtml = items.map(i => `
+        <div class="cal-stat-item">
+            <span class="cal-stat-dot cal-dot-${i.cls}"></span>
+            <span class="cal-stat-label">${i.label}</span>
+            <span class="cal-stat-value">${i.count} day${i.count !== 1 ? 's' : ''}</span>
+        </div>
+    `).join('');
+
+    statsEl.innerHTML = `
+        <div class="cal-stat-row">${statHtml}</div>
+        <div class="cal-total">
+            <span class="cal-total-label">Total this month:</span>
+            <span class="cal-total-value">${totalSolved} problem${totalSolved !== 1 ? 's' : ''}</span>
+        </div>
+    `;
+}
+
+function changeCalendarMonth(delta) {
+    calendarState.month += delta;
+    if (calendarState.month > 11) {
+        calendarState.month = 0;
+        calendarState.year++;
+    } else if (calendarState.month < 0) {
+        calendarState.month = 11;
+        calendarState.year--;
+    }
+    renderCalendar();
+}
+
+function goToCurrentMonth() {
+    const now = new Date();
+    calendarState.month = now.getMonth();
+    calendarState.year = now.getFullYear();
+    renderCalendar();
+}
+
+// =====================================================
 // Active Practice Session Check
 // =====================================================
 
@@ -1023,3 +1192,5 @@ window.toggleTag = toggleTag;
 window.updateTagCount = updateTagCount;
 window.clearTagFilter = clearTagFilter;
 window.filterTags = filterTags;
+window.changeCalendarMonth = changeCalendarMonth;
+window.goToCurrentMonth = goToCurrentMonth;
