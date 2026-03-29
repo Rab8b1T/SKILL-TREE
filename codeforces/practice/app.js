@@ -26,17 +26,18 @@ const state = {
     handle: '',
     currentProblemIndex: 0,
     currentPhase: 0,
-    // Server-timestamp fields (replaces setInterval tick counting)
-    phaseStartTime: null,     // Wall-clock ms when current phase timer started
-    phasePausedElapsed: 0,    // Total ms spent paused in current phase
+    phaseStartTime: null,
+    phasePausedElapsed: 0,
     isPaused: false,
-    pauseStartTime: null,     // Wall-clock ms when pause started (null if not paused)
+    pauseStartTime: null,
     isRunning: false,
     useCorsProxy: false,
     completed: 0,
     upsolveCount: 0,
     sessionStarted: false,
-    problemResults: [],       // Track results per problem
+    sessionStartedAt: null,
+    problemResults: [],
+    pastSessions: [],
     // Sync
     apiSyncEnabled: true,
     _syncTimeout: null,
@@ -231,6 +232,7 @@ function buildActivePracticePayload() {
         pauseStartTime: state.pauseStartTime,
         isRunning: state.isRunning,
         sessionStarted: state.sessionStarted,
+        sessionStartedAt: state.sessionStartedAt,
         completed: state.completed,
         upsolveCount: state.upsolveCount,
         problemResults: state.problemResults
@@ -250,6 +252,7 @@ function saveToLocalStorage() {
             pauseStartTime: state.pauseStartTime,
             isRunning: state.isRunning,
             sessionStarted: state.sessionStarted,
+            sessionStartedAt: state.sessionStartedAt,
             completed: state.completed,
             upsolveCount: state.upsolveCount,
             problemResults: state.problemResults,
@@ -333,6 +336,7 @@ function applyRemoteState(serverData) {
     state.pauseStartTime = ap.pauseStartTime;
     state.isRunning = ap.isRunning || false;
     state.sessionStarted = ap.sessionStarted || false;
+    state.sessionStartedAt = ap.sessionStartedAt || null;
     state.completed = ap.completed || 0;
     state.upsolveCount = ap.upsolveCount || 0;
     state.problemResults = ap.problemResults || [];
@@ -434,10 +438,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
 
-    // --- Try to load from API (with handle if known, without for cross-device) ---
     let apiData = null;
     if (token) {
         apiData = await loadFromAPI(state.handle || '');
+    }
+
+    if (apiData && apiData.pastSessions) {
+        state.pastSessions = apiData.pastSessions;
     }
 
     if (tryRestoreFromAPI(apiData)) {
@@ -445,14 +452,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // --- Fall back to localStorage ---
     if (tryRestoreFromLocal(localData)) {
         startPeriodicSync();
         return;
     }
 
-    // No data at all — show empty state with handle input for cross-device
-    showEl('#emptyState');
+    showPracticeHub();
 });
 
 function tryRestoreFromAPI(apiData) {
@@ -473,15 +478,16 @@ function tryRestoreFromAPI(apiData) {
     state.pauseStartTime = ap.pauseStartTime;
     state.isRunning = ap.isRunning || false;
     state.sessionStarted = ap.sessionStarted || false;
+    state.sessionStartedAt = ap.sessionStartedAt || null;
     state.completed = ap.completed || 0;
     state.upsolveCount = ap.upsolveCount || 0;
     state.problemResults = ap.problemResults || [];
+    state.pastSessions = apiData.pastSessions || [];
 
-    // Persist handle locally so future loads on this device are faster
     if (state.handle) {
         localStorage.setItem('cf_upsolve_handle', state.handle);
     }
-    localStorage.removeItem('cf_practice_data');
+    saveToLocalStorage();
 
     $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
     $('#totalCount').textContent = state.problems.length;
@@ -508,6 +514,7 @@ function tryRestoreFromLocal(localData) {
     state.pauseStartTime = localData.pauseStartTime || null;
     state.isRunning = localData.isRunning || false;
     state.sessionStarted = localData.sessionStarted || false;
+    state.sessionStartedAt = localData.sessionStartedAt || null;
     state.completed = localData.completed || 0;
     state.upsolveCount = localData.upsolveCount || 0;
     state.problemResults = localData.problemResults || [];
@@ -779,6 +786,7 @@ function startTimer() {
     requestNotificationPermission();
     if (!state.sessionStarted) {
         state.sessionStarted = true;
+        if (!state.sessionStartedAt) state.sessionStartedAt = new Date().toISOString();
         state.currentPhase = 0;
         state.phaseStartTime = Date.now();
         state.phasePausedElapsed = 0;
@@ -1091,15 +1099,67 @@ function advanceToNext() {
     }
 }
 
-function showSessionComplete() {
+function generateSessionId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+async function saveSessionToHistory(status) {
+    const session = {
+        sessionId: generateSessionId(),
+        startedAt: state.sessionStartedAt || new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        status,
+        problems: state.problems,
+        problemResults: state.problemResults,
+        completed: state.completed,
+        upsolveCount: state.upsolveCount,
+        totalProblems: state.problems.length,
+        currentProblemIndex: state.currentProblemIndex,
+        handle: state.handle
+    };
+
+    state.pastSessions.push(session);
+
+    const token = localStorage.getItem('authToken');
+    if (token && state.handle) {
+        try {
+            await fetch(`${PRACTICE_API}/practice/data`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    cfHandle: state.handle,
+                    action: 'saveSession',
+                    session
+                })
+            });
+        } catch (e) {
+            console.warn('Failed to save session to history:', e);
+        }
+    }
+
+    try {
+        const local = JSON.parse(localStorage.getItem('cf_practice_history') || '[]');
+        local.push(session);
+        if (local.length > 30) local.splice(0, local.length - 30);
+        localStorage.setItem('cf_practice_history', JSON.stringify(local));
+    } catch (e) {
+        console.warn('Failed to save session history locally:', e);
+    }
+}
+
+async function showSessionComplete() {
     cancelAnimationFrame(state.animFrameId);
     stopWatchdog();
     stopPeriodicSync();
+
+    await saveSessionToHistory('completed');
+
     hideEl('#problemCard');
     hideEl('#timerSection');
     hideEl('#postTimer');
     hideEl('.queue-section');
     hideEl('#restoreBanner');
+    hideEl('#completedSection');
     showEl('#sessionComplete');
 
     const skipped = state.problemResults.filter(r => r.result === 'skipped').length;
@@ -1115,30 +1175,32 @@ function showSessionComplete() {
     $('#progressPct').textContent = pct + '%';
     $('#sessionProgress').style.width = pct + '%';
 
-    // Clear session from localStorage and MongoDB
     localStorage.removeItem('cf_practice_data');
 
-    // Clear active practice from MongoDB
     state.sessionStarted = false;
     state.isRunning = false;
     syncNow();
 }
 
-// ===== Abandon Session =====
+// ===== Save & Exit Session =====
 async function abandonSession() {
-    if (!confirm('Are you sure you want to abandon this practice session? All progress will be lost.')) {
+    if (!confirm('Save your progress and exit? You can resume this session later.')) {
         return;
     }
 
     cancelAnimationFrame(state.animFrameId);
     stopWatchdog();
     stopPeriodicSync();
+
+    await saveSessionToHistory('paused');
+
     state.problems = [];
     state.currentProblemIndex = 0;
     state.currentPhase = 0;
     state.isRunning = false;
     state.isPaused = false;
     state.sessionStarted = false;
+    state.sessionStartedAt = null;
     state.phaseStartTime = null;
     state.phasePausedElapsed = 0;
     state.pauseStartTime = null;
@@ -1148,12 +1210,10 @@ async function abandonSession() {
 
     localStorage.removeItem('cf_practice_data');
 
-    // Clear from MongoDB
     await syncNow();
 
-    showToast('Practice session abandoned', 'warning');
+    showToast('Session saved! You can resume it later.', 'success');
 
-    // Redirect back to problem picker
     setTimeout(() => {
         window.location.href = '../';
     }, 500);
@@ -1249,12 +1309,443 @@ async function loadWithHandle() {
     $('#handleDisplay').textContent = `@${handle}`;
 
     const apiData = await loadFromAPI(handle);
+    if (apiData && apiData.pastSessions) {
+        state.pastSessions = apiData.pastSessions;
+    }
     if (tryRestoreFromAPI(apiData)) {
         startPeriodicSync();
         showToast('Session loaded!', 'success');
     } else {
+        showPracticeHub();
         showToast('No active session found for this handle', 'info');
     }
+}
+
+// ===== Practice Hub =====
+function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days === 1) return 'yesterday';
+    if (days < 30) return `${days}d ago`;
+    return new Date(dateStr).toLocaleDateString();
+}
+
+function getPastSessions() {
+    if (state.pastSessions && state.pastSessions.length > 0) {
+        return state.pastSessions;
+    }
+    try {
+        return JSON.parse(localStorage.getItem('cf_practice_history') || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+
+function computeStats(sessions) {
+    if (!sessions || sessions.length === 0) {
+        return { totalSessions: 0, totalSolved: 0, solveRate: 0, currentStreak: 0, bestStreak: 0 };
+    }
+
+    let totalSolved = 0;
+    let totalProblems = 0;
+    sessions.forEach(s => {
+        totalSolved += (s.completed || 0);
+        totalProblems += (s.totalProblems || s.problems?.length || 0);
+    });
+    const solveRate = totalProblems > 0 ? Math.round((totalSolved / totalProblems) * 100) : 0;
+
+    const sessionDays = new Set();
+    sessions.forEach(s => {
+        if (s.completedAt || s.startedAt) {
+            const d = new Date(s.completedAt || s.startedAt);
+            sessionDays.add(d.toISOString().split('T')[0]);
+        }
+    });
+
+    let currentStreak = 0;
+    let bestStreak = 0;
+    const today = new Date();
+    let checkDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    while (true) {
+        const ds = checkDate.toISOString().split('T')[0];
+        if (sessionDays.has(ds)) {
+            currentStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+            if (currentStreak === 0) {
+                checkDate.setDate(checkDate.getDate() - 1);
+                const yd = checkDate.toISOString().split('T')[0];
+                if (sessionDays.has(yd)) {
+                    currentStreak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                    continue;
+                }
+            }
+            break;
+        }
+    }
+
+    const sortedDays = Array.from(sessionDays).sort();
+    let streak = 1;
+    bestStreak = sortedDays.length > 0 ? 1 : 0;
+    for (let i = 1; i < sortedDays.length; i++) {
+        const prev = new Date(sortedDays[i - 1]);
+        const curr = new Date(sortedDays[i]);
+        const diffDays = Math.round((curr - prev) / 86400000);
+        if (diffDays === 1) {
+            streak++;
+            bestStreak = Math.max(bestStreak, streak);
+        } else {
+            streak = 1;
+        }
+    }
+
+    return { totalSessions: sessions.length, totalSolved, solveRate, currentStreak, bestStreak };
+}
+
+function showPracticeHub() {
+    hideEl('#practiceArea');
+    const emptyState = $('#emptyState');
+    if (!emptyState) return;
+
+    const sessions = getPastSessions();
+    const stats = computeStats(sessions);
+    const pausedSessions = sessions.filter(s => s.status === 'paused');
+    const recentSessions = [...sessions].reverse().slice(0, 10);
+
+    let html = '';
+
+    if (stats.totalSessions > 0) {
+        html += `<div class="hub-stats">
+            <div class="hub-stat"><span class="hub-stat-val">${stats.totalSessions}</span><span class="hub-stat-lbl">Sessions</span></div>
+            <div class="hub-stat"><span class="hub-stat-val">${stats.totalSolved}</span><span class="hub-stat-lbl">Solved</span></div>
+            <div class="hub-stat"><span class="hub-stat-val">${stats.solveRate}%</span><span class="hub-stat-lbl">Solve Rate</span></div>
+            <div class="hub-stat"><span class="hub-stat-val">${stats.currentStreak}</span><span class="hub-stat-lbl">Day Streak</span></div>
+            <div class="hub-stat"><span class="hub-stat-val">${stats.bestStreak}</span><span class="hub-stat-lbl">Best Streak</span></div>
+        </div>`;
+    }
+
+    html += `<div class="hub-header">
+        <div class="hub-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+        </div>
+        <h2>Practice Hub</h2>
+        <p>Start a new session, resume a saved one, or practice from your upsolve queue.</p>
+    </div>`;
+
+    html += `<div class="hub-quick-actions">
+        <a href="../" class="hub-action-card hub-action-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            <div>
+                <strong>Problem Picker</strong>
+                <span>Select problems by rating & tags</span>
+            </div>
+        </a>
+        <button class="hub-action-card hub-action-upsolve" onclick="loadUpsolveForPractice()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+            </svg>
+            <div>
+                <strong>Upsolve Queue</strong>
+                <span>Practice from your todo list</span>
+            </div>
+        </button>
+    </div>`;
+
+    if (pausedSessions.length > 0) {
+        html += `<div class="hub-section">
+            <h3 class="hub-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                </svg>
+                Paused Sessions
+            </h3>
+            <div class="hub-sessions-list">
+                ${pausedSessions.reverse().map(s => renderSessionCard(s)).join('')}
+            </div>
+        </div>`;
+    }
+
+    if (recentSessions.length > 0) {
+        html += `<div class="hub-section">
+            <h3 class="hub-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Recent Sessions
+            </h3>
+            <div class="hub-sessions-list">
+                ${recentSessions.map(s => renderSessionCard(s)).join('')}
+            </div>
+        </div>`;
+    }
+
+    html += `<div class="cross-device-section">
+        <p class="cross-device-hint">Have an active session on another device?</p>
+        <div class="handle-input-row">
+            <input type="text" id="handleInput" class="handle-input" placeholder="Enter your CF handle" autocomplete="off">
+            <button class="btn-gradient btn-sm" onclick="loadWithHandle()">Load Session</button>
+        </div>
+    </div>`;
+
+    emptyState.innerHTML = html;
+    showEl('#emptyState');
+}
+
+function renderSessionCard(s) {
+    const solved = s.completed || 0;
+    const total = s.totalProblems || s.problems?.length || 0;
+    const upsolve = s.upsolveCount || 0;
+    const isPaused = s.status === 'paused';
+    const statusClass = isPaused ? 'status-paused' : 'status-completed';
+    const statusLabel = isPaused ? 'Paused' : 'Completed';
+    const remaining = total - (s.problemResults?.length || 0);
+    const dateStr = timeAgo(s.completedAt || s.startedAt);
+    const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
+
+    return `<div class="hub-session-card ${statusClass}">
+        <div class="hub-session-header">
+            <span class="hub-session-badge ${statusClass}">${statusLabel}</span>
+            <span class="hub-session-date">${dateStr}</span>
+        </div>
+        <div class="hub-session-stats">
+            <span>${solved}/${total} solved</span>
+            ${upsolve > 0 ? `<span>\u00b7 ${upsolve} upsolve</span>` : ''}
+            ${isPaused && remaining > 0 ? `<span>\u00b7 ${remaining} remaining</span>` : ''}
+        </div>
+        <div class="hub-session-bar">
+            <div class="hub-session-fill" style="width: ${pct}%"></div>
+        </div>
+        ${isPaused ? `<button class="hub-session-resume" onclick="resumePausedSession('${s.sessionId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Resume
+        </button>` : ''}
+    </div>`;
+}
+
+// ===== Resume Paused Sessions =====
+async function resumePausedSession(sessionId) {
+    const sessions = getPastSessions();
+    const session = sessions.find(s => s.sessionId === sessionId);
+    if (!session) {
+        showToast('Session not found', 'error');
+        return;
+    }
+
+    if (state.problems && state.problems.length > 0 && state.sessionStarted) {
+        if (!confirm('You have an active session. Replace it with the saved session?')) return;
+    }
+
+    const processedKeys = new Set(
+        (session.problemResults || []).map(r => `${r.contestId}-${r.index}`)
+    );
+    const remaining = (session.problems || []).filter(
+        p => !processedKeys.has(`${p.contestId}-${p.index}`)
+    );
+
+    if (remaining.length === 0) {
+        showToast('No problems remaining in this session', 'info');
+        return;
+    }
+
+    state.problems = remaining;
+    state.handle = session.handle || state.handle;
+    state.currentProblemIndex = 0;
+    state.currentPhase = 0;
+    state.isRunning = false;
+    state.isPaused = false;
+    state.sessionStarted = false;
+    state.sessionStartedAt = session.startedAt;
+    state.phaseStartTime = null;
+    state.phasePausedElapsed = 0;
+    state.pauseStartTime = null;
+    state.completed = session.completed || 0;
+    state.upsolveCount = session.upsolveCount || 0;
+    state.problemResults = session.problemResults || [];
+
+    state.pastSessions = state.pastSessions.filter(s => s.sessionId !== sessionId);
+
+    const token = localStorage.getItem('authToken');
+    if (token && state.handle) {
+        try {
+            await fetch(`${PRACTICE_API}/practice/data`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    cfHandle: state.handle,
+                    action: 'resumeSession',
+                    sessionId
+                })
+            });
+        } catch (e) {
+            console.warn('Failed to remove resumed session from history:', e);
+        }
+    }
+
+    try {
+        const local = JSON.parse(localStorage.getItem('cf_practice_history') || '[]');
+        const updated = local.filter(s => s.sessionId !== sessionId);
+        localStorage.setItem('cf_practice_history', JSON.stringify(updated));
+    } catch (e) { /* ignore */ }
+
+    localStorage.setItem('cf_upsolve_handle', state.handle);
+    $('#handleDisplay').textContent = state.handle ? `@${state.handle}` : '';
+    $('#totalCount').textContent = state.problems.length;
+
+    hideEl('#emptyState');
+    showEl('#practiceArea');
+    loadCurrentProblem();
+    startPeriodicSync();
+    syncNow();
+
+    showToast(`Session resumed \u2014 ${remaining.length} problems remaining`, 'success');
+}
+
+// ===== Upsolve Queue Practice =====
+async function loadUpsolveForPractice() {
+    const handle = state.handle
+        || localStorage.getItem('cf_upsolve_handle')
+        || localStorage.getItem('lastUser')
+        || '';
+
+    if (!handle) {
+        showToast('Enter your handle first', 'warning');
+        return;
+    }
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        showToast('Please log in to access your upsolve queue', 'warning');
+        return;
+    }
+
+    showToast('Loading upsolve queue...', 'info');
+
+    try {
+        const resp = await fetch(`${PRACTICE_API}/upsolve-data?handle=${encodeURIComponent(handle)}`, {
+            headers: getAuthHeaders()
+        });
+        const data = await resp.json();
+        const todos = data.todo || [];
+
+        if (todos.length === 0) {
+            showToast('Your upsolve queue is empty', 'info');
+            return;
+        }
+
+        showUpsolveSelectionModal(todos, handle);
+    } catch (e) {
+        console.warn('Failed to load upsolve queue:', e);
+        showToast('Failed to load upsolve queue', 'error');
+    }
+}
+
+function showUpsolveSelectionModal(todos, handle) {
+    const existing = $('#upsolveModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'upsolveModal';
+    modal.innerHTML = `
+        <div class="modal-content upsolve-select-modal">
+            <h2>Select Problems to Practice</h2>
+            <p>${todos.length} problems in your upsolve queue</p>
+            <div class="upsolve-select-actions">
+                <label class="upsolve-select-all">
+                    <input type="checkbox" id="upsolveSelectAll" checked> Select All
+                </label>
+            </div>
+            <div class="upsolve-select-list">
+                ${todos.map((p, i) => `
+                    <label class="upsolve-select-item">
+                        <input type="checkbox" class="upsolve-cb" data-idx="${i}" checked>
+                        <span class="upsolve-select-name">${p.contestId}${p.index} - ${p.name || 'Unknown'}</span>
+                        <span class="queue-rating ${getRatingClass(p.rating)}">${p.rating || '?'}</span>
+                    </label>
+                `).join('')}
+            </div>
+            <div class="upsolve-select-footer">
+                <button class="btn-gradient" id="upsolveStartBtn">Start Practice</button>
+                <button class="btn-outline" onclick="document.getElementById('upsolveModal').remove()">Cancel</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const selectAll = modal.querySelector('#upsolveSelectAll');
+    const checkboxes = modal.querySelectorAll('.upsolve-cb');
+    selectAll.addEventListener('change', () => {
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    });
+
+    modal.querySelector('#upsolveStartBtn').addEventListener('click', () => {
+        const selected = [];
+        checkboxes.forEach((cb, i) => {
+            if (cb.checked) {
+                const p = todos[i];
+                selected.push({
+                    contestId: p.contestId,
+                    index: p.index,
+                    name: p.name || 'Unknown',
+                    rating: p.rating || null,
+                    tags: p.tags || [],
+                    url: p.url || `https://codeforces.com/problemset/problem/${p.contestId}/${p.index}`
+                });
+            }
+        });
+
+        if (selected.length === 0) {
+            showToast('Select at least one problem', 'warning');
+            return;
+        }
+
+        modal.remove();
+        startSessionFromProblems(selected, handle);
+    });
+}
+
+function startSessionFromProblems(problems, handle) {
+    state.problems = problems;
+    state.handle = handle;
+    state.currentProblemIndex = 0;
+    state.currentPhase = 0;
+    state.isRunning = false;
+    state.isPaused = false;
+    state.sessionStarted = false;
+    state.sessionStartedAt = null;
+    state.phaseStartTime = null;
+    state.phasePausedElapsed = 0;
+    state.pauseStartTime = null;
+    state.completed = 0;
+    state.upsolveCount = 0;
+    state.problemResults = [];
+
+    localStorage.setItem('cf_upsolve_handle', handle);
+    $('#handleDisplay').textContent = `@${handle}`;
+    $('#totalCount').textContent = problems.length;
+
+    hideEl('#emptyState');
+    showEl('#practiceArea');
+    loadCurrentProblem();
+    startPeriodicSync();
+    syncNow();
+
+    showToast(`Practice session started with ${problems.length} problems`, 'success');
 }
 
 // Globals for onclick handlers
@@ -1268,3 +1759,6 @@ window.dismissRestoreBanner = dismissRestoreBanner;
 window.skipProblem = skipProblem;
 window.markUpsolveEarly = markUpsolveEarly;
 window.loadWithHandle = loadWithHandle;
+window.resumePausedSession = resumePausedSession;
+window.loadUpsolveForPractice = loadUpsolveForPractice;
+window.startSessionFromProblems = startSessionFromProblems;

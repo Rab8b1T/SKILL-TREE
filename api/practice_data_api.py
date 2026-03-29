@@ -1,6 +1,6 @@
 """
 Practice data API — authenticated MongoDB CRUD for per-user practice session data.
-Follows the same pattern as contest_data_api.py
+Supports active practice sessions and session history (pastSessions).
 """
 
 import os
@@ -18,8 +18,11 @@ DB_NAME = os.environ.get('DB_NAME', 'skilltree')
 
 _client = None
 
+MAX_PAST_SESSIONS = 30
+
 EMPTY_DATA = {
     'activePractice': None,
+    'pastSessions': [],
 }
 
 
@@ -60,7 +63,6 @@ def practice_data():
             if cf_handle:
                 doc = col.find_one({'_id': cf_handle})
             else:
-                # No handle provided — look up by userId for cross-device restore
                 doc = col.find_one({
                     'userId': auth['userId'],
                     'activePractice': {'$ne': None}
@@ -68,6 +70,7 @@ def practice_data():
             if doc:
                 found_handle = doc.pop('_id', None)
                 doc['cfHandle'] = found_handle
+                doc.setdefault('pastSessions', [])
                 return send_cors_json(doc)
             return send_cors_json(EMPTY_DATA)
 
@@ -79,6 +82,42 @@ def practice_data():
             if not cf_handle or not isinstance(cf_handle, str):
                 return send_cors_json({'error': 'cfHandle is required in the request body'}, 400)
 
+            action = payload.get('action')
+            now = datetime.now(timezone.utc).isoformat()
+
+            if action == 'saveSession':
+                session = payload.get('session')
+                if not session:
+                    return send_cors_json({'error': 'session is required'}, 400)
+                session['savedAt'] = now
+                col.update_one(
+                    {'_id': cf_handle},
+                    {
+                        '$push': {
+                            'pastSessions': {
+                                '$each': [session],
+                                '$slice': -MAX_PAST_SESSIONS
+                            }
+                        },
+                        '$set': {'userId': auth['userId'], 'savedAt': now}
+                    },
+                    upsert=True
+                )
+                return send_cors_json({'ok': True, 'savedAt': now})
+
+            if action == 'resumeSession':
+                session_id = payload.get('sessionId')
+                if not session_id:
+                    return send_cors_json({'error': 'sessionId is required'}, 400)
+                col.update_one(
+                    {'_id': cf_handle},
+                    {
+                        '$pull': {'pastSessions': {'sessionId': session_id}},
+                        '$set': {'savedAt': now}
+                    }
+                )
+                return send_cors_json({'ok': True})
+
             last_known = payload.get('lastKnownSavedAt')
             if last_known:
                 existing = col.find_one({'_id': cf_handle})
@@ -86,12 +125,13 @@ def practice_data():
                     existing.pop('_id', None)
                     existing['cfHandle'] = cf_handle
                     existing['conflict'] = True
+                    existing.setdefault('pastSessions', [])
                     return send_cors_json(existing)
 
             data_to_save = {k: v for k, v in payload.items()
-                           if k not in ('cfHandle', 'lastKnownSavedAt')}
+                           if k not in ('cfHandle', 'lastKnownSavedAt', 'action')}
             data_to_save['userId'] = auth['userId']
-            data_to_save['savedAt'] = datetime.now(timezone.utc).isoformat()
+            data_to_save['savedAt'] = now
 
             col.update_one(
                 {'_id': cf_handle},

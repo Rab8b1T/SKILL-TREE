@@ -825,6 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadUpsolveCounts();
     checkActivePractice();
+    loadPracticeHistorySummary();
 });
 
 // =====================================================
@@ -910,6 +911,7 @@ function startPractice() {
                     pauseStartTime: null,
                     isRunning: false,
                     sessionStarted: false,
+                    sessionStartedAt: null,
                     completed: 0,
                     upsolveCount: 0,
                     problemResults: []
@@ -1128,7 +1130,7 @@ async function checkActivePractice() {
             const resp = await fetch(`${apiBase}/api/practice/data?handle=${encodeURIComponent(handle)}`, { headers });
             const data = await resp.json();
 
-            if (data.activePractice && data.activePractice.problems && data.activePractice.problems.length > 0 && data.activePractice.sessionStarted) {
+            if (data.activePractice && data.activePractice.problems && data.activePractice.problems.length > 0) {
                 showActivePracticeBanner(data.activePractice);
                 return;
             }
@@ -1142,7 +1144,7 @@ async function checkActivePractice() {
         const raw = localStorage.getItem('cf_practice_data');
         if (raw) {
             const localData = JSON.parse(raw);
-            if (localData && localData.problems && localData.problems.length > 0 && localData.sessionStarted) {
+            if (localData && localData.problems && localData.problems.length > 0) {
                 showActivePracticeBanner(localData);
             }
         }
@@ -1156,11 +1158,97 @@ function showActivePracticeBanner(ap) {
     const current = (ap.currentProblemIndex || 0) + 1;
     const completed = ap.completed || 0;
 
+    let statusText;
+    if (!ap.sessionStarted) {
+        statusText = `${total} problems \u00b7 Not started`;
+    } else if (ap.isPaused) {
+        statusText = `Problem ${current} of ${total} \u00b7 ${completed} completed \u00b7 Paused`;
+    } else if (ap.isRunning) {
+        statusText = `Problem ${current} of ${total} \u00b7 ${completed} completed \u00b7 Running`;
+    } else {
+        statusText = `Problem ${current} of ${total} \u00b7 ${completed} completed`;
+    }
+
     const banner = document.getElementById('activePracticeBanner');
     const detail = document.getElementById('activePracticeDetail');
     if (banner && detail) {
-        detail.textContent = `Problem ${current} of ${total} \u00b7 ${completed} completed${ap.isPaused ? ' \u00b7 Paused' : ap.isRunning ? ' \u00b7 Running' : ''}`;
+        detail.textContent = statusText;
         banner.classList.remove('hidden');
+    }
+}
+
+// =====================================================
+// Practice History Summary
+// =====================================================
+
+async function loadPracticeHistorySummary() {
+    const handle = ($('#handleInput') && $('#handleInput').value.trim())
+        || state.handle
+        || localStorage.getItem('cf_upsolve_handle')
+        || '';
+    if (!handle) return;
+
+    const token = localStorage.getItem('authToken');
+    let sessions = [];
+
+    if (token) {
+        try {
+            const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+            const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+            const resp = await fetch(`${apiBase}/api/practice/data?handle=${encodeURIComponent(handle)}`, { headers });
+            const data = await resp.json();
+            sessions = data.pastSessions || [];
+        } catch (e) {
+            console.warn('Could not load practice history:', e);
+        }
+    }
+
+    if (sessions.length === 0) {
+        try {
+            sessions = JSON.parse(localStorage.getItem('cf_practice_history') || '[]');
+        } catch (e) { /* ignore */ }
+    }
+
+    if (sessions.length === 0) return;
+
+    let totalSolved = 0;
+    sessions.forEach(s => { totalSolved += (s.completed || 0); });
+
+    const sessionDays = new Set();
+    sessions.forEach(s => {
+        if (s.completedAt || s.startedAt) {
+            const d = new Date(s.completedAt || s.startedAt);
+            sessionDays.add(d.toISOString().split('T')[0]);
+        }
+    });
+
+    let currentStreak = 0;
+    const today = new Date();
+    let checkDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    let checked = false;
+    while (true) {
+        const ds = checkDate.toISOString().split('T')[0];
+        if (sessionDays.has(ds)) {
+            currentStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+            checked = true;
+        } else {
+            if (!checked) {
+                checkDate.setDate(checkDate.getDate() - 1);
+                checked = true;
+                continue;
+            }
+            break;
+        }
+    }
+
+    const summary = document.getElementById('practiceHistorySummary');
+    const text = document.getElementById('practiceHistoryText');
+    if (summary && text) {
+        const parts = [`${sessions.length} sessions`, `${totalSolved} solved`];
+        if (currentStreak > 0) parts.push(`${currentStreak}-day streak`);
+        text.textContent = parts.join(' \u00b7 ');
+        summary.classList.remove('hidden');
     }
 }
 

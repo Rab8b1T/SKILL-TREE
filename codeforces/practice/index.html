@@ -70,24 +70,9 @@
                 </div>
             </div>
 
-            <!-- No Data State -->
-            <div class="empty-state" id="emptyState">
-                <div class="empty-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                    </svg>
-                </div>
-                <h2>No Problems Selected</h2>
-                <p>Go to the Problem Picker, select problems, then click "Start Practicing".</p>
-                <a href="../" class="btn-gradient btn-lg">Go to Problem Picker</a>
-
-                <div class="cross-device-section">
-                    <p class="cross-device-hint">Have an active session on another device?</p>
-                    <div class="handle-input-row">
-                        <input type="text" id="handleInput" class="handle-input" placeholder="Enter your CF handle" autocomplete="off">
-                        <button class="btn-gradient btn-sm" onclick="loadWithHandle()">Load Session</button>
-                    </div>
-                </div>
+            <!-- Practice Hub / Empty State -->
+            <div class="empty-state practice-hub" id="emptyState">
+                <div class="hub-loading">Loading practice hub...</div>
             </div>
 
             <!-- Practice Area -->
@@ -248,9 +233,9 @@
                     </button>
                     <button class="btn-abandon" onclick="abandonSession()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                            <path d="M18 6L6 18M6 6l12 12"/>
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
                         </svg>
-                        Abandon Session
+                        Save & Exit
                     </button>
                 </div>
 
@@ -273,7 +258,10 @@
                     <h2>Session Complete!</h2>
                     <p>You've gone through all problems in your queue.</p>
                     <div class="session-stats" id="sessionStats"></div>
-                    <a href="../" class="btn-gradient btn-lg">Back to Problem Picker</a>
+                    <div class="session-complete-actions">
+                        <a href="." class="btn-gradient btn-lg">Practice Hub</a>
+                        <a href="../" class="btn-outline btn-lg">Problem Picker</a>
+                    </div>
                 </div>
             </div>
         </div>
