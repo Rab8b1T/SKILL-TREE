@@ -963,13 +963,15 @@ function processSubmissionsForCalendar(submissions) {
     const seenPerDay = {};
 
     for (const sub of submissions) {
-        if (sub.verdict === 'OK' && sub.problem && sub.problem.contestId) {
+        if (sub.verdict === 'OK' && sub.problem) {
             const date = new Date(sub.creationTimeSeconds * 1000);
             const y = date.getFullYear();
             const m = String(date.getMonth() + 1).padStart(2, '0');
             const d = String(date.getDate()).padStart(2, '0');
             const dateStr = `${y}-${m}-${d}`;
-            const problemKey = `${sub.problem.contestId}-${sub.problem.index}`;
+            const cid = sub.problem.contestId || sub.contestId || 0;
+            const idx = sub.problem.index || '';
+            const problemKey = cid ? `${cid}-${idx}` : sub.problem.name;
 
             if (!seenPerDay[dateStr]) seenPerDay[dateStr] = new Set();
             if (!seenPerDay[dateStr].has(problemKey)) {
@@ -1033,7 +1035,7 @@ function renderCalendar() {
         } else if (count < 5) {
             colorClass = 'cal-yellow';
             stats.yellow++;
-        } else if (count <= 10) {
+        } else if (count < 10) {
             colorClass = 'cal-green';
             stats.green++;
         } else {
@@ -1070,8 +1072,8 @@ function renderCalendarStats(stats, totalSolved) {
     const items = [
         { cls: 'red', label: '0 solved', count: stats.red },
         { cls: 'yellow', label: '1\u20134 solved', count: stats.yellow },
-        { cls: 'green', label: '5\u201310 solved', count: stats.green },
-        { cls: 'cyan', label: '11+ solved', count: stats.cyan },
+        { cls: 'green', label: '5\u20139 solved', count: stats.green },
+        { cls: 'cyan', label: '10+ solved', count: stats.cyan },
         { cls: 'future', label: 'Upcoming', count: stats.future },
     ];
 
