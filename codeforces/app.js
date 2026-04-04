@@ -26,19 +26,25 @@ let state = {
 // Presets for rating segments (each segment = 100 rating range)
 const PRESETS = {
     beginner: [
-        { min: 800, max: 899, count: 2 },
-        { min: 900, max: 999, count: 2 },
-        { min: 1000, max: 1099, count: 2 },
+        { min: 800, max: 899, count: 1 },
+        { min: 900, max: 999, count: 1 },
+        { min: 1000, max: 1099, count: 1 },
+        { min: 1100, max: 1199, count: 2 },
+        { min: 1200, max: 1299, count: 2 },
     ],
     intermediate: [
-        { min: 1200, max: 1299, count: 2 },
-        { min: 1300, max: 1399, count: 2 },
-        { min: 1400, max: 1499, count: 2 },
+        { min: 1200, max: 1299, count: 1 },
+        { min: 1300, max: 1399, count: 1 },
+        { min: 1400, max: 1499, count: 1 },
+        { min: 1500, max: 1599, count: 2 },
+        { min: 1600, max: 1699, count: 2 },
     ],
     advanced: [
-        { min: 1600, max: 1699, count: 2 },
-        { min: 1700, max: 1799, count: 2 },
-        { min: 1800, max: 1899, count: 2 },
+        { min: 1600, max: 1699, count: 1 },
+        { min: 1700, max: 1799, count: 1 },
+        { min: 1800, max: 1899, count: 1 },
+        { min: 1900, max: 1999, count: 2 },
+        { min: 2000, max: 2099, count: 2 },
     ],
     mixed: [
         { min: 800, max: 899, count: 1 },
