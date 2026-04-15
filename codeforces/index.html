@@ -156,10 +156,30 @@
                     </div>
                     <div class="segment-presets">
                         <span class="segment-presets-label">Presets:</span>
-                        <button class="btn-outline" onclick="loadPreset('beginner')">Beginner</button>
-                        <button class="btn-outline" onclick="loadPreset('intermediate')">Intermediate</button>
-                        <button class="btn-outline" onclick="loadPreset('advanced')">Advanced</button>
-                        <button class="btn-outline" onclick="loadPreset('mixed')">Mixed</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('beginner')">Beginner</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('intermediate')">Intermediate</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('advanced')">Advanced</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('mixed')">Mixed</button>
+                    </div>
+                    <div class="segment-presets">
+                        <span class="segment-presets-label">By Rank:</span>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('newbie')" style="border-color: #808080; color: #808080">Newbie</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('pupil')" style="border-color: #008000; color: #008000">Pupil</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('specialist')" style="border-color: #03a89e; color: #03a89e">Specialist</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('expert')" style="border-color: #0000ff; color: #0000ff">Expert</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('candidate_master')" style="border-color: #aa00aa; color: #aa00aa">CM</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('master')" style="border-color: #ff8c00; color: #ff8c00">Master</button>
+                    </div>
+                </div>
+
+                <!-- Rating Level Progress -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h3>Rating Level Progress</h3>
+                        <span class="rl-subtitle">Goal: 100 problems per level</span>
+                    </div>
+                    <div class="rl-grid" id="ratingLevelGrid">
+                        <div class="rl-placeholder">Fetch data to see your progress</div>
                     </div>
                 </div>
 
@@ -417,6 +437,62 @@
             </ul>
             <button class="btn-gradient" onclick="retryWithProxy()">Try with CORS Proxy</button>
             <button class="btn-outline" onclick="closeCorsModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Rating Level Modal -->
+    <div class="modal hidden" id="ratingLevelModal" onclick="if(event.target===this)closeRatingLevelModal()">
+        <div class="rl-modal-content">
+            <button class="rl-modal-close" onclick="closeRatingLevelModal()" aria-label="Close">&times;</button>
+            <div class="rl-modal-header">
+                <span class="rl-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </span>
+                <div>
+                    <h2>Rating <span id="rlModalRating">800</span></h2>
+                    <p class="rl-modal-range" id="rlModalRatingRange">800 – 899</p>
+                </div>
+            </div>
+
+            <div class="rl-modal-stats">
+                <div class="rl-modal-stat">
+                    <span class="rl-modal-stat-value" id="rlModalSolved">0</span>
+                    <span class="rl-modal-stat-label">Solved</span>
+                </div>
+                <div class="rl-modal-stat">
+                    <span class="rl-modal-stat-value" id="rlModalAvailable">0</span>
+                    <span class="rl-modal-stat-label">Available</span>
+                </div>
+            </div>
+
+            <div class="rl-modal-progress">
+                <div class="rl-modal-bar-track">
+                    <div class="rl-modal-bar-fill" id="rlModalProgressFill"></div>
+                </div>
+            </div>
+
+            <div class="rl-modal-form">
+                <label class="rl-modal-label" for="rlModalCountInput">How many problems to solve?</label>
+                <div class="rl-modal-input-row">
+                    <input type="number" id="rlModalCountInput" class="rl-modal-input" min="1" max="50" value="5" onkeydown="if(event.key==='Enter'){event.preventDefault();document.querySelector('.rl-modal-actions .btn-practice').click();}">
+                    <span class="rl-modal-max-hint" id="rlModalMaxHint">Max: 0</span>
+                </div>
+            </div>
+
+            <div class="rl-modal-actions">
+                <button class="btn-practice btn-lg" onclick="startRatingLevelPractice()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Start Practice
+                </button>
+                <button class="btn-gradient btn-lg" onclick="startRatingLevelContest()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    Start Contest
+                </button>
+            </div>
         </div>
     </div>
 

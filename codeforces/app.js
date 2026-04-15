@@ -53,6 +53,50 @@ const PRESETS = {
         { min: 1400, max: 1499, count: 1 },
         { min: 1600, max: 1699, count: 1 },
     ],
+    newbie: [
+        { min: 800, max: 899, count: 3 },
+        { min: 900, max: 999, count: 3 },
+        { min: 1000, max: 1099, count: 1 },
+    ],
+    pupil: [
+        { min: 1000, max: 1099, count: 2 },
+        { min: 1100, max: 1199, count: 3 },
+        { min: 1200, max: 1299, count: 2 },
+    ],
+    specialist: [
+        { min: 1200, max: 1299, count: 2 },
+        { min: 1300, max: 1399, count: 2 },
+        { min: 1400, max: 1499, count: 3 },
+    ],
+    expert: [
+        { min: 1400, max: 1499, count: 1 },
+        { min: 1500, max: 1599, count: 2 },
+        { min: 1600, max: 1699, count: 2 },
+        { min: 1700, max: 1799, count: 2 },
+    ],
+    candidate_master: [
+        { min: 1700, max: 1799, count: 2 },
+        { min: 1800, max: 1899, count: 2 },
+        { min: 1900, max: 1999, count: 3 },
+    ],
+    master: [
+        { min: 1900, max: 1999, count: 2 },
+        { min: 2000, max: 2099, count: 2 },
+        { min: 2100, max: 2199, count: 2 },
+        { min: 2200, max: 2299, count: 1 },
+    ],
+};
+
+const RATING_LEVEL_GOAL = 100;
+
+const RATING_COLORS = {
+    800: '#808080', 900: '#808080',
+    1000: '#008000', 1100: '#008000',
+    1200: '#03a89e', 1300: '#03a89e',
+    1400: '#0000ff', 1500: '#0000ff',
+    1600: '#aa00aa', 1700: '#aa00aa', 1800: '#aa00aa',
+    1900: '#ff8c00', 2000: '#ff8c00',
+    2100: '#ff0000', 2200: '#ff0000', 2300: '#ff0000', 2400: '#ff0000',
 };
 
 // Initialize with default segment
@@ -718,6 +762,8 @@ async function fetchData() {
         renderCalendar();
         showElement('#calendarSection');
 
+        renderRatingLevelProgress();
+
         showElement('#selectionSection');
         hideElement('#resultsSection');
         showMessage(`Successfully loaded ${state.problemset.length} problems. You've solved ${state.solvedProblems.size}!`, 'success');
@@ -796,6 +842,163 @@ function pickProblems() {
     renderResults();
 
     $('#resultsSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+// =====================================================
+// Rating Level Progress
+// =====================================================
+
+function getRatingLevelSolvedCounts() {
+    const counts = {};
+    for (let r = 800; r <= 2400; r += 100) {
+        counts[r] = 0;
+    }
+    for (const p of state.problemset) {
+        if (state.solvedProblems.has(p.key) && p.rating) {
+            const bucket = Math.floor(p.rating / 100) * 100;
+            if (counts[bucket] !== undefined) {
+                counts[bucket]++;
+            }
+        }
+    }
+    return counts;
+}
+
+function renderRatingLevelProgress() {
+    const container = document.getElementById('ratingLevelGrid');
+    if (!container) return;
+
+    const counts = getRatingLevelSolvedCounts();
+
+    let html = '';
+    for (let rating = 800; rating <= 2400; rating += 100) {
+        const solved = counts[rating] || 0;
+        const pct = Math.min((solved / RATING_LEVEL_GOAL) * 100, 100);
+        const color = RATING_COLORS[rating] || '#808080';
+        const isComplete = solved >= RATING_LEVEL_GOAL;
+        const isOver = solved > RATING_LEVEL_GOAL;
+
+        html += `
+            <button class="rl-card${isComplete ? ' rl-complete' : ''}" onclick="openRatingLevelModal(${rating})" title="Click to practice ${rating}-${rating + 99} rated problems">
+                <div class="rl-card-header">
+                    <span class="rl-rating" style="color: ${color}">${rating}</span>
+                    <span class="rl-count">${solved}/${RATING_LEVEL_GOAL}</span>
+                </div>
+                <div class="rl-bar-track">
+                    <div class="rl-bar-fill${isComplete ? ' rl-bar-complete' : ''}" style="width: ${pct}%; background: ${color}"></div>
+                </div>
+                ${pct >= 15 ? `<span class="rl-pct" style="color: ${color}">${Math.round(pct)}%</span>` : ''}
+                ${isOver ? '<span class="rl-lightning" title="Goal exceeded!">⚡</span>' : ''}
+            </button>
+        `;
+    }
+
+    container.innerHTML = html;
+}
+
+function openRatingLevelModal(rating) {
+    if (!state.problemset.length) {
+        showMessage('Please fetch data first before selecting a rating level.', 'warning');
+        return;
+    }
+
+    const color = RATING_COLORS[rating] || '#808080';
+    const unsolved = getUnsolvedProblems();
+    const available = filterByRatingSegment(unsolved, rating, rating + 99);
+    const solved = getRatingLevelSolvedCounts()[rating] || 0;
+
+    const modal = document.getElementById('ratingLevelModal');
+    if (!modal) return;
+
+    document.getElementById('rlModalRating').textContent = rating;
+    document.getElementById('rlModalRating').style.color = color;
+    document.getElementById('rlModalRatingRange').textContent = `${rating} – ${rating + 99}`;
+    document.getElementById('rlModalSolved').textContent = solved;
+    document.getElementById('rlModalAvailable').textContent = available.length;
+    document.getElementById('rlModalCountInput').value = Math.min(5, available.length);
+    document.getElementById('rlModalCountInput').max = available.length;
+    document.getElementById('rlModalMaxHint').textContent = `Max: ${available.length}`;
+
+    const bar = document.getElementById('rlModalProgressFill');
+    const pct = Math.min((solved / RATING_LEVEL_GOAL) * 100, 100);
+    bar.style.width = pct + '%';
+    bar.style.background = color;
+
+    modal.dataset.rating = rating;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById('rlModalCountInput').focus();
+}
+
+function closeRatingLevelModal() {
+    const modal = document.getElementById('ratingLevelModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+function startRatingLevelPractice() {
+    const modal = document.getElementById('ratingLevelModal');
+    const rating = parseInt(modal.dataset.rating, 10);
+    const count = parseInt(document.getElementById('rlModalCountInput').value, 10);
+
+    if (!count || count < 1) {
+        showMessage('Please enter at least 1 problem.', 'warning');
+        return;
+    }
+
+    const unsolved = getUnsolvedProblems();
+    const available = filterByRatingSegment(unsolved, rating, rating + 99);
+    const picked = sampleProblems(available, count, true);
+
+    if (picked.length === 0) {
+        showMessage(`No unsolved problems found for rating ${rating}-${rating + 99}.`, 'warning');
+        return;
+    }
+
+    closeRatingLevelModal();
+
+    state.selectedProblems = picked;
+    state.tagFrequency = computeTagFrequency(picked);
+
+    segments = [{ min: rating, max: rating + 99, count: picked.length }];
+    renderSegments();
+    renderResults();
+
+    startPractice();
+}
+
+function startRatingLevelContest() {
+    const modal = document.getElementById('ratingLevelModal');
+    const rating = parseInt(modal.dataset.rating, 10);
+    const count = parseInt(document.getElementById('rlModalCountInput').value, 10);
+
+    if (!count || count < 1) {
+        showMessage('Please enter at least 1 problem.', 'warning');
+        return;
+    }
+
+    const unsolved = getUnsolvedProblems();
+    const available = filterByRatingSegment(unsolved, rating, rating + 99);
+    const picked = sampleProblems(available, count, true);
+
+    if (picked.length === 0) {
+        showMessage(`No unsolved problems found for rating ${rating}-${rating + 99}.`, 'warning');
+        return;
+    }
+
+    closeRatingLevelModal();
+
+    state.selectedProblems = picked;
+    state.tagFrequency = computeTagFrequency(picked);
+
+    segments = [{ min: rating, max: rating + 99, count: picked.length }];
+    renderSegments();
+    renderResults();
+
+    createVirtualContest();
 }
 
 // =====================================================
@@ -1291,3 +1494,7 @@ window.clearTagFilter = clearTagFilter;
 window.filterTags = filterTags;
 window.changeCalendarMonth = changeCalendarMonth;
 window.goToCurrentMonth = goToCurrentMonth;
+window.openRatingLevelModal = openRatingLevelModal;
+window.closeRatingLevelModal = closeRatingLevelModal;
+window.startRatingLevelPractice = startRatingLevelPractice;
+window.startRatingLevelContest = startRatingLevelContest;
