@@ -85,6 +85,24 @@ const PRESETS = {
         { min: 2100, max: 2199, count: 2 },
         { min: 2200, max: 2299, count: 1 },
     ],
+
+    // ── Daily 1-hour ladder: 4 problems/day (≈15 min each) ──────────────
+    // A 0 → Candidate Master progression over ~200 days. Each stage is a
+    // sliding window: 1 warm-up (−100), 2 core (your current level), 1
+    // stretch (+100). Climb one stage roughly every 2–3 weeks. The stretch
+    // problem is the one you'll usually push into the 2nd-hour upsolve.
+    daily_s1:  [ { min: 800,  max: 899,  count: 2 }, { min: 900,  max: 999,  count: 1 }, { min: 1000, max: 1099, count: 1 } ],
+    daily_s2:  [ { min: 800,  max: 899,  count: 1 }, { min: 900,  max: 999,  count: 2 }, { min: 1000, max: 1099, count: 1 } ],
+    daily_s3:  [ { min: 900,  max: 999,  count: 1 }, { min: 1000, max: 1099, count: 2 }, { min: 1100, max: 1199, count: 1 } ],
+    daily_s4:  [ { min: 1000, max: 1099, count: 1 }, { min: 1100, max: 1199, count: 2 }, { min: 1200, max: 1299, count: 1 } ],
+    daily_s5:  [ { min: 1100, max: 1199, count: 1 }, { min: 1200, max: 1299, count: 2 }, { min: 1300, max: 1399, count: 1 } ],
+    daily_s6:  [ { min: 1200, max: 1299, count: 1 }, { min: 1300, max: 1399, count: 2 }, { min: 1400, max: 1499, count: 1 } ],
+    daily_s7:  [ { min: 1300, max: 1399, count: 1 }, { min: 1400, max: 1499, count: 2 }, { min: 1500, max: 1599, count: 1 } ],
+    daily_s8:  [ { min: 1400, max: 1499, count: 1 }, { min: 1500, max: 1599, count: 2 }, { min: 1600, max: 1699, count: 1 } ],
+    daily_s9:  [ { min: 1500, max: 1599, count: 1 }, { min: 1600, max: 1699, count: 2 }, { min: 1700, max: 1799, count: 1 } ],
+    daily_s10: [ { min: 1600, max: 1699, count: 1 }, { min: 1700, max: 1799, count: 2 }, { min: 1800, max: 1899, count: 1 } ],
+    daily_s11: [ { min: 1700, max: 1799, count: 1 }, { min: 1800, max: 1899, count: 2 }, { min: 1900, max: 1999, count: 1 } ],
+    daily_s12: [ { min: 1800, max: 1899, count: 1 }, { min: 1900, max: 1999, count: 2 }, { min: 2000, max: 2099, count: 1 } ],
 };
 
 const RATING_LEVEL_GOAL = 100;
@@ -619,10 +637,7 @@ function renderResults() {
         meta.textContent = `${selectedProblems.length} problems · ${dur} min`;
     }
 
-    const practiceMeta = $('#practiceBtnMeta');
-    if (practiceMeta) {
-        practiceMeta.textContent = `${selectedProblems.length} problems · 1h each`;
-    }
+    updatePracticeBtnMeta();
 
     showElement('#resultsSection');
 }
@@ -1035,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadUpsolveCounts();
     checkActivePractice();
     loadPracticeHistorySummary();
+    renderPracticeModeToggle();
 });
 
 // =====================================================
@@ -1084,6 +1100,36 @@ function createWarmUpContest() {
 // Practice Mode
 // =====================================================
 
+function getPracticeMode() {
+    return localStorage.getItem('cf_practice_mode') === 'rapid' ? 'rapid' : 'standard';
+}
+
+function setPracticeMode(mode) {
+    if (mode !== 'rapid' && mode !== 'standard') return;
+    localStorage.setItem('cf_practice_mode', mode);
+    renderPracticeModeToggle();
+    updatePracticeBtnMeta();
+}
+
+function renderPracticeModeToggle() {
+    const m = getPracticeMode();
+    document.querySelectorAll('.pp-mode-opt').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === m);
+    });
+}
+
+function updatePracticeBtnMeta() {
+    const meta = $('#practiceBtnMeta');
+    if (!meta) return;
+    const n = state.selectedProblems.length;
+    if (!n) { meta.textContent = ''; return; }
+    if (getPracticeMode() === 'rapid') {
+        meta.textContent = `${n} problems \u00b7 15 min each \u00b7 ~${n * 15} min total`;
+    } else {
+        meta.textContent = `${n} problems \u00b7 1h each`;
+    }
+}
+
 function startPractice() {
     if (!state.selectedProblems || state.selectedProblems.length === 0) {
         showMessage('No problems selected. Please pick problems first.', 'warning');
@@ -1093,6 +1139,7 @@ function startPractice() {
     const practiceData = {
         problems: state.selectedProblems,
         handle: state.handle,
+        timerMode: getPracticeMode(),
         timestamp: Date.now()
     };
 
@@ -1112,6 +1159,7 @@ function startPractice() {
                 activePractice: {
                     problems: state.selectedProblems,
                     handle: state.handle,
+                    timerMode: getPracticeMode(),
                     currentProblemIndex: 0,
                     currentPhase: 0,
                     phaseStartTime: null,
@@ -1479,6 +1527,7 @@ window.addSegment = addSegment;
 window.removeSegment = removeSegment;
 window.updateSegment = updateSegment;
 window.loadPreset = loadPreset;
+window.setPracticeMode = setPracticeMode;
 window.copyAsJSON = copyAsJSON;
 window.copyAsCSV = copyAsCSV;
 window.copyAsText = copyAsText;

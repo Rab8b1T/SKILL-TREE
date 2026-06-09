@@ -107,6 +107,10 @@
 
                 <!-- Timer Section -->
                 <div class="timer-section" id="timerSection">
+                    <div class="mode-toggle" id="modeToggle" title="Standard = full contest phases (1h). Rapid = a single 15-min sprint. Switch between problems.">
+                        <button class="mode-opt" data-mode="standard" onclick="setTimerMode('standard')">Standard &middot; 1h</button>
+                        <button class="mode-opt" data-mode="rapid" onclick="setTimerMode('rapid')">Rapid &middot; 15m</button>
+                    </div>
                     <div class="timer-ring-container">
                         <div class="timer-glow" id="timerGlow"></div>
                         <svg class="timer-ring" viewBox="0 0 260 260">

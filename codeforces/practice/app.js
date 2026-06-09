@@ -2,13 +2,45 @@
 const CONFIG = {
     API_BASE: 'https://codeforces.com/api',
     CORS_PROXY: 'https://corsproxy.io/?',
-    PHASES: [
-        { name: 'Solve Phase', duration: 30 * 60, color: '#10b981', cssClass: 'phase-solve' },
-        { name: 'Tutorial Phase', duration: 15 * 60, color: '#f59e0b', cssClass: 'phase-tutorial' },
-        { name: 'Final Attempt', duration: 15 * 60, color: '#ef4444', cssClass: 'phase-final' }
-    ],
+    // Selectable session lengths.
+    //   standard = full contest-style phases (1 hour per problem)
+    //   rapid    = single 15-min solve sprint (the "4 problems in 1 hour" daily flow)
+    PHASE_MODES: {
+        standard: {
+            label: 'Standard', perProblemMin: 60,
+            phases: [
+                { name: 'Solve Phase', short: 'Solve', duration: 30 * 60, color: '#10b981', cssClass: 'phase-solve' },
+                { name: 'Tutorial Phase', short: 'Tutorial', duration: 15 * 60, color: '#f59e0b', cssClass: 'phase-tutorial' },
+                { name: 'Final Attempt', short: 'Final', duration: 15 * 60, color: '#ef4444', cssClass: 'phase-final' }
+            ]
+        },
+        rapid: {
+            label: 'Rapid', perProblemMin: 15,
+            phases: [
+                { name: 'Solve', short: 'Solve', duration: 15 * 60, color: '#10b981', cssClass: 'phase-solve' }
+            ]
+        }
+    },
     RING_CIRCUMFERENCE: 2 * Math.PI * 110 // ~691.15
 };
+
+function getPhases() {
+    const mode = CONFIG.PHASE_MODES[state.timerMode] ? state.timerMode : 'standard';
+    return CONFIG.PHASE_MODES[mode].phases;
+}
+
+function getPhase(i) {
+    const phases = getPhases();
+    return phases[Math.min(Math.max(i || 0, 0), phases.length - 1)];
+}
+
+function normalizeMode(m) {
+    return (m === 'rapid' || m === 'standard') ? m : null;
+}
+
+function readStoredMode() {
+    return normalizeMode(localStorage.getItem('cf_practice_mode')) || 'standard';
+}
 
 const PRACTICE_API = window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
@@ -24,6 +56,7 @@ function getAuthHeaders() {
 const state = {
     problems: [],
     handle: '',
+    timerMode: 'standard', // 'standard' (1h/problem) | 'rapid' (15 min/problem)
     currentProblemIndex: 0,
     currentPhase: 0,
     phaseStartTime: null,
@@ -142,7 +175,7 @@ function startWatchdog() {
     watchdogId = setInterval(() => {
         if (!state.isRunning || state.isPaused) return;
         const remaining = getTimeRemainingSeconds();
-        const phase = CONFIG.PHASES[state.currentPhase];
+        const phase = getPhase(state.currentPhase);
         const mins = Math.floor(remaining / 60);
         const secs = remaining % 60;
         document.title = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} | ${phase.name} - Practice`;
@@ -224,6 +257,7 @@ function buildActivePracticePayload() {
     return {
         problems: state.problems,
         handle: state.handle,
+        timerMode: state.timerMode,
         currentProblemIndex: state.currentProblemIndex,
         currentPhase: state.currentPhase,
         phaseStartTime: state.phaseStartTime,
@@ -248,6 +282,7 @@ function saveToLocalStorage() {
         const data = {
             problems: state.problems,
             handle: state.handle,
+            timerMode: state.timerMode,
             currentProblemIndex: state.currentProblemIndex,
             currentPhase: state.currentPhase,
             phaseStartTime: state.phaseStartTime,
@@ -332,6 +367,7 @@ function applyRemoteState(serverData) {
 
     state.problems = ap.problems;
     state.handle = ap.handle || serverData.cfHandle || state.handle;
+    state.timerMode = normalizeMode(ap.timerMode) || state.timerMode;
     state.currentProblemIndex = ap.currentProblemIndex || 0;
     state.currentPhase = ap.currentPhase || 0;
     state.phaseStartTime = ap.phaseStartTime;
@@ -407,6 +443,9 @@ async function loadFromAPI(handle) {
 // ===== Initialize =====
 document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
+    state.timerMode = readStoredMode();
+    renderModeToggle();
+    renderPhaseDots();
     $('#themeToggle').addEventListener('click', toggleTheme);
     setupKeyboardShortcuts();
 
@@ -471,6 +510,7 @@ function tryRestoreFromAPI(apiData) {
     const ap = apiData.activePractice;
     state.problems = ap.problems;
     state.handle = ap.handle || apiData.cfHandle || state.handle;
+    state.timerMode = normalizeMode(ap.timerMode) || readStoredMode();
     state.currentProblemIndex = ap.currentProblemIndex || 0;
     state.currentPhase = ap.currentPhase || 0;
     state.phaseStartTime = ap.phaseStartTime;
@@ -507,6 +547,7 @@ function tryRestoreFromLocal(localData) {
 
     state.problems = localData.problems;
     state.handle = localData.handle || '';
+    state.timerMode = normalizeMode(localData.timerMode) || readStoredMode();
     state.currentProblemIndex = localData.currentProblemIndex || 0;
     state.currentPhase = localData.currentPhase || 0;
     state.phaseStartTime = localData.phaseStartTime || null;
@@ -550,7 +591,7 @@ function restoreSession() {
     // If was running (not paused), check if the phase has expired
     if (state.isRunning && !state.isPaused && state.phaseStartTime) {
         const elapsed = getPhaseElapsedMs();
-        const phaseDurationMs = CONFIG.PHASES[state.currentPhase].duration * 1000;
+        const phaseDurationMs = getPhase(state.currentPhase).duration * 1000;
 
         if (elapsed >= phaseDurationMs) {
             // Phase expired while we were away — handle phase transitions
@@ -574,12 +615,12 @@ function restoreSession() {
 
 function handleMissedPhaseTransitions() {
     // Walk through phases that may have elapsed while page was closed
-    while (state.currentPhase < CONFIG.PHASES.length) {
+    while (state.currentPhase < getPhases().length) {
         const elapsed = getPhaseElapsedMs();
-        const phaseDurationMs = CONFIG.PHASES[state.currentPhase].duration * 1000;
+        const phaseDurationMs = getPhase(state.currentPhase).duration * 1000;
 
         if (elapsed >= phaseDurationMs) {
-            if (state.currentPhase < CONFIG.PHASES.length - 1) {
+            if (state.currentPhase < getPhases().length - 1) {
                 // Move to next phase
                 const overshoot = elapsed - phaseDurationMs;
                 state.currentPhase++;
@@ -618,7 +659,7 @@ function getPhaseElapsedMs() {
 }
 
 function getTimeRemainingSeconds() {
-    const phaseDurationMs = CONFIG.PHASES[state.currentPhase].duration * 1000;
+    const phaseDurationMs = getPhase(state.currentPhase).duration * 1000;
     const elapsed = getPhaseElapsedMs();
     return Math.max(0, Math.ceil((phaseDurationMs - elapsed) / 1000));
 }
@@ -626,8 +667,9 @@ function getTimeRemainingSeconds() {
 function getTotalProblemElapsedMs() {
     if (!state.sessionStarted || !state.phaseStartTime) return 0;
     let total = 0;
-    for (let i = 0; i < state.currentPhase; i++) {
-        total += CONFIG.PHASES[i].duration * 1000;
+    const phases = getPhases();
+    for (let i = 0; i < state.currentPhase && i < phases.length; i++) {
+        total += phases[i].duration * 1000;
     }
     total += getPhaseElapsedMs();
     return total;
@@ -674,6 +716,8 @@ function loadCurrentProblem() {
     hideEl('#restoreBanner');
     renderQueue();
     renderCompleted();
+    renderPhaseDots();
+    renderModeToggle();
 }
 
 function getRatingClass(rating) {
@@ -755,7 +799,7 @@ function resetTimerUI() {
     state.phasePausedElapsed = 0;
     state.pauseStartTime = null;
 
-    const phase = CONFIG.PHASES[0];
+    const phase = getPhases()[0];
     const mins = Math.floor(phase.duration / 60);
     const secs = phase.duration % 60;
     $('#timerTime').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
@@ -771,6 +815,48 @@ function resetTimerUI() {
 
     const section = $('#timerSection');
     section.className = 'timer-section';
+    renderPhaseDots();
+}
+
+// ===== Timer Mode (Standard 1h vs Rapid 15m) =====
+function renderPhaseDots() {
+    const container = $('#phaseDots');
+    if (!container) return;
+    const phases = getPhases();
+    let html = '';
+    phases.forEach((p, i) => {
+        if (i > 0) html += '<div class="phase-connector"></div>';
+        html += `<div class="phase-dot${i === 0 ? ' active' : ''}" data-phase="${i}">`
+            + '<span class="dot-pip"></span>'
+            + `<span class="dot-label">${p.short || p.name}</span></div>`;
+    });
+    container.innerHTML = html;
+    container.classList.toggle('single-phase', phases.length === 1);
+}
+
+function renderModeToggle() {
+    document.querySelectorAll('.mode-opt').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === state.timerMode);
+    });
+}
+
+function setTimerMode(mode) {
+    mode = normalizeMode(mode);
+    if (!mode) return;
+    if (mode === state.timerMode) { renderModeToggle(); return; }
+    // A problem timer is only safe to reconfigure between problems / before start.
+    if (state.sessionStarted || state.isRunning) {
+        showToast('Finish or skip the current problem before switching mode', 'warning');
+        renderModeToggle();
+        return;
+    }
+    state.timerMode = mode;
+    localStorage.setItem('cf_practice_mode', mode);
+    renderModeToggle();
+    renderPhaseDots();
+    if (state.problems.length > 0) resetTimerUI();
+    showToast(mode === 'rapid' ? 'Rapid mode \u2014 15 min per problem' : 'Standard mode \u2014 1 hour per problem', 'success');
+    saveToLocalStorage();
 }
 
 function toggleTimer() {
@@ -859,7 +945,7 @@ function startAnimationLoop() {
 }
 
 function updateTimerUI() {
-    const phase = CONFIG.PHASES[state.currentPhase];
+    const phase = getPhase(state.currentPhase);
     const remaining = getTimeRemainingSeconds();
     const mins = Math.floor(remaining / 60);
     const secs = remaining % 60;
@@ -896,10 +982,10 @@ function updateTimerUI() {
 function onPhaseEnd() {
     cancelAnimationFrame(state.animFrameId);
     playAlarm();
-    const phase = CONFIG.PHASES[state.currentPhase];
+    const phase = getPhase(state.currentPhase);
 
-    if (state.currentPhase < CONFIG.PHASES.length - 1) {
-        const nextPhase = CONFIG.PHASES[state.currentPhase + 1];
+    if (state.currentPhase < getPhases().length - 1) {
+        const nextPhase = getPhases()[state.currentPhase + 1];
         const title = phase.name + ' Complete!';
         const text = `Moving to ${nextPhase.name} (${nextPhase.duration / 60} minutes)`;
 
@@ -1497,6 +1583,14 @@ async function showPracticeHub() {
         <p>Start a new session, resume a saved one, or practice from your upsolve queue.</p>
     </div>`;
 
+    html += `<div class="hub-mode" title="Choose how long each problem gets. Rapid = the 4-problems-in-1-hour daily flow.">
+        <span class="hub-mode-label">Session length</span>
+        <div class="mode-toggle">
+            <button class="mode-opt" data-mode="standard" onclick="setTimerMode('standard')">Standard \u00b7 1h / problem</button>
+            <button class="mode-opt" data-mode="rapid" onclick="setTimerMode('rapid')">Rapid \u00b7 15m / problem</button>
+        </div>
+    </div>`;
+
     html += `<div class="hub-quick-actions">
         <a href="../" class="hub-action-card hub-action-primary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
@@ -1556,6 +1650,7 @@ async function showPracticeHub() {
 
     emptyState.innerHTML = html;
     showEl('#emptyState');
+    renderModeToggle();
 }
 
 function renderSessionCard(s) {
@@ -1805,6 +1900,7 @@ function startSessionFromProblems(problems, handle) {
 
 // Globals for onclick handlers
 window.toggleTimer = toggleTimer;
+window.setTimerMode = setTimerMode;
 window.checkSubmission = checkSubmission;
 window.markCompleted = markCompleted;
 window.markUpsolve = markUpsolve;

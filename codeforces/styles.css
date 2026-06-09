@@ -721,6 +721,25 @@ body {
     border-radius: var(--radius-md);
     letter-spacing: 0.3px;
 }
+
+/* Practice timer mode selector (above Start Practicing) */
+.pp-mode {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;
+}
+.pp-mode-label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+.pp-mode-opt {
+    appearance: none; font-family: inherit; cursor: pointer;
+    padding: 7px 14px; font-size: 0.82rem; font-weight: 600;
+    color: var(--text-secondary); background: var(--bg-tertiary);
+    border: 1.5px solid var(--border-color); border-radius: 999px;
+    transition: all var(--transition); white-space: nowrap;
+}
+.pp-mode-opt:hover { border-color: var(--accent-primary); color: var(--text-primary); }
+.pp-mode-opt.active {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-color: transparent; color: #fff;
+    box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+}
 .btn-preset:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);

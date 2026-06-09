@@ -170,6 +170,21 @@
                         <button class="btn-outline btn-preset" onclick="loadPreset('candidate_master')" style="border-color: #aa00aa; color: #aa00aa">CM</button>
                         <button class="btn-outline btn-preset" onclick="loadPreset('master')" style="border-color: #ff8c00; color: #ff8c00">Master</button>
                     </div>
+                    <div class="segment-presets">
+                        <span class="segment-presets-label" title="4 problems/day (~15 min each) + 1 hour upsolve. Climb one stage every 2-3 weeks to reach Candidate Master in ~200 days.">Daily 1h (0&rarr;CM):</span>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s1')"  style="border-color: #808080; color: #808080" title="Stage 1 &middot; Days 1-17 &middot; 800x2, 900, 1000">S1</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s2')"  style="border-color: #808080; color: #808080" title="Stage 2 &middot; Days 18-34 &middot; 800, 900x2, 1000">S2</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s3')"  style="border-color: #808080; color: #808080" title="Stage 3 &middot; Days 35-50 &middot; 900, 1000x2, 1100">S3</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s4')"  style="border-color: #808080; color: #808080" title="Stage 4 &middot; Days 51-67 &middot; 1000, 1100x2, 1200">S4</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s5')"  style="border-color: #008000; color: #008000" title="Stage 5 &middot; Days 68-84 &middot; 1100, 1200x2, 1300 (Pupil)">S5</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s6')"  style="border-color: #008000; color: #008000" title="Stage 6 &middot; Days 85-100 &middot; 1200, 1300x2, 1400 (Pupil)">S6</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s7')"  style="border-color: #03a89e; color: #03a89e" title="Stage 7 &middot; Days 101-117 &middot; 1300, 1400x2, 1500 (Specialist)">S7</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s8')"  style="border-color: #03a89e; color: #03a89e" title="Stage 8 &middot; Days 118-134 &middot; 1400, 1500x2, 1600 (Specialist)">S8</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s9')"  style="border-color: #0000ff; color: #0000ff" title="Stage 9 &middot; Days 135-150 &middot; 1500, 1600x2, 1700 (Expert)">S9</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s10')" style="border-color: #0000ff; color: #0000ff" title="Stage 10 &middot; Days 151-167 &middot; 1600, 1700x2, 1800 (Expert)">S10</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s11')" style="border-color: #0000ff; color: #0000ff" title="Stage 11 &middot; Days 168-184 &middot; 1700, 1800x2, 1900 (Expert&rarr;CM)">S11</button>
+                        <button class="btn-outline btn-preset" onclick="loadPreset('daily_s12')" style="border-color: #aa00aa; color: #aa00aa" title="Stage 12 &middot; Days 185-200 &middot; 1800, 1900x2, 2000 (Candidate Master)">S12</button>
+                    </div>
                 </div>
 
                 <!-- Rating Level Progress -->
@@ -304,6 +319,11 @@
 
                 <!-- Action Buttons -->
                 <div class="virtual-contest-section">
+                    <div class="pp-mode" title="Standard gives each problem a full hour (contest-style). Rapid gives 15 minutes each — the 4-problems-in-1-hour daily flow.">
+                        <span class="pp-mode-label">Practice timer:</span>
+                        <button type="button" class="pp-mode-opt" data-mode="standard" onclick="setPracticeMode('standard')">Standard &middot; 1h / problem</button>
+                        <button type="button" class="pp-mode-opt" data-mode="rapid" onclick="setPracticeMode('rapid')">Rapid &middot; 15m / problem</button>
+                    </div>
                     <button class="btn-practice btn-lg" onclick="startPractice()" id="startPracticeBtn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                             <polygon points="5 3 19 12 5 21 5 3"/>

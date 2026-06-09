@@ -1284,3 +1284,53 @@ body {
     .hub-session-card { padding: 14px 16px; }
     .upsolve-select-modal { max-width: 95vw !important; }
 }
+
+/* ===== Timer Mode Toggle (Standard 1h / Rapid 15m) ===== */
+.mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    margin: 0 auto 18px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+}
+.mode-opt {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;
+}
+.mode-opt:hover { color: var(--text-primary); }
+.mode-opt.active {
+    background: var(--accent-gradient);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+}
+
+/* Hub variant: label + toggle on one row */
+.hub-mode {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 0 0 20px;
+}
+.hub-mode-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+}
+
+/* Single-phase (rapid) dots: hide the lone connector gap cleanly */
+.timer-phase-dots.single-phase { justify-content: center; }
