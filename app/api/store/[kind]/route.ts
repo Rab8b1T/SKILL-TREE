@@ -16,6 +16,10 @@ const COLLECTIONS: Record<string, { name: string; empty: Record<string, unknown>
   contest: { name: "contest_data", empty: { active: null, history: [] } },
   practice: { name: "practice_data", empty: { entries: [], prefs: {} } },
   upsolve: { name: "upsolve_data", empty: { entries: [] } },
+  // Coach-planned session runs, keyed by `<kind>-<day>`. Read back out of band
+  // by scripts/coach-report.mjs, which is why it is a plain document rather
+  // than something derived from the practice store.
+  arena: { name: "arena_data", empty: { runs: {} } },
 };
 
 function resolve(kind: string) {

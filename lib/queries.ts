@@ -6,6 +6,7 @@ import {
   useQueryClient,
   type UseQueryResult,
 } from "@tanstack/react-query";
+import type { ArenaDataDoc, CoachPlan } from "./coach";
 import type {
   CategoryDetail,
   CategoryIndex,
@@ -167,7 +168,7 @@ export function usePickProblems() {
 
 /* ---------------- per-user documents ---------------- */
 
-type StoreKind = "contest" | "practice" | "upsolve";
+type StoreKind = "contest" | "practice" | "upsolve" | "arena";
 
 function useStore<T>(kind: StoreKind, handle?: string | null, empty?: T) {
   return useQuery({
@@ -210,6 +211,27 @@ export const useUpsolveData = (handle?: string | null) =>
   useStore<UpsolveDataDoc>("upsolve", handle, { entries: [] });
 export const useSaveUpsolveData = (handle?: string | null) =>
   useStoreMutation<UpsolveDataDoc>("upsolve", handle);
+
+export const useArenaData = (handle?: string | null) =>
+  useStore<ArenaDataDoc>("arena", handle, { runs: {} });
+export const useSaveArenaData = (handle?: string | null) =>
+  useStoreMutation<ArenaDataDoc>("arena", handle);
+
+/* ---------------- coach plan ----------------
+ * Static JSON committed to git, so a published session cannot be edited from
+ * the browser. `staleTime: 0` because the coach may push a new plan while a tab
+ * is open, and the day's set changing under you is the correct behaviour there.
+ */
+
+export function useCoachPlan() {
+  return useQuery({
+    queryKey: ["coach", "plan"],
+    queryFn: () => request<CoachPlan>("/data/coach/plan.json"),
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    retry: 1,
+  });
+}
 
 /* ---------------- A2OJ static datasets ----------------
  * Served from /public/data as plain JSON so 12,738 scraped problems never enter

@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Compass,
   LayoutDashboard,
   Layers,
   ListOrdered,
@@ -19,6 +20,7 @@ export interface NavItem {
 
 export const PRIMARY_NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/coach", label: "Coach", icon: Compass },
   { href: "/practice", label: "Practice", icon: Target },
   { href: "/contest", label: "Contest", icon: Swords },
   { href: "/ladders", label: "Ladders", icon: ListOrdered },
