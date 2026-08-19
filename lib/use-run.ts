@@ -6,6 +6,7 @@ import {
   activeSeconds,
   emptyEntry,
   emptyRun,
+  isOnBreak,
   repairRun,
   runId,
   type CoachDay,
@@ -15,25 +16,45 @@ import {
 } from "./coach";
 
 /**
- * No pointer, key or focus event for this long and the clock stops on its own.
+ * How the clock decides you are working.
  *
- * The session is supposed to answer "how long was I actually working", so an
- * idle stretch has to be excluded rather than trusted. Ninety seconds is long
- * enough to think with your hands off the keyboard and short enough that a
- * coffee break never counts.
+ * The app is a companion, not the workspace: the statement is read on
+ * Codeforces and the code is written in the editor, so for most of a real
+ * session this tab is hidden and receives no events at all. Anything that
+ * treats "no pointer event here" or "tab not visible" as idleness therefore
+ * measures the opposite of the truth.
+ *
+ * So the clock runs from when you say you are working until you pause it, give
+ * the problem a verdict, or declare a break. The only thing detected
+ * automatically is the machine going away — a closed lid or a frozen tab — and
+ * that is detected from a gap between ticks, which is real evidence rather than
+ * an inference about your attention.
  */
-const IDLE_MS = 90_000;
+const TICK_MS = 15_000;
+/** A tick this late means time passed without the machine running. */
+const GAP_MS = 45_000;
+/** A gap at least this long is treated as a break rather than lost desk time. */
+const AUTO_BREAK_MS = 5 * 60_000;
 /** How often a running tab records that it is still alive. */
 const HEARTBEAT_MS = 20_000;
 /** Writes are coalesced this long so a burst of clicks is one request. */
 const FLUSH_DEBOUNCE_MS = 1_200;
 
+export interface Interruption {
+  key: string;
+  awaySeconds: number;
+  /** Whether the gap was long enough to be excluded as a break. */
+  excluded: boolean;
+}
+
 export interface RunController {
   run: RunDoc | null;
   ready: boolean;
-  /** True while the clock is stopped because nothing has happened for a while. */
-  idle: boolean;
   saving: boolean;
+  /** Set when the machine was away while a problem was on the clock. */
+  interrupted: Interruption | null;
+  /** Puts the clock back on the interrupted problem. */
+  resume: () => void;
   begin: () => void;
   focusProblem: (key: string) => void;
   pause: () => void;
@@ -48,6 +69,10 @@ export interface RunController {
   setTechnique: (key: string, technique: string) => void;
   setTechniqueRight: (key: string, right: boolean) => void;
   setNote: (key: string, note: string) => void;
+  /** True while a declared break is open. */
+  onBreak: boolean;
+  startBreak: () => void;
+  endBreak: () => void;
   finish: (review?: string) => void;
   reopen: () => void;
 }
@@ -69,6 +94,34 @@ function closeOpen(prev: RunDoc, at = Date.now()): RunDoc {
   };
 }
 
+/** Opens a segment on `key` and makes it the active problem. */
+function openOn(prev: RunDoc, key: string, at = Date.now()): RunDoc {
+  const entry = entryOf(prev, key);
+  return {
+    ...prev,
+    activeKey: key,
+    heartbeat: at,
+    entries: {
+      ...prev.entries,
+      [key]: { ...entry, segments: [...entry.segments, { from: at, to: null }] },
+    },
+  };
+}
+
+/** Closes an open break, if there is one, and reports what it was resuming. */
+function closeBreak(prev: RunDoc, at = Date.now()): { run: RunDoc; resumeKey?: string } {
+  const breaks = prev.breaks ?? [];
+  const last = breaks[breaks.length - 1];
+  if (!last || last.to !== null) return { run: prev };
+  return {
+    run: {
+      ...prev,
+      breaks: [...breaks.slice(0, -1), { ...last, to: Math.max(last.from, at) }],
+    },
+    resumeKey: last.resumeKey,
+  };
+}
+
 export function useRun(
   kind: "practice" | "contest",
   day: CoachDay | null,
@@ -78,12 +131,10 @@ export function useRun(
   const save = useSaveArenaData(handle);
 
   const [run, setRun] = useState<RunDoc | null>(null);
-  const [idle, setIdle] = useState(false);
+  const [interrupted, setInterrupted] = useState<Interruption | null>(null);
   const hydrated = useRef<string | null>(null);
   const savedAtRef = useRef<string | null>(null);
   const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Problem the idle watchdog paused, so activity can resume the same one. */
-  const idleParked = useRef<string | null>(null);
 
   const id = day ? runId(kind, day.day) : null;
 
@@ -140,32 +191,32 @@ export function useRun(
 
   const focusProblem = useCallback(
     (key: string) => {
-      idleParked.current = null;
-      setIdle(false);
+      setInterrupted(null);
       update((prev) => {
         const now = Date.now();
-        // Clicking the problem already running is a no-op, not a restart.
         if (prev.activeKey === key) return prev;
-        const closed = closeOpen(prev, now);
-        const entry = entryOf(closed, key);
-        return {
-          ...closed,
-          activeKey: key,
-          heartbeat: now,
-          entries: {
-            ...closed.entries,
-            [key]: { ...entry, segments: [...entry.segments, { from: now, to: null }] },
-          },
-        };
+        // One problem at a time, and leaving one is a decision you have to make
+        // explicitly. Anything already running has to be paused or given a
+        // verdict first, so drifting between problems cannot happen silently.
+        if (prev.activeKey) return prev;
+        // Going back to work ends a break, so you never have to end it twice.
+        return openOn(closeBreak(prev, now).run, key, now);
       });
     },
     [update],
   );
 
   const pause = useCallback(() => {
-    idleParked.current = null;
+    setInterrupted(null);
     update((prev) => closeOpen(prev));
   }, [update]);
+
+  const resume = useCallback(() => {
+    const parked = interrupted?.key;
+    setInterrupted(null);
+    if (!parked) return;
+    update((prev) => (prev.activeKey ? prev : openOn(prev, parked)));
+  }, [interrupted, update]);
 
   const setStatus = useCallback(
     (key: string, status: RunStatus, atSeconds?: number) => {
@@ -223,12 +274,37 @@ export function useRun(
     [update],
   );
 
+  const startBreak = useCallback(() => {
+    setInterrupted(null);
+    update((prev) => {
+      if (isOnBreak(prev)) return prev;
+      const now = Date.now();
+      const resumeKey = prev.activeKey ?? undefined;
+      const closed = closeOpen(prev, now);
+      return {
+        ...closed,
+        breaks: [...(closed.breaks ?? []), { from: now, to: null, resumeKey }],
+      };
+    });
+  }, [update]);
+
+  const endBreak = useCallback(() => {
+    update((prev) => {
+      const now = Date.now();
+      const { run: closed, resumeKey } = closeBreak(prev, now);
+      if (!resumeKey) return closed;
+      // Put the clock back on whatever you walked away from.
+      if (entryOf(closed, resumeKey).status !== "todo") return closed;
+      return openOn(closed, resumeKey, now);
+    });
+  }, [update]);
+
   const finish = useCallback(
     (review?: string) => {
-      idleParked.current = null;
+      setInterrupted(null);
       update((prev) => {
         const now = Date.now();
-        const closed = closeOpen(prev, now);
+        const closed = closeOpen(closeBreak(prev, now).run, now);
         return { ...closed, finishedAt: now, ...(review ? { review } : {}) };
       });
     },
@@ -241,64 +317,56 @@ export function useRun(
 
   const running = !!run && !run.finishedAt && !!run.activeKey;
 
-  // Idle watchdog. Any real interaction resets it; silence stops the clock and
-  // remembers which problem to put back when the user returns.
+  // Machine-absence detector. A suspended laptop or a frozen tab does not fire
+  // timers, so a tick arriving late is the only honest evidence that time
+  // passed while nobody was here — and it is the one case timestamps alone get
+  // wrong, because an open segment would otherwise bill the whole sleep.
   useEffect(() => {
     if (!running) return;
-    let timer: ReturnType<typeof setTimeout>;
+    let lastTick = Date.now();
 
-    const park = () => {
-      setIdle(true);
+    const check = () => {
+      const now = Date.now();
+      const gap = now - lastTick;
+      const seen = lastTick;
+      lastTick = now;
+      if (gap <= GAP_MS) return;
+
+      const excluded = gap >= AUTO_BREAK_MS;
       setRun((prev) => {
         if (!prev?.activeKey) return prev;
-        idleParked.current = prev.activeKey;
-        const next = closeOpen(prev, Date.now() - IDLE_MS);
+        setInterrupted({
+          key: prev.activeKey,
+          awaySeconds: Math.floor(gap / 1000),
+          excluded,
+        });
+        let next = closeOpen(prev, seen);
+        if (excluded) {
+          // Long absences leave the denominator too. A closed lid over lunch is
+          // a break, and charging it to the focus ratio would only teach you to
+          // distrust the number.
+          next = {
+            ...next,
+            breaks: [
+              ...(next.breaks ?? []),
+              { from: seen, to: now, auto: true, resumeKey: prev.activeKey },
+            ],
+          };
+        }
         persist(next);
         return next;
       });
     };
 
-    const bump = () => {
-      clearTimeout(timer);
-      if (idleParked.current) {
-        const key = idleParked.current;
-        idleParked.current = null;
-        setIdle(false);
-        focusProblem(key);
-        return;
-      }
-      timer = setTimeout(park, IDLE_MS);
-    };
-
-    const events = ["pointerdown", "keydown", "wheel", "focus"] as const;
-    for (const e of events) window.addEventListener(e, bump, { passive: true });
-    timer = setTimeout(park, IDLE_MS);
-
+    const timer = setInterval(check, TICK_MS);
+    document.addEventListener("visibilitychange", check);
     return () => {
-      clearTimeout(timer);
-      for (const e of events) window.removeEventListener(e, bump);
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
     };
-  }, [running, persist, focusProblem]);
-
-  // Leaving the tab is idleness we do not have to guess at.
-  useEffect(() => {
-    if (!running) return;
-    const onVisibility = () => {
-      if (document.visibilityState !== "hidden") return;
-      setRun((prev) => {
-        if (!prev?.activeKey) return prev;
-        idleParked.current = prev.activeKey;
-        const next = closeOpen(prev);
-        persist(next);
-        return next;
-      });
-      setIdle(true);
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [running, persist]);
 
-  // Heartbeat, so a crashed tab can be trimmed rather than believed.
+  // Heartbeat, so a tab that never comes back can be trimmed rather than believed.
   useEffect(() => {
     if (!running) return;
     const t = setInterval(() => {
@@ -311,8 +379,9 @@ export function useRun(
     () => ({
       run,
       ready: !!query.data,
-      idle,
       saving: save.isPending,
+      interrupted,
+      resume,
       begin,
       focusProblem,
       pause,
@@ -324,20 +393,26 @@ export function useRun(
       setTechniqueRight: (key: string, right: boolean) =>
         patchEntry(key, { techniqueRight: right }),
       setNote: (key: string, note: string) => patchEntry(key, { note }),
+      onBreak: run ? isOnBreak(run) : false,
+      startBreak,
+      endBreak,
       finish,
       reopen,
     }),
     [
       run,
       query.data,
-      idle,
       save.isPending,
+      interrupted,
+      resume,
       begin,
       focusProblem,
       pause,
       setStatus,
       bumpWrong,
       patchEntry,
+      startBreak,
+      endBreak,
       finish,
       reopen,
     ],

@@ -120,6 +120,23 @@ export interface Segment {
   to: number | null;
 }
 
+/**
+ * A break you declared, rather than one inferred from silence.
+ *
+ * Time inside a break is removed from the session's wall clock, so the focus
+ * ratio compares real work against real waste. Without this, twenty minutes of
+ * breakfast and twenty minutes of scrolling are the same number, and the ratio
+ * stops being worth reading over a five-hour morning.
+ */
+export interface BreakSpan {
+  from: number;
+  to: number | null;
+  /** Problem that held the clock, so ending the break can put it back. */
+  resumeKey?: string;
+  /** Detected from a machine absence rather than declared by you. */
+  auto?: boolean;
+}
+
 export type RunStatus = "todo" | "solved" | "failed" | "skipped";
 
 export interface RunEntry {
@@ -151,6 +168,8 @@ export interface RunDoc {
   /** Problem key currently on the clock; only ever one at a time. */
   activeKey: string | null;
   entries: Record<string, RunEntry>;
+  /** Declared breaks, oldest first. The last one is open while resting. */
+  breaks?: BreakSpan[];
   /**
    * Last time the running tab said it was alive. A tab that dies with a segment
    * open would otherwise leave it open forever and bill every hour since, so
@@ -238,16 +257,42 @@ export function totalActiveSeconds(run: RunDoc, now: number): number {
   );
 }
 
+/** True while a declared break is open. */
+export function isOnBreak(run: RunDoc): boolean {
+  const last = run.breaks?.[run.breaks.length - 1];
+  return !!last && last.to === null;
+}
+
+/** Total declared break time. An open break is counted up to `now`. */
+export function breakSeconds(run: RunDoc, now: number): number {
+  const end = run.finishedAt ?? now;
+  return Math.max(
+    0,
+    Math.floor(
+      (run.breaks ?? []).reduce(
+        (sum, b) => sum + (Math.min(b.to ?? end, end) - b.from) / 1000,
+        0,
+      ),
+    ),
+  );
+}
+
+/** Wall time since the session opened, with declared breaks removed. */
+export function availableSeconds(run: RunDoc, now: number): number {
+  const wall = ((run.finishedAt ?? now) - run.startedAt) / 1000;
+  return Math.max(1, wall - breakSeconds(run, now));
+}
+
 /**
- * Engaged time as a share of time since the session opened.
+ * Engaged time as a share of the time you were actually at the desk.
  *
- * This is the number that answers "am I actually working or is the tab just
- * open?". A 4-hour session at 45% focus is a 108-minute session with 132
- * minutes of self-deception in it, and it should read that way.
+ * This is the number that answers "am I working or is the tab just open?". A
+ * four-hour sitting at 45% is 108 minutes of work and 132 minutes of
+ * self-deception, and it should read that way — but only time you did not
+ * declare as a break counts against you.
  */
 export function focusRatio(run: RunDoc, now: number): number {
-  const wall = Math.max(1, ((run.finishedAt ?? now) - run.startedAt) / 1000);
-  return Math.min(1, totalActiveSeconds(run, now) / wall);
+  return Math.min(1, totalActiveSeconds(run, now) / availableSeconds(run, now));
 }
 
 export function isOverCap(problem: CoachProblem, seconds: number): boolean {
@@ -372,6 +417,8 @@ export interface RunAnalysis {
   total: number;
   engagedMinutes: number;
   wallMinutes: number;
+  breakMinutes: number;
+  breakCount: number;
   focus: number;
   overCap: number;
   wrongAttempts: number;
@@ -424,6 +471,8 @@ export function analyseRun(
     total: problems.length,
     engagedMinutes: Math.round(engaged / 60),
     wallMinutes: Math.round(wall / 60),
+    breakMinutes: run ? Math.round(breakSeconds(run, now) / 60) : 0,
+    breakCount: run?.breaks?.length ?? 0,
     focus: run ? focusRatio(run, now) : 0,
     overCap: lines.filter((l) => l.overCap).length,
     wrongAttempts: lines.reduce((s, l) => s + l.wrongAttempts, 0),

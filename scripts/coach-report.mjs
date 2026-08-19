@@ -70,6 +70,9 @@ function analyse(day, kind, run) {
       slot: problem.slot ?? problem.role,
       capMinutes: problem.capMinutes,
       minutes: Math.round(seconds / 60),
+      // Switching is explicit now, so more than one segment means you genuinely
+      // left this problem and came back to it.
+      resumed: Math.max(0, (entry?.segments?.length ?? 0) - 1),
       status: entry?.status ?? "todo",
       wrongAttempts: entry?.wrongAttempts ?? 0,
       overCap: seconds > problem.capMinutes * 60,
@@ -84,6 +87,15 @@ function analyse(day, kind, run) {
     ? Object.values(run.entries ?? {}).reduce((s, e) => s + activeSeconds(e, now), 0)
     : 0;
   const wall = run ? ((run.finishedAt ?? now) - run.startedAt) / 1000 : 0;
+  // Declared breaks leave the denominator, so focus is work against desk time.
+  const end = run?.finishedAt ?? now;
+  const rested = run
+    ? (run.breaks ?? []).reduce(
+        (s, b) => s + (Math.min(b.to ?? end, end) - b.from) / 1000,
+        0,
+      )
+    : 0;
+  const atDesk = Math.max(1, wall - rested);
   const sealed = lines.filter((l) => l.technique);
 
   const summary = {
@@ -97,7 +109,11 @@ function analyse(day, kind, run) {
     total: lines.length,
     engagedMinutes: Math.round(engaged / 60),
     wallMinutes: Math.round(wall / 60),
-    focusPct: wall > 0 ? Math.round((engaged / wall) * 100) : 0,
+    deskMinutes: Math.round(atDesk / 60),
+    breakMinutes: Math.round(rested / 60),
+    breakCount: (run?.breaks ?? []).length,
+    autoBreaks: (run?.breaks ?? []).filter((b) => b.auto).length,
+    focusPct: wall > 0 ? Math.round((engaged / atDesk) * 100) : 0,
     overCap: lines.filter((l) => l.overCap).length,
     wrongAttempts: lines.reduce((s, l) => s + l.wrongAttempts, 0),
     discriminationAttempts: sealed.length,
@@ -137,7 +153,11 @@ function print(reports) {
     }
     console.log(
       `  solved ${r.solved}/${r.total}` +
-        `  engaged ${r.engagedMinutes}m of ${r.wallMinutes}m (${r.focusPct}% focus)` +
+        `  engaged ${r.engagedMinutes}m of ${r.deskMinutes}m at desk (${r.focusPct}% focus)` +
+        (r.breakCount
+          ? `  breaks ${r.breakCount}/${r.breakMinutes}m` +
+            (r.autoBreaks ? ` (${r.autoBreaks} detected)` : "")
+          : "") +
         `  past-cap ${r.overCap}  wrong ${r.wrongAttempts}` +
         (r.points !== undefined ? `  points ${r.points}` : "") +
         (r.finished ? "" : "  [UNFINISHED]"),
@@ -156,6 +176,7 @@ function print(reports) {
           `${l.overCap ? " OVER" : "    "} ` +
           `${l.wrongAttempts ? `${l.wrongAttempts}w ` : "   "}` +
           `${l.name}` +
+          (l.resumed ? `  (came back ${l.resumed}x)` : "") +
           (l.technique
             ? `\n        called: "${l.technique}"${l.techniqueRight === false ? "  << WRONG TECHNIQUE" : ""}`
             : ""),
