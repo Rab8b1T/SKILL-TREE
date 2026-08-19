@@ -17,7 +17,8 @@ import {
   type CoachDay,
   type CoachPlan,
 } from "@/lib/coach";
-import { isoDate, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useLocalToday } from "@/lib/use-now";
 import { EmptyState, PageHeader, PageShell } from "@/components/layout/page";
 import { Card, CardTitle, SectionLabel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ export default function CoachPage() {
   const handle = session?.user?.cfHandle;
   const plan = useCoachPlan();
   const arena = useArenaData(handle);
+  const today = useLocalToday();
 
   if (!handle) {
     return (
@@ -41,7 +43,7 @@ export default function CoachPage() {
     );
   }
 
-  if (plan.isLoading) {
+  if (plan.isLoading || today === null) {
     return (
       <PageShell>
         <PageHeader title="Coach" />
@@ -63,7 +65,6 @@ export default function CoachPage() {
     );
   }
 
-  const today = isoDate();
   const day = dayFor(plan.data, today);
 
   if (!day) {

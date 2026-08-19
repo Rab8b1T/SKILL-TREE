@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { localDayKey } from "./daily";
 
 type Ticker = {
   subscribe: (onChange: () => void) => () => void;
@@ -51,4 +52,17 @@ function tickerFor(intervalMs: number): Ticker {
 export function useNow(intervalMs = 1000): number | null {
   const ticker = tickerFor(intervalMs);
   return useSyncExternalStore(ticker.subscribe, ticker.snapshot, () => null);
+}
+
+/**
+ * Today as `YYYY-MM-DD` in the reader's own timezone. Null until mounted, for
+ * the same hydration reason as `useNow`.
+ *
+ * `isoDate()` cannot be used to pick the current day: it is UTC, so anywhere
+ * east of Greenwich it names yesterday for the whole early morning. At IST that
+ * covers everything before 05:30 — which is the entire practice window.
+ */
+export function useLocalToday(): string | null {
+  const now = useNow(60_000);
+  return now === null ? null : localDayKey(now);
 }

@@ -5,7 +5,7 @@ import { ArrowLeft, CalendarDays } from "lucide-react";
 import { useCoachPlan, useSession } from "@/lib/queries";
 import { useRun } from "@/lib/use-run";
 import { dayFor } from "@/lib/coach";
-import { isoDate } from "@/lib/utils";
+import { useLocalToday } from "@/lib/use-now";
 import { EmptyState, PageHeader, PageShell } from "@/components/layout/page";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +16,8 @@ export default function CoachPracticePage() {
   const { data: session } = useSession();
   const handle = session?.user?.cfHandle;
   const plan = useCoachPlan();
-  const day = dayFor(plan.data, isoDate());
+  const today = useLocalToday();
+  const day = today ? dayFor(plan.data, today) : null;
   const ctl = useRun("practice", day, handle);
 
   if (!handle) {
@@ -28,7 +29,7 @@ export default function CoachPracticePage() {
     );
   }
 
-  if (plan.isLoading || !ctl.ready) {
+  if (plan.isLoading || today === null || !ctl.ready) {
     return (
       <PageShell>
         <PageHeader title="Practice" />
