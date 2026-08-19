@@ -1,0 +1,530 @@
+{
+  "lastUpdated": "2026-02-07T17:58:59.916Z",
+  "categories": [
+    {
+      "slug": "dynamic-programming",
+      "name": "Dynamic Programming",
+      "count": 1211,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 669
+        },
+        {
+          "name": "SPOJ",
+          "n": 197
+        },
+        {
+          "name": "UVA",
+          "n": 157
+        },
+        {
+          "name": "Timus",
+          "n": 69
+        }
+      ]
+    },
+    {
+      "slug": "implementation",
+      "name": "Implementation",
+      "count": 1054,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 1003
+        },
+        {
+          "name": "SPOJ",
+          "n": 22
+        },
+        {
+          "name": "UVA",
+          "n": 7
+        },
+        {
+          "name": "Live Archive",
+          "n": 7
+        }
+      ]
+    },
+    {
+      "slug": "math",
+      "name": "math",
+      "count": 679,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 591
+        },
+        {
+          "name": "SPOJ",
+          "n": 29
+        },
+        {
+          "name": "UVA",
+          "n": 17
+        },
+        {
+          "name": "URI",
+          "n": 15
+        }
+      ]
+    },
+    {
+      "slug": "greedy",
+      "name": "Greedy",
+      "count": 599,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 558
+        },
+        {
+          "name": "SPOJ",
+          "n": 15
+        },
+        {
+          "name": "UVA",
+          "n": 12
+        },
+        {
+          "name": "A2 Online Judge",
+          "n": 6
+        }
+      ]
+    },
+    {
+      "slug": "dfs-and-bfs-and-dijkstra",
+      "name": "DFS & BFS & Dijkstra",
+      "count": 565,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 348
+        },
+        {
+          "name": "UVA",
+          "n": 99
+        },
+        {
+          "name": "SPOJ",
+          "n": 83
+        },
+        {
+          "name": "Live Archive",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "slug": "brute-force",
+      "name": "brute force",
+      "count": 494,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 477
+        },
+        {
+          "name": "SPOJ",
+          "n": 10
+        },
+        {
+          "name": "Live Archive",
+          "n": 3
+        },
+        {
+          "name": "UVA",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "slug": "data-structures",
+      "name": "data structures",
+      "count": 489,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 462
+        },
+        {
+          "name": "SPOJ",
+          "n": 14
+        },
+        {
+          "name": "UVA",
+          "n": 4
+        },
+        {
+          "name": "Live Archive",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "slug": "binary-search-and-ternary-search",
+      "name": "Binary Search & Ternary Search",
+      "count": 350,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 287
+        },
+        {
+          "name": "SPOJ",
+          "n": 30
+        },
+        {
+          "name": "UVA",
+          "n": 15
+        },
+        {
+          "name": "PKU",
+          "n": 14
+        }
+      ]
+    },
+    {
+      "slug": "constructive-algorithms",
+      "name": "constructive algorithms",
+      "count": 331,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 328
+        },
+        {
+          "name": "SPOJ",
+          "n": 1
+        },
+        {
+          "name": "UVA",
+          "n": 1
+        },
+        {
+          "name": "A2 Online Judge",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "slug": "sortings",
+      "name": "sortings",
+      "count": 316,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 291
+        },
+        {
+          "name": "SPOJ",
+          "n": 11
+        },
+        {
+          "name": "UVA",
+          "n": 8
+        },
+        {
+          "name": "TopCoder",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "slug": "graphs",
+      "name": "Graphs",
+      "count": 291,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 242
+        },
+        {
+          "name": "UVA",
+          "n": 16
+        },
+        {
+          "name": "SPOJ",
+          "n": 10
+        },
+        {
+          "name": "Live Archive",
+          "n": 9
+        }
+      ]
+    },
+    {
+      "slug": "geometry",
+      "name": "Geometry",
+      "count": 254,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 161
+        },
+        {
+          "name": "UVA",
+          "n": 32
+        },
+        {
+          "name": "Timus",
+          "n": 28
+        },
+        {
+          "name": "SPOJ",
+          "n": 19
+        }
+      ]
+    },
+    {
+      "slug": "number-theory",
+      "name": "Number Theory",
+      "count": 251,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 162
+        },
+        {
+          "name": "SPOJ",
+          "n": 49
+        },
+        {
+          "name": "UVA",
+          "n": 27
+        },
+        {
+          "name": "Live Archive",
+          "n": 6
+        }
+      ]
+    },
+    {
+      "slug": "strings",
+      "name": "strings",
+      "count": 216,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 180
+        },
+        {
+          "name": "UVA",
+          "n": 14
+        },
+        {
+          "name": "SPOJ",
+          "n": 8
+        },
+        {
+          "name": "Live Archive",
+          "n": 6
+        }
+      ]
+    },
+    {
+      "slug": "combinatorics",
+      "name": "combinatorics",
+      "count": 215,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 167
+        },
+        {
+          "name": "PKU",
+          "n": 29
+        },
+        {
+          "name": "UVA",
+          "n": 14
+        },
+        {
+          "name": "SPOJ",
+          "n": 4
+        }
+      ]
+    },
+    {
+      "slug": "trees",
+      "name": "trees",
+      "count": 202,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 189
+        },
+        {
+          "name": "SPOJ",
+          "n": 7
+        },
+        {
+          "name": "UVA",
+          "n": 2
+        },
+        {
+          "name": "A2 Online Judge",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "slug": "segment-tree",
+      "name": "Segment Tree",
+      "count": 162,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 64
+        },
+        {
+          "name": "SPOJ",
+          "n": 60
+        },
+        {
+          "name": "UVA",
+          "n": 12
+        },
+        {
+          "name": "CodeChef",
+          "n": 11
+        }
+      ]
+    },
+    {
+      "slug": "network-flow",
+      "name": "Network Flow",
+      "count": 159,
+      "platforms": [
+        {
+          "name": "UVA",
+          "n": 60
+        },
+        {
+          "name": "Codeforces",
+          "n": 37
+        },
+        {
+          "name": "SPOJ",
+          "n": 31
+        },
+        {
+          "name": "TJU",
+          "n": 14
+        }
+      ]
+    },
+    {
+      "slug": "probabilities",
+      "name": "probabilities",
+      "count": 153,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 81
+        },
+        {
+          "name": "UVA",
+          "n": 31
+        },
+        {
+          "name": "TopCoder",
+          "n": 23
+        },
+        {
+          "name": "PKU",
+          "n": 11
+        }
+      ]
+    },
+    {
+      "slug": "two-pointers",
+      "name": "two pointers",
+      "count": 128,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 124
+        },
+        {
+          "name": "SPOJ",
+          "n": 3
+        },
+        {
+          "name": "SGU",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "slug": "dsu",
+      "name": "dsu",
+      "count": 116,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 106
+        },
+        {
+          "name": "UVA",
+          "n": 5
+        },
+        {
+          "name": "SPOJ",
+          "n": 4
+        },
+        {
+          "name": "Timus",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "slug": "bitmasks",
+      "name": "bitmasks",
+      "count": 113,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 101
+        },
+        {
+          "name": "SPOJ",
+          "n": 5
+        },
+        {
+          "name": "Timus",
+          "n": 2
+        },
+        {
+          "name": "Live Archive",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "slug": "matrix-power",
+      "name": "Matrix Power",
+      "count": 90,
+      "platforms": [
+        {
+          "name": "Codeforces",
+          "n": 47
+        },
+        {
+          "name": "SPOJ",
+          "n": 26
+        },
+        {
+          "name": "UVA",
+          "n": 15
+        },
+        {
+          "name": "SGU",
+          "n": 1
+        }
+      ]
+    }
+  ]
+}
