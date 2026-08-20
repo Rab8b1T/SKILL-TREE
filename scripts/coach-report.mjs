@@ -203,10 +203,21 @@ const stamp = (ms) => new Date(ms).toISOString().slice(0, 10);
  * would mean planning around half of what actually happened.
  */
 function printStores({ practice, contest, upsolve }) {
-  const rapid = (practice?.sessionHistory ?? [])
-    .slice()
-    .sort((a, b) => b.finishedAt - a.finishedAt);
-  console.log("  Rapid sessions (app timer, per-problem cap)");
+  // An older save bug appended a fresh record every time a finished session was
+  // re-saved: eight of the nine stored on 2026-03-29 share one `startedAt` and
+  // one result set. Counting those as eight sessions would inflate the only
+  // volume figure this section reports, so they collapse to the latest finish.
+  const bySession = new Map();
+  for (const s of practice?.sessionHistory ?? []) {
+    const prev = bySession.get(s.startedAt);
+    if (!prev || s.finishedAt > prev.finishedAt) bySession.set(s.startedAt, s);
+  }
+  const rapid = [...bySession.values()].sort((a, b) => b.finishedAt - a.finishedAt);
+  const dupes = (practice?.sessionHistory ?? []).length - rapid.length;
+  console.log(
+    `  Rapid sessions (app timer, per-problem cap)` +
+      (dupes ? `  — ${dupes} duplicate save(s) collapsed` : ""),
+  );
   if (!rapid.length) console.log("    none recorded");
   for (const s of rapid.slice(0, 5)) {
     const secs = (s.results ?? []).reduce((t, r) => t + (r.seconds ?? 0), 0);
