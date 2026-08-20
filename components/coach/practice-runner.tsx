@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { problemUrl, ratingColor } from "@/lib/cf";
 import {
   activeSeconds,
+  AUTO_BREAK_THRESHOLD_MS,
   availableSeconds,
   breakSeconds,
   capRemaining,
@@ -62,6 +63,9 @@ export function PracticeRunner({
   const openBreak = run.breaks?.[run.breaks.length - 1];
   const restingFor =
     resting && openBreak ? Math.floor((t - openBreak.from) / 1000) : 0;
+  const paused = ctl.paused;
+  const pausedFor = paused ? Math.floor((t - paused.at) / 1000) : 0;
+  const pausedLong = pausedFor * 1000 >= AUTO_BREAK_THRESHOLD_MS;
 
   const all = blocks.flatMap((b) => b.problems);
   const solved = all.filter((p) => run.entries[p.key]?.status === "solved").length;
@@ -81,6 +85,30 @@ export function PracticeRunner({
 
   return (
     <div className="space-y-4">
+      {paused && !resting && !done && (
+        <Card className="flex flex-wrap items-center gap-3 border-line-strong bg-elevated">
+          <Pause className="size-4 shrink-0 text-muted" />
+          <div className="grow">
+            <p className="text-[13px] font-medium text-ink">
+              Paused for {formatClock(pausedFor)}
+              {pausedLong && " — counted as a break"}
+            </p>
+            <p className="mt-0.5 text-[12px] text-muted">
+              {pausedLong
+                ? "You have been away long enough that this time has left the session, so it costs your focus nothing."
+                : "Under five minutes still counts as desk time. Past that it becomes a break automatically, so you can walk away without thinking about it."}
+              {paused.key
+                ? " Resuming puts the clock back where you left it."
+                : ""}
+            </p>
+          </div>
+          <Button variant="accent" onClick={ctl.resumePaused}>
+            <Play />
+            Resume
+          </Button>
+        </Card>
+      )}
+
       {resting && !done && (
         <Card className="flex flex-wrap items-center gap-3 border-accent/40 bg-accent-soft">
           <Coffee className="size-4 shrink-0 text-accent" />
@@ -187,7 +215,13 @@ export function PracticeRunner({
               Break
             </Button>
           )}
-          {!done && !resting && (
+          {!done && !resting && paused && (
+            <Button variant="accent" onClick={ctl.resumePaused}>
+              <Play />
+              Resume
+            </Button>
+          )}
+          {!done && !resting && !paused && (
             <Button variant="secondary" onClick={ctl.pause} disabled={!run.activeKey}>
               <Pause />
               Pause
@@ -255,9 +289,10 @@ function StartCard({ day, onStart }: { day: CoachDay; onStart: () => void }) {
           you cannot drift between problems without deciding to.
         </p>
         <p>
-          <span className="font-medium text-ink">Break, not pause,</span> when you
-          step away — break time leaves the session entirely and costs your focus
-          nothing.
+          <span className="font-medium text-ink">Leave whenever you need to.</span>{" "}
+          Pause holds the clock and resumes on the same problem; anything longer
+          than five minutes leaves the session as a break and costs your focus
+          nothing. Use Break instead when you already know you are going.
         </p>
         <p>
           <span className="font-medium text-ink">The clock trusts you.</span> It

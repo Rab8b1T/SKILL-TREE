@@ -4,11 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useArenaData, useSaveArenaData } from "./queries";
 import {
   activeSeconds,
+  AUTO_BREAK_THRESHOLD_MS,
   emptyEntry,
   emptyRun,
   isOnBreak,
   repairRun,
   runId,
+  settlePause,
   type CoachDay,
   type RunDoc,
   type RunEntry,
@@ -33,8 +35,7 @@ import {
 const TICK_MS = 15_000;
 /** A tick this late means time passed without the machine running. */
 const GAP_MS = 45_000;
-/** A gap at least this long is treated as a break rather than lost desk time. */
-const AUTO_BREAK_MS = 5 * 60_000;
+const AUTO_BREAK_MS = AUTO_BREAK_THRESHOLD_MS;
 /** How often a running tab records that it is still alive. */
 const HEARTBEAT_MS = 20_000;
 /** Writes are coalesced this long so a burst of clicks is one request. */
@@ -73,6 +74,9 @@ export interface RunController {
   onBreak: boolean;
   startBreak: () => void;
   endBreak: () => void;
+  /** Open pause, if the session is holding rather than running. */
+  paused: { at: number; key?: string } | null;
+  resumePaused: () => void;
   finish: (review?: string) => void;
   reopen: () => void;
 }
@@ -199,8 +203,9 @@ export function useRun(
         // explicitly. Anything already running has to be paused or given a
         // verdict first, so drifting between problems cannot happen silently.
         if (prev.activeKey) return prev;
-        // Going back to work ends a break, so you never have to end it twice.
-        return openOn(closeBreak(prev, now).run, key, now);
+        // Going back to work ends a break and settles a pause, so you never
+        // have to remember which one you left open.
+        return openOn(settlePause(closeBreak(prev, now).run, now), key, now);
       });
     },
     [update],
@@ -208,7 +213,11 @@ export function useRun(
 
   const pause = useCallback(() => {
     setInterrupted(null);
-    update((prev) => closeOpen(prev));
+    update((prev) => {
+      const now = Date.now();
+      const key = prev.activeKey ?? prev.paused?.key;
+      return { ...closeOpen(prev, now), paused: { at: now, key } };
+    });
   }, [update]);
 
   const resume = useCallback(() => {
@@ -279,11 +288,15 @@ export function useRun(
     update((prev) => {
       if (isOnBreak(prev)) return prev;
       const now = Date.now();
-      const resumeKey = prev.activeKey ?? undefined;
+      // A pause that turns into a declared break keeps its own start time, so
+      // the minutes between pausing and pressing Break are not counted twice.
+      const from = prev.paused?.at ?? now;
+      const resumeKey = prev.activeKey ?? prev.paused?.key;
       const closed = closeOpen(prev, now);
       return {
         ...closed,
-        breaks: [...(closed.breaks ?? []), { from: now, to: null, resumeKey }],
+        paused: null,
+        breaks: [...(closed.breaks ?? []), { from, to: null, resumeKey }],
       };
     });
   }, [update]);
@@ -299,12 +312,26 @@ export function useRun(
     });
   }, [update]);
 
+  const resumePaused = useCallback(() => {
+    update((prev) => {
+      const now = Date.now();
+      const key = prev.paused?.key;
+      const settled = settlePause(prev, now);
+      if (!key || settled.activeKey) return settled;
+      if (entryOf(settled, key).status !== "todo") return settled;
+      return openOn(settled, key, now);
+    });
+  }, [update]);
+
   const finish = useCallback(
     (review?: string) => {
       setInterrupted(null);
       update((prev) => {
         const now = Date.now();
-        const closed = closeOpen(closeBreak(prev, now).run, now);
+        const closed = closeOpen(
+          settlePause(closeBreak(prev, now).run, now),
+          now,
+        );
         return { ...closed, finishedAt: now, ...(review ? { review } : {}) };
       });
     },
@@ -396,6 +423,8 @@ export function useRun(
       onBreak: run ? isOnBreak(run) : false,
       startBreak,
       endBreak,
+      paused: run?.paused ?? null,
+      resumePaused,
       finish,
       reopen,
     }),
@@ -413,6 +442,7 @@ export function useRun(
       patchEntry,
       startBreak,
       endBreak,
+      resumePaused,
       finish,
       reopen,
     ],

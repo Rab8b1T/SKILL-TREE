@@ -137,6 +137,16 @@ export interface BreakSpan {
   auto?: boolean;
 }
 
+/**
+ * An absence at least this long is a break rather than lost desk time.
+ *
+ * This is what makes Pause safe to press. A short pause is you thinking with
+ * your hands off the keyboard and should count against focus; a long one means
+ * you left, and charging a four-hour emergency to the focus ratio would only
+ * teach you to stop trusting the number.
+ */
+export const AUTO_BREAK_THRESHOLD_MS = 5 * 60_000;
+
 export type RunStatus = "todo" | "solved" | "failed" | "skipped";
 
 export interface RunEntry {
@@ -170,6 +180,11 @@ export interface RunDoc {
   entries: Record<string, RunEntry>;
   /** Declared breaks, oldest first. The last one is open while resting. */
   breaks?: BreakSpan[];
+  /**
+   * An open pause. Held rather than resolved immediately because a pause only
+   * becomes a break once it turns out to be a long one — see `AUTO_BREAK_MS`.
+   */
+  paused?: { at: number; key?: string } | null;
   /**
    * Last time the running tab said it was alive. A tab that dies with a segment
    * open would otherwise leave it open forever and bill every hour since, so
@@ -205,7 +220,37 @@ export function repairRun(run: RunDoc, now = Date.now()): RunDoc {
   }
 
   if (!touched) return run;
-  return { ...run, entries, activeKey: null };
+  // The trimmed tail becomes a pause rather than vanishing, so a refresh, a
+  // closed tab and a slept laptop all land in the same visible state: the clock
+  // is holding, resuming puts it back on the same problem, and if the absence
+  // turned out to be long it settles as a break.
+  return {
+    ...run,
+    entries,
+    activeKey: null,
+    paused: run.paused ?? { at: deadline, key: run.activeKey ?? undefined },
+  };
+}
+
+/**
+ * Resolves an open pause against the clock.
+ *
+ * A pause shorter than the threshold stays as desk time — you were here, not
+ * working. A longer one is reclassified as a break, which is what lets you walk
+ * out mid-problem without the session punishing you for it.
+ */
+export function settlePause(run: RunDoc, at = Date.now()): RunDoc {
+  const paused = run.paused;
+  if (!paused) return run;
+  if (at - paused.at < AUTO_BREAK_THRESHOLD_MS) return { ...run, paused: null };
+  return {
+    ...run,
+    paused: null,
+    breaks: [
+      ...(run.breaks ?? []),
+      { from: paused.at, to: at, auto: true, resumeKey: paused.key },
+    ],
+  };
 }
 
 export interface ArenaDataDoc {
@@ -263,18 +308,22 @@ export function isOnBreak(run: RunDoc): boolean {
   return !!last && last.to === null;
 }
 
-/** Total declared break time. An open break is counted up to `now`. */
+/**
+ * Total break time. An open break is counted up to `now`, and so is an open
+ * pause once it has run past `AUTO_BREAK_THRESHOLD_MS` — that pause is going to
+ * be recorded as a break the moment it is settled, so counting it now keeps the
+ * live focus ratio from sagging during a long absence and then jumping back on
+ * resume.
+ */
 export function breakSeconds(run: RunDoc, now: number): number {
   const end = run.finishedAt ?? now;
-  return Math.max(
+  const declared = (run.breaks ?? []).reduce(
+    (sum, b) => sum + (Math.min(b.to ?? end, end) - b.from) / 1000,
     0,
-    Math.floor(
-      (run.breaks ?? []).reduce(
-        (sum, b) => sum + (Math.min(b.to ?? end, end) - b.from) / 1000,
-        0,
-      ),
-    ),
   );
+  const held = run.paused ? Math.max(0, end - run.paused.at) : 0;
+  const pending = held >= AUTO_BREAK_THRESHOLD_MS ? held / 1000 : 0;
+  return Math.max(0, Math.floor(declared + pending));
 }
 
 /** Wall time since the session opened, with declared breaks removed. */
