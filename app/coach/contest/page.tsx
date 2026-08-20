@@ -56,6 +56,26 @@ export default function CoachContestPage() {
     );
   }
 
+  // Past rounds are read-only. A live clock on a finished contest would let a
+  // closed record be reopened and overwritten.
+  if (day.date !== today) {
+    return (
+      <PageShell width="narrow">
+        <PageHeader title="Contest" />
+        <EmptyState
+          icon={CalendarDays}
+          title="Tonight has not been planned yet"
+          description={`The most recent published day is ${day.date}. Ask the coach for a contest — day ${day.day} can still be read, but it cannot be re-run.`}
+          action={
+            <Button asChild variant="secondary">
+              <Link href={`/coach/day/${day.day}`}>Read day {day.day}</Link>
+            </Button>
+          }
+        />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell>
       <PageHeader

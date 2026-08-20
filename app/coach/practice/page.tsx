@@ -56,6 +56,27 @@ export default function CoachPracticePage() {
     );
   }
 
+  // `dayFor` falls back to the newest published day so the hub can still show
+  // something. A live clock must not: pointing it at a finished session is how a
+  // closed record gets reopened and overwritten. Past days are read-only.
+  if (day.date !== today) {
+    return (
+      <PageShell width="narrow">
+        <PageHeader title="Practice" />
+        <EmptyState
+          icon={CalendarDays}
+          title="Today has not been planned yet"
+          description={`The most recent published day is ${day.date}. Ask the coach to plan today — day ${day.day} can still be read, but it cannot be re-run.`}
+          action={
+            <Button asChild variant="secondary">
+              <Link href={`/coach/day/${day.day}`}>Read day {day.day}</Link>
+            </Button>
+          }
+        />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell>
       <PageHeader

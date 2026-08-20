@@ -6,7 +6,7 @@ import {
   useQueryClient,
   type UseQueryResult,
 } from "@tanstack/react-query";
-import type { ArenaDataDoc, CoachPlan } from "./coach";
+import type { ArenaDataDoc, CoachPlan, RunDoc } from "./coach";
 import type {
   CategoryDetail,
   CategoryIndex,
@@ -214,8 +214,13 @@ export const useSaveUpsolveData = (handle?: string | null) =>
 
 export const useArenaData = (handle?: string | null) =>
   useStore<ArenaDataDoc>("arena", handle, { runs: {} });
+
+/**
+ * Runs are saved one at a time. The server sets each on its own `runs.<id>`
+ * path, so a save can add or update a session but never remove another one.
+ */
 export const useSaveArenaData = (handle?: string | null) =>
-  useStoreMutation<ArenaDataDoc>("arena", handle);
+  useStoreMutation<{ runPatch: Record<string, RunDoc> }>("arena", handle);
 
 /* ---------------- coach plan ----------------
  * Static JSON committed to git, so a published session cannot be edited from

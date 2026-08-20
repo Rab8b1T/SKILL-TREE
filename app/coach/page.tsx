@@ -276,17 +276,17 @@ function History({
 }) {
   const past = plan.days
     .filter((d) => d.date < today)
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
-    .slice(0, 14);
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
 
   if (!past.length) return null;
 
   return (
     <Card flush className="mt-4">
       <div className="border-b border-line p-5">
-        <CardTitle>Recent days</CardTitle>
+        <CardTitle>Every past day</CardTitle>
         <p className="mt-0.5 text-[12.5px] text-muted">
-          Engaged minutes and solves per session, newest first.
+          Newest first. Open one to read the per-problem record — times against
+          caps, wrong attempts, the technique you named and whether it was right.
         </p>
       </div>
       <ul className="divide-y divide-line">
@@ -295,30 +295,38 @@ function History({
           const c = arenaRuns?.[runId("contest", d.day)];
           const pa = d.practice ? analyseRun(d, "practice", p) : null;
           const ca = d.contest ? analyseRun(d, "contest", c) : null;
+          const nothing = !p && !c;
           return (
-            <li key={d.day} className="flex flex-wrap items-center gap-3 p-4">
-              <span className="w-16 shrink-0 font-mono text-[12px] text-faint">
-                Day {d.day}
-              </span>
-              <div className="min-w-0 grow">
-                <p className="truncate text-[13px] font-medium text-ink">
-                  {d.focus}
-                </p>
-                <p className="mt-0.5 text-[11.5px] text-faint">{d.date}</p>
-              </div>
-              {pa && (
-                <Badge variant={pa.solved === pa.total ? "positive" : "warning"}>
-                  practice {pa.solved}/{pa.total} · {pa.engagedMinutes}m
-                </Badge>
-              )}
-              {ca && (
-                <Badge variant={ca.solved > 0 ? "accent" : "neutral"}>
-                  contest {ca.solved}/{ca.total}
-                </Badge>
-              )}
-              {!pa && !ca && (
-                <Badge variant="outline">no session recorded</Badge>
-              )}
+            <li key={d.day}>
+              <Link
+                href={`/coach/day/${d.day}`}
+                className="flex flex-wrap items-center gap-3 p-4 transition-colors hover:bg-elevated"
+              >
+                <span className="w-16 shrink-0 font-mono text-[12px] text-faint">
+                  Day {d.day}
+                </span>
+                <div className="min-w-0 grow">
+                  <p className="truncate text-[13px] font-medium text-ink">
+                    {d.focus}
+                  </p>
+                  <p className="mt-0.5 text-[11.5px] text-faint">{d.date}</p>
+                </div>
+                {pa && p && (
+                  <Badge variant={pa.solved === pa.total ? "positive" : "warning"}>
+                    practice {pa.solved}/{pa.total} · {pa.engagedMinutes}m
+                  </Badge>
+                )}
+                {d.practice && !p && (
+                  <Badge variant="outline">practice skipped</Badge>
+                )}
+                {ca && c && (
+                  <Badge variant={ca.solved > 0 ? "accent" : "neutral"}>
+                    contest {ca.solved}/{ca.total}
+                  </Badge>
+                )}
+                {nothing && <Badge variant="outline">nothing recorded</Badge>}
+                <ArrowRight className="size-4 shrink-0 text-faint" />
+              </Link>
             </li>
           );
         })}

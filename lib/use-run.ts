@@ -142,26 +142,35 @@ export function useRun(
 
   const id = day ? runId(kind, day.day) : null;
 
+  // `useStore` serves a placeholder `{ runs: {} }` before the fetch lands, so
+  // "data exists" is not the same as "data is real". Hydrating from the
+  // placeholder would decide the day had never been started and let Start
+  // overwrite a session already in progress, which is the one bug in here that
+  // destroys work rather than mismeasuring it.
+  const loaded = query.isSuccess && !query.isPlaceholderData;
+
   // Hydrate once per run id. After that the local copy is authoritative: this
   // is a single-user stopwatch, and letting a background refetch overwrite it
   // mid-problem would lose the open segment.
   useEffect(() => {
-    if (!id || !query.data) return;
+    if (!id || !loaded) return;
     if (hydrated.current === id) return;
     hydrated.current = id;
-    savedAtRef.current = query.data.savedAt ?? null;
-    const stored = query.data.runs?.[id];
+    savedAtRef.current = query.data?.savedAt ?? null;
+    const stored = query.data?.runs?.[id];
     setRun(stored ? repairRun(stored) : null);
-  }, [id, query.data]);
+  }, [id, loaded, query.data]);
 
+  // Only ever writes the one run it changed. The server sets it on its own
+  // `runs.<id>` path, so a tab holding an incomplete history — a failed refetch,
+  // a stale cache — cannot delete the days it does not know about.
   const persist = useCallback(
     (next: RunDoc) => {
       if (!handle || !id) return;
       if (flushTimer.current) clearTimeout(flushTimer.current);
       flushTimer.current = setTimeout(() => {
-        const runs = { ...(query.data?.runs ?? {}), [id]: next };
         save.mutate(
-          { runs, lastKnownSavedAt: savedAtRef.current },
+          { runPatch: { [id]: next }, lastKnownSavedAt: savedAtRef.current },
           {
             onSuccess: (res) => {
               savedAtRef.current = res.savedAt;
@@ -170,7 +179,7 @@ export function useRun(
         );
       }, FLUSH_DEBOUNCE_MS);
     },
-    [handle, id, query.data, save],
+    [handle, id, save],
   );
 
   /** Applies a change to the local run and schedules a write. */
@@ -405,7 +414,7 @@ export function useRun(
   return useMemo(
     () => ({
       run,
-      ready: !!query.data,
+      ready: loaded,
       saving: save.isPending,
       interrupted,
       resume,
@@ -430,7 +439,7 @@ export function useRun(
     }),
     [
       run,
-      query.data,
+      loaded,
       save.isPending,
       interrupted,
       resume,

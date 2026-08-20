@@ -81,15 +81,32 @@ export async function PUT(
     }
 
     const savedAt = new Date().toISOString();
-    const { handle: _h, lastKnownSavedAt: _l, ...data } = body;
+    const { handle: _h, lastKnownSavedAt: _l, runPatch, ...data } = body;
     void _h;
     void _l;
 
-    await col.updateOne(
-      { _id: handle as never },
-      { $set: { ...data, userId: auth.userId, savedAt } },
-      { upsert: true },
-    );
+    const set: Record<string, unknown> = {
+      ...data,
+      userId: auth.userId,
+      savedAt,
+    };
+
+    // A session writes only the run it changed, on its own `runs.<id>` path,
+    // rather than replacing the whole map. Months of history therefore cannot be
+    // lost to one client that had an incomplete copy of it.
+    if (runPatch !== undefined) {
+      if (typeof runPatch !== "object" || runPatch === null || Array.isArray(runPatch)) {
+        throw new HttpError(400, "runPatch must be an object");
+      }
+      for (const [id, doc] of Object.entries(runPatch)) {
+        if (!/^(practice|contest)-\d{1,4}$/.test(id)) {
+          throw new HttpError(400, `Invalid run id: ${id}`);
+        }
+        set[`runs.${id}`] = doc;
+      }
+    }
+
+    await col.updateOne({ _id: handle as never }, { $set: set }, { upsert: true });
     return json({ ok: true, savedAt });
   } catch (err) {
     return errorResponse(err, "Could not save data");
