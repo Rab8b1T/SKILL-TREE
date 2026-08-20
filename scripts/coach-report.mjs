@@ -14,6 +14,7 @@
 
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import dns from "node:dns";
 import path from "node:path";
 import { MongoClient } from "mongodb";
 
@@ -187,17 +188,133 @@ function print(reports) {
   console.log("");
 }
 
+const ago = (ms) => {
+  const days = Math.floor((Date.now() - ms) / 86_400_000);
+  if (days <= 0) return "today";
+  return `${days}d ago`;
+};
+
+const stamp = (ms) => new Date(ms).toISOString().slice(0, 10);
+
+/**
+ * The app's own three stores, which the coach-planned arena runs know nothing
+ * about. Work done in the Practice Hub, a virtual started from the Contest page
+ * or an upsolve parked months ago is still work — leaving it out of the brief
+ * would mean planning around half of what actually happened.
+ */
+function printStores({ practice, contest, upsolve }) {
+  const rapid = (practice?.sessionHistory ?? [])
+    .slice()
+    .sort((a, b) => b.finishedAt - a.finishedAt);
+  console.log("  Rapid sessions (app timer, per-problem cap)");
+  if (!rapid.length) console.log("    none recorded");
+  for (const s of rapid.slice(0, 5)) {
+    const secs = (s.results ?? []).reduce((t, r) => t + (r.seconds ?? 0), 0);
+    const cap = Math.round((s.perProblemSeconds ?? 0) / 60);
+    console.log(
+      `    ${stamp(s.finishedAt)} (${ago(s.finishedAt)})  ${s.solved}/${s.total} solved  ` +
+        `${Math.round(secs / 60)}m engaged  ${cap}m/problem cap`,
+    );
+    const bad = (s.results ?? []).filter((r) => r.outcome !== "solved");
+    if (bad.length) {
+      console.log(
+        `        missed: ${bad.map((r) => `${r.key} (${r.outcome}, ${Math.round(r.seconds / 60)}m)`).join(", ")}`,
+      );
+    }
+  }
+
+  const picked = (practice?.entries ?? []).filter((e) => e.status === "todo");
+  if (picked.length) {
+    console.log(`\n  Practice Hub queue (${picked.length} still todo)`);
+    for (const e of picked.slice(0, 8)) {
+      console.log(
+        `    ${e.index} ${e.name} ${e.rating}  added ${ago(e.addedAt)}`,
+      );
+    }
+  }
+
+  const virtuals = (contest?.history ?? [])
+    .slice()
+    .sort((a, b) => b.finishedAt - a.finishedAt);
+  console.log("\n  Virtual contests run in the app");
+  if (!virtuals.length) console.log("    none recorded");
+  for (const v of virtuals.slice(0, 5)) {
+    console.log(
+      `    ${stamp(v.finishedAt)} (${ago(v.finishedAt)})  ${v.solved}/${v.total}  ` +
+        `${v.points} pts  ${v.penaltyMinutes}m penalty  ${Math.round(v.durationSeconds / 60)}m  ${v.division}`,
+    );
+    // Which letter you stop at is the number that decides contest rating, so
+    // the per-problem detail matters more than the aggregate.
+    for (const p of v.problems ?? []) {
+      if (p.solved) continue;
+      console.log(
+        `        unsolved ${p.slot ?? p.index} ${p.contestId}${p.index} ${p.rating}` +
+          (p.wrongAttempts ? `  ${p.wrongAttempts} wrong` : ""),
+      );
+    }
+  }
+  if (contest?.active) {
+    console.log(`    ! a virtual is still open: ${contest.active.name}`);
+  }
+
+  const open = (upsolve?.entries ?? []).filter((e) => e.status === "open");
+  console.log(`\n  Upsolve queue (${open.length} open)`);
+  for (const e of open) {
+    const stale = Date.now() - e.addedAt > 14 * 86_400_000 ? "  << stale" : "";
+    console.log(
+      `    ${e.contestId}${e.index} ${e.name} ${e.rating}  from ${e.source}  ` +
+        `${e.attempts} attempt(s)  added ${ago(e.addedAt)}${stale}`,
+    );
+  }
+  console.log("");
+}
+
+/**
+ * Connects, working around a flaky SRV lookup.
+ *
+ * `mongodb+srv://` makes the driver resolve a SRV record through Node's own
+ * resolver, which on this network intermittently returns EBADRESP even while
+ * the system resolver answers correctly. A failed client cannot be reconnected,
+ * so each attempt needs a fresh one, and the retry falls back to a public
+ * resolver rather than leaving the morning brief without its app data.
+ */
+async function connect(uri) {
+  let last;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt === 1) dns.setServers(["1.1.1.1", "8.8.8.8"]);
+    const client = new MongoClient(uri, { serverSelectionTimeoutMS: 15000 });
+    try {
+      await client.connect();
+      return client;
+    } catch (err) {
+      last = err;
+      await client.close().catch(() => {});
+      await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+    }
+  }
+  throw last;
+}
+
 async function main() {
   const { uri, dbName } = await env();
   const plan = JSON.parse(
     await readFile(path.join(ROOT, "public/data/coach/plan.json"), "utf8"),
   );
 
-  const client = new MongoClient(uri, { serverSelectionTimeoutMS: 15000 });
+  const client = await connect(uri);
   let doc;
+  let stores = {};
   try {
-    await client.connect();
-    doc = await client.db(dbName).collection("arena_data").findOne({ _id: plan.handle });
+    const db = client.db(dbName);
+    const one = (name) => db.collection(name).findOne({ _id: plan.handle });
+    const [arena, practice, contest, upsolve] = await Promise.all([
+      one("arena_data"),
+      one("practice_data"),
+      one("contest_data"),
+      one("upsolve_data"),
+    ]);
+    doc = arena;
+    stores = { practice, contest, upsolve };
   } finally {
     await client.close().catch(() => {});
   }
@@ -216,12 +333,16 @@ async function main() {
   }
 
   if (asJson) {
-    console.log(JSON.stringify({ handle: plan.handle, reports }, null, 2));
-  } else if (!reports.length) {
-    console.log("No recorded runs yet.");
-  } else {
-    print(reports);
+    console.log(
+      JSON.stringify({ handle: plan.handle, reports, stores }, null, 2),
+    );
+    return;
   }
+
+  if (!reports.length) console.log("  No coach-planned runs recorded yet.\n");
+  else print(reports);
+
+  printStores(stores);
 }
 
 main().catch((err) => {
