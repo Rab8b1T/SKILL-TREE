@@ -1,30 +1,78 @@
 {
-  "updatedAt": "2026-08-20T23:20:00+05:30",
+  "updatedAt": "2026-08-21T07:30:00+05:30",
   "handle": "rab8bit",
   "mentor": {
     "rating": 1132,
-    "rank": "Pupil",
+    "rank": "Newbie",
     "goalRating": 1600,
     "goalDate": "2026-10-31",
-    "headline": "A and B are eating your contests. The difficulty is not what stops you.",
-    "detail": "Round 1117 finished at rank 4961, 1022 to 1132. A was accepted at +17 minutes and B at +63 — eighty minutes for two problems you can both solve on sight. D then fell at +114, so the ceiling is not the problem. C was a tree problem and it never got read. That is the entire 468 points: minutes on A and B, and a rooted-tree toolkit you do not yet have.",
+    "headline": "You are walking around trees, and trees is what cost you C in a live round.",
+    "detail": "Of the day-21 set, 1927D and 1793C were both accepted and 2257C fell at 01:40 — everything except the tree problem. 1676G was dropped, then its prerequisite toolkit was scheduled for day 23 and never started, so 20AUG26/toolkit.py is still five empty stubs. Trees is also the blind spot with 0 solves rated 1300+, and 2257C in Round 1117 was a tree problem that never got read. Today is its second scheduling. Build the toolkit first, then use it twice.",
     "weaknesses": [
-      { "id": "contest-speed-ab", "label": "A and B eat the whole contest, so C is never reached", "severity": 5 },
-      { "id": "session-decay", "label": "Session completion decays across the week", "severity": 5 },
-      { "id": "simulate-instead-of-invariant", "label": "Simulating a process instead of finding the invariant", "severity": 5 },
-      { "id": "binary-search-invariant-unwritten", "label": "Writing binary search before defining the boundary invariant", "severity": 5 },
-      { "id": "rooted-tree-toolkit-absent", "label": "No working representation for a rooted tree", "severity": 4 }
+      {
+        "id": "contest-speed-ab",
+        "label": "A and B eat the whole contest, so C is never reached",
+        "severity": 5
+      },
+      {
+        "id": "session-decay",
+        "label": "Session completion decays across the week",
+        "severity": 5
+      },
+      {
+        "id": "simulate-instead-of-invariant",
+        "label": "Simulating a process instead of finding the invariant",
+        "severity": 5
+      },
+      {
+        "id": "binary-search-invariant-unwritten",
+        "label": "Writing binary search before defining the boundary invariant",
+        "severity": 5
+      },
+      {
+        "id": "rooted-tree-toolkit-absent",
+        "label": "No working representation for a rooted tree",
+        "severity": 4
+      }
     ],
     "pace": [
-      { "slot": "A", "targetMinutes": 10, "yourMinutes": 17 },
-      { "slot": "B", "targetMinutes": 30, "yourMinutes": 63 },
-      { "slot": "C", "targetMinutes": 60, "yourMinutes": null },
-      { "slot": "D", "targetMinutes": 95, "yourMinutes": 114 }
+      {
+        "slot": "A",
+        "targetMinutes": 10,
+        "yourMinutes": 17
+      },
+      {
+        "slot": "B",
+        "targetMinutes": 30,
+        "yourMinutes": 63
+      },
+      {
+        "slot": "C",
+        "targetMinutes": 60,
+        "yourMinutes": null
+      },
+      {
+        "slot": "D",
+        "targetMinutes": 95,
+        "yourMinutes": 114
+      }
     ],
     "checkpoints": [
-      { "date": "2026-09-06", "rounds": 3, "rating": 1300 },
-      { "date": "2026-09-21", "rounds": 5, "rating": 1400 },
-      { "date": "2026-10-31", "rounds": 9, "rating": 1600 }
+      {
+        "date": "2026-09-06",
+        "rounds": 3,
+        "rating": 1300
+      },
+      {
+        "date": "2026-09-21",
+        "rounds": 5,
+        "rating": 1400
+      },
+      {
+        "date": "2026-10-31",
+        "rounds": 9,
+        "rating": 1600
+      }
     ]
   },
   "days": [
@@ -39,6 +87,140 @@
         "drill": "20AUG26/toolkit.py",
         "verify": "python3 testing/check_toolkit.py",
         "minutes": 90
+      }
+    },
+    {
+      "day": 24,
+      "date": "2026-08-21",
+      "focus": "Trees, second scheduling — a rooted tree is parent[] plus one order in which every parent precedes its child, and then every subtree question is a single loop",
+      "concept": "WHERE WE ACTUALLY STAND, and the honest version is better than it looked. Day 24 of 180, rating 1132, 289 rated solves, 6 rounds. The milestone table wanted 1200 by day 20, so we are 68 behind — not 178, because Round 1117 paid +110. Day 40 wants 1300 and that is 16 days away. || THE LAST THREE DAYS, told straight. Day 21 was marked skipped, but its set did not vanish: 1927D and 1793C were both accepted on the 19th and 2257C at 01:40 on the 20th. That is three solves on a day with no entry in the plan, which is why they never got credited. Day 23 genuinely never ran — Codeforces was 502 all evening, the day was repointed to an offline toolkit drill, and 20AUG26/toolkit.py is still five untouched NotImplementedError stubs. So the pattern is not 'you stopped working'. It is narrower and more useful than that: OF THE DAY-21 SET, THE ONE PROBLEM THAT DID NOT GET DONE WAS THE TREE PROBLEM. 1676G was dropped, then its prerequisite toolkit was scheduled on day 23 and dropped too. Trees is the thing being walked around, and it is also the blind spot with 0 solves at 1300+ that cost you 2257C in a live round. Today is its second scheduling. There will not be a third. || TODAY'S ONE IDEA: a rooted tree is two arrays and an order, and the order is the whole trick. Hold the tree as parent[v] plus a list `order` in which every vertex appears after its parent. Once you have that, every subtree question is ONE LOOP over order reversed — each vertex is finished before its parent is read, so size[p] += size[v] just works — and every root-downward question is one loop over order forward, because the parent is always already settled. No DFS, no recursion, no searching. Build the order once and the two core problems collapse into a few lines each. || WHY NOT RECURSION, measured rather than assumed: at Python's default limit of 1000, a recursive subtree pass on a 200000-node path raises RecursionError, which Codeforces reports as a RUNTIME ERROR, not a wrong answer. Raising the limit does survive on this machine, so the trap is not that recursion always dies — it is that the default kills you and the iterative version has no ceiling to manage at all. Write the loop. || THE TOOLKIT IS 20 MINUTES AND IT COMES FIRST, before either tree problem. Fill in build_adj, root_tree, subtree_sizes and depths in 20AUG26/toolkit.py and run `python3 testing/check_toolkit.py --core`. It checks you against an independently written brute force and finishes with a 200000-node path. Do not skip it and then improvise inside 1830A — improvising the tree representation is exactly what stalled 2257C. || FOUR PROBLEMS ARE SEALED (1613C, 1366B, 1372B, 1520E). Their tags are withheld. Write ONE LINE naming the technique and why BEFORE any code. That line being wrong is the most useful thing that can happen this morning — the discrimination denominator is only 4 deep and currently reads 2 wrong of 4, and I will ask you for every line at close. || THE GATE IS MANDATORY. Hand me the final file before you submit and I run the samples, an edge battery and a randomised differential check — outside your four hours. Do not write or run gen.py, brute.py or stress.py yourself; that is my job and it costs you no practice minutes. || Submit everything as PyPy 3-64. || NEXT RATED ROUND: Codeforces Round (Div. 2), Saturday 29 August, 20:05 IST, 120 minutes. Eight days out. Rating only moves in rounds and your last three returned +135, +97 and +110 — tell me whether you are playing it so the week points at it.",
+      "watchFor": "FIRST, BEFORE ANY PROBLEM: 20 minutes on 20AUG26/toolkit.py — fill in build_adj, root_tree, subtree_sizes and depths from memory, no recursion, then run `python3 testing/check_toolkit.py --core`. That is the day-23 drill that never started and it is a prerequisite for 1830A, not homework beside it. || Then: the order is the deliverable, not the DFS. If you catch yourself writing a recursive helper or searching for a vertex's children mid-loop, stop — you skipped building `order` and you are about to pay for it twice. 1676G hands you a valid order for free and 1830A does not; noticing that difference is the actual lesson of the pairing.",
+      "practice": {
+        "title": "Morning — 4h. Toolkit first, then trees twice.",
+        "blocks": [
+          {
+            "id": "mixed",
+            "label": "Mixed opener — tags withheld",
+            "minutes": 30,
+            "note": "Both from topics you have already covered, both sealed, 15 minutes each and the cap is hard. Write ONE LINE naming the technique and why before any code. A wrong line is the data this whole practice order exists to collect; an unfinished problem is not a failure.",
+            "problems": [
+              {
+                "key": "1613-C",
+                "contestId": 1613,
+                "index": "C",
+                "name": "Poisoned Dagger",
+                "rating": 1200,
+                "tags": [
+                  "binary search"
+                ],
+                "capMinutes": 15,
+                "role": "mixed",
+                "why": "If you reach for a search, your line must also say what makes the searched quantity monotone. 'binary-search-invariant-unwritten' is severity 5 with five citations.",
+                "sealed": true,
+                "reveal": "Total damage for a given k is sum(min(k, a[i+1]-a[i]) for i in range(n-1)) + k. That total is non-decreasing in k, and THAT is the monotonicity that licenses a search — write it down before you search. Binary search k over [1, h]; k = h always suffices because the final attack alone deals h. Invariant: lo is always insufficient, hi is always sufficient, the answer is hi."
+              },
+              {
+                "key": "1366-B",
+                "contestId": 1366,
+                "index": "B",
+                "name": "Shuffle",
+                "rating": 1300,
+                "tags": [
+                  "math",
+                  "two pointers"
+                ],
+                "capMinutes": 15,
+                "role": "mixed",
+                "why": "n and the operation count are both large enough that touching the array once per operation is already too slow, so the shape of the answer is decided before you type.",
+                "sealed": true,
+                "reveal": "Do not simulate the array. The set of positions the single 1 can occupy is ALWAYS a contiguous interval [lo, hi] — that is the invariant, and it holds because if the 1 can reach any position inside an operation's range, one swap moves it to any other position in that range. Start [lo, hi] = [x, x]; for each (l, r), if it intersects [lo, hi] (l <= hi and r >= lo), widen to [min(lo, l), max(hi, r)]; otherwise ignore it. Answer hi - lo + 1, in O(m)."
+              }
+            ]
+          },
+          {
+            "id": "core",
+            "label": "Core — the rooted tree, twice",
+            "minutes": 95,
+            "note": "Do the toolkit first (see the watch-for). These two are deliberately paired: one hands you a valid processing order for free and the other makes you build it. Tags are shown here on purpose — this is the blocked half where you install the technique.",
+            "problems": [
+              {
+                "key": "1676-G",
+                "contestId": 1676,
+                "index": "G",
+                "name": "White-Black Balanced Subtrees",
+                "rating": 1300,
+                "tags": [
+                  "dfs and similar",
+                  "dp",
+                  "graphs",
+                  "trees"
+                ],
+                "capMinutes": 45,
+                "role": "core",
+                "why": "Owed from day 21 and the gentlest possible first use of the toolkit. Before writing anything, answer one question out loud: does this input hand you a valid processing order for free, or must you build one? Then write in a comment what your accumulator stores at index v.",
+                "reveal": "Map 'W' to +1 and 'B' to -1 and let f[v] be the sum over v's whole subtree. The input guarantees p_i < i, so vertices 1..n are ALREADY in an order where every parent precedes its child — you get `order` for free and need no adjacency list and no DFS at all. One loop v from n down to 2 doing f[p[v]] += f[v] finishes every subtree before its parent is read. Answer is the count of v with f[v] == 0. O(n)."
+              },
+              {
+                "key": "1830-A",
+                "contestId": 1830,
+                "index": "A",
+                "name": "Copil Copac Draws Trees",
+                "rating": 1400,
+                "tags": [
+                  "dfs and similar",
+                  "dp",
+                  "graphs",
+                  "trees"
+                ],
+                "capMinutes": 50,
+                "role": "core",
+                "why": "The step up, and the reason the toolkit is not optional: the edges arrive in arbitrary order, so nothing is sorted for you and you must build parent and order yourself. Simulating Copil's scans is the trap — 'simulate-instead-of-invariant' is severity 5. Before coding, write one sentence defining a per-vertex quantity that makes the answer a maximum over vertices instead of a loop over passes.",
+                "reveal": "Keep each edge's position in the input. Root at 1 and define pass[v] = the scan on which v gets drawn: pass[1] = 1, and for v attached to u by the edge at input index idx[v], pass[v] = pass[u] + (1 if idx[v] < idx[u] else 0), taking idx[1] = 0. Within a single scan you can only follow edges of increasing input index; a decrease forces a new scan. Answer is max(pass). Build parent and order with your iterative root_tree, then one forward pass over order. O(n)."
+              }
+            ]
+          },
+          {
+            "id": "close",
+            "label": "Cold re-solve, then debt if there is room",
+            "minutes": 60,
+            "note": "The re-solve is not optional; the debt problem is. Eight cold re-solves are overdue and this is the oldest. Closing five of five beats starting seven — that is the direct lesson of days 21 to 23.",
+            "problems": [
+              {
+                "key": "1372-B",
+                "contestId": 1372,
+                "index": "B",
+                "name": "Omkar and Last Class of Math",
+                "rating": 1300,
+                "tags": [
+                  "greedy",
+                  "math",
+                  "number theory"
+                ],
+                "capMinutes": 25,
+                "role": "retention",
+                "why": "Cold re-solve, rep 1 of 2, four days overdue. Blank file, no notes, no old code, do not open your day-13 submission. Before you optimise anything, write down in words the exact quantity your loop returns — that sentence is the entire reason this is on the ladder.",
+                "sealed": true,
+                "reveal": "Minimising lcm(a, b) with a + b = n means making a the LARGEST PROPER DIVISOR of n, not the largest divisor below sqrt(n). Find the smallest divisor d > 1 by scanning to sqrt(n); then a = n // d and b = n - a. For prime n that d is n itself, giving a = 1. Your day-13 sqrt rewrite returned the largest divisor below sqrt(n) instead, and the two quantities first disagree at n = 12."
+              },
+              {
+                "key": "1520-E",
+                "contestId": 1520,
+                "index": "E",
+                "name": "Arranging The Sheep",
+                "rating": 1400,
+                "tags": [
+                  "greedy",
+                  "math"
+                ],
+                "capMinutes": 35,
+                "role": "debt (bonus)",
+                "why": "The only open debt, four days old, first reschedule. BONUS ON PURPOSE: start it only once the toolkit and both tree problems are finished. Sealed — name the technique in one line first.",
+                "sealed": true,
+                "reveal": "Collect the sheep positions, then subtract i from the i-th of them, which turns 'adjacent' into 'equal'. Move every normalised value to their median; the sum of absolute deviations is minimised at the median, and that exchange argument is the thing to write down. n is up to 1e6, so read with sys.stdin.buffer, keep the arithmetic integer, and do not build extra lists."
+              }
+            ]
+          }
+        ]
       }
     }
   ]
