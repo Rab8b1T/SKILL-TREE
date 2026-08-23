@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Check,
   Flag,
+  Lock,
   RefreshCw,
   Swords,
   TrendingDown,
@@ -27,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/input";
+import { HintPanel } from "@/components/coach/hint-panel";
 
 export function ContestRunner({
   day,
@@ -107,7 +109,70 @@ export function ContestRunner({
         </div>
       </Card>
 
+      <HintShelf contest={contest} run={run} done={done} ctl={ctl} />
+
       {done && <PostMortem contest={contest} run={run} board={board} ctl={ctl} />}
+    </div>
+  );
+}
+
+/**
+ * The round's hints, all of them, held behind the round itself.
+ *
+ * A contest is one gate rather than a phase per problem: while the clock runs
+ * nothing opens, whatever any individual attempt looks like, because competing
+ * unassisted is a rules line and not a training preference. The moment it stops
+ * the whole shelf opens at once, which is exactly when it is useful — the
+ * upsolve is the part of a round that moves rating.
+ */
+function HintShelf({
+  contest,
+  run,
+  done,
+  ctl,
+}: {
+  contest: CoachContest;
+  run: RunDoc;
+  done: boolean;
+  ctl: RunController;
+}) {
+  const withHints = contest.problems.filter((p) => p.hints?.ladder?.length);
+  if (withHints.length === 0) return null;
+
+  if (!done) {
+    const rungs = withHints.reduce(
+      (sum, p) => sum + (p.hints?.ladder.length ?? 0),
+      0,
+    );
+    return (
+      <Card className="flex flex-wrap items-center gap-3 border-line-strong bg-elevated">
+        <Lock className="size-4 shrink-0 text-faint" />
+        <div className="min-w-0 grow">
+          <p className="text-[13px] font-medium text-ink">
+            {rungs} hints across {withHints.length} problems, sealed until the
+            clock stops
+          </p>
+          <p className="mt-0.5 text-[12px] text-muted">
+            They were written before the round and they stay shut through it.
+            Every one of them opens for the upsolve the moment it ends.
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {withHints.map((p) => (
+        <div key={p.key}>
+          <SectionLabel>
+            {p.slot} · {p.name}
+          </SectionLabel>
+          <div className="mt-2">
+            <HintPanel problem={p} entry={run.entries[p.key]} ctl={ctl} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

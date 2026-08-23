@@ -33,6 +33,7 @@ import { cn, formatClock, formatDuration } from "@/lib/utils";
 import { useNow } from "@/lib/use-now";
 import { usePhaseAlerts, type Alarm } from "@/lib/use-phase-alerts";
 import { Card, CardTitle, SectionLabel } from "@/components/ui/card";
+import { HintPanel } from "@/components/coach/hint-panel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PhaseRing, Progress } from "@/components/ui/progress";
@@ -74,11 +75,19 @@ export function PracticeRunner({
   return (
     <div className="space-y-4">
       {active && !done && (
-        <OnTheClock
-          problem={active}
-          seconds={activeSeconds(run.entries[active.key], t)}
-          ctl={ctl}
-        />
+        <>
+          <OnTheClock
+            problem={active}
+            seconds={activeSeconds(run.entries[active.key], t)}
+            ctl={ctl}
+          />
+          <HintPanel
+            problem={active}
+            seconds={activeSeconds(run.entries[active.key], t)}
+            entry={run.entries[active.key]}
+            ctl={ctl}
+          />
+        </>
       )}
 
       {!active && resting && !done && (

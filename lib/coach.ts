@@ -17,7 +17,31 @@
 
 /* ------------------------------------------------------------------ plan --- */
 
+import type { Figure } from "./figure";
+
 export type CoachRole = "speed" | "core" | "upsolve" | "retention" | "contest";
+
+/**
+ * One rung of a hint ladder.
+ *
+ * A rung asks before it tells. "What is the largest answer that could possibly
+ * work?" leaves the solving to you; "binary search on the answer" does not, and
+ * the second one is what makes a hint feel like help while teaching nothing.
+ * `say` exists for when the question alone is not enough, and is written to be
+ * the smallest nudge that restores forward motion.
+ */
+export interface Hint {
+  ask: string;
+  say?: string;
+  figure?: Figure;
+}
+
+export interface ProblemHints {
+  /** Gentlest first. Opened one at a time, and each opening is recorded. */
+  ladder: Hint[];
+  /** The whole idea, held back until the tutorial phase. */
+  solution?: { say: string; figure?: Figure };
+}
 
 export interface CoachProblem {
   /** `contestId-index`, matching `problemKey()` so verdict sync lines up. */
@@ -40,6 +64,11 @@ export interface CoachProblem {
   reveal?: string;
   /** Why this problem is in today's set. Always safe to show. */
   why?: string;
+  /**
+   * Written before the session and shipped sealed. The clock decides when any
+   * of it can be opened — see `hintAccess`.
+   */
+  hints?: ProblemHints;
 }
 
 export interface CoachBlock {
@@ -141,6 +170,14 @@ export interface RunEntry {
   technique?: string;
   /** Whether that named technique turned out to be the right one. */
   techniqueRight?: boolean;
+  /**
+   * How many hint rungs were opened. A solve that needed three rungs is not the
+   * same result as an unaided one, and mastery is only supposed to move on the
+   * second — so the count is recorded rather than inferred.
+   */
+  hintsUsed?: number;
+  /** Whether the editorial was opened. Makes the solve an upsolve. */
+  solutionSeen?: boolean;
   note?: string;
 }
 
@@ -329,6 +366,52 @@ export function phaseAt(capMinutes: number, seconds: number): PhaseState {
   }
 
   return { phases, index: -1, phase: null, remaining: 0, total, over: true };
+}
+
+/* ----------------------------------------------------------------- hints --- */
+
+export interface HintAccess {
+  /** How many ladder rungs may be opened right now. */
+  rungs: number;
+  solution: boolean;
+  /** Why nothing more is available yet. Shown in place of the hints. */
+  blocked?: string;
+}
+
+/**
+ * What the clock permits.
+ *
+ * The hints are written before the session and shipped with it, which is the
+ * only way they can be good — a hint improvised while you are stuck is a hint
+ * written by someone who has not solved the problem either. Shipping them early
+ * means the discipline has to live in the gate instead of in their absence, so a
+ * rung is unreachable until the cap has actually been spent on your own attempt.
+ *
+ * A contest is absolute: nothing opens until the round is over, whatever phase
+ * the problem's own clock is in. That is a rules line, not a preference.
+ */
+export function hintAccess(
+  hints: ProblemHints | undefined,
+  phase: PhaseId | null,
+  contestOpen: boolean,
+): HintAccess {
+  const none = { rungs: 0, solution: false };
+  if (!hints?.ladder?.length) return none;
+
+  if (contestOpen) {
+    return { ...none, blocked: "Hints unlock when the round is over." };
+  }
+
+  if (phase === "trying") {
+    return {
+      ...none,
+      blocked: "Yours alone until the cap. The first hint opens then.",
+    };
+  }
+
+  // Past the whole budget, `phase` is null and everything is open — at that
+  // point withholding the editorial only protects the score, not the learning.
+  return { rungs: hints.ladder.length, solution: phase !== "hints" };
 }
 
 /* ---------------------------------------------------------------- alarms --- */

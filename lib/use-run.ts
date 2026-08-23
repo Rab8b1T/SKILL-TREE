@@ -56,6 +56,9 @@ export interface RunController {
   removeWrong: (key: string) => void;
   setTechnique: (key: string, technique: string) => void;
   setTechniqueRight: (key: string, right: boolean) => void;
+  /** Opens the next hint rung. Monotonic — a hint cannot be unseen. */
+  openHint: (key: string) => void;
+  openSolution: (key: string) => void;
   setNote: (key: string, note: string) => void;
   finish: (review?: string) => void;
   reopen: () => void;
@@ -245,6 +248,22 @@ export function useRun(
     [update],
   );
 
+  const openHint = useCallback(
+    (key: string) => {
+      update((prev) => {
+        const entry = entryOf(prev, key);
+        return {
+          ...prev,
+          entries: {
+            ...prev.entries,
+            [key]: { ...entry, hintsUsed: (entry.hintsUsed ?? 0) + 1 },
+          },
+        };
+      });
+    },
+    [update],
+  );
+
   const finish = useCallback(
     (review?: string) => {
       update((prev) => {
@@ -280,6 +299,8 @@ export function useRun(
         patchEntry(key, { technique }),
       setTechniqueRight: (key: string, right: boolean) =>
         patchEntry(key, { techniqueRight: right }),
+      openHint,
+      openSolution: (key: string) => patchEntry(key, { solutionSeen: true }),
       setNote: (key: string, note: string) => patchEntry(key, { note }),
       finish,
       reopen,
@@ -294,6 +315,7 @@ export function useRun(
       setStatus,
       bumpWrong,
       patchEntry,
+      openHint,
       finish,
       reopen,
     ],
