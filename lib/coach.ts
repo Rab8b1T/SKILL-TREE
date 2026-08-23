@@ -245,6 +245,8 @@ export interface Phase {
   label: string;
   /** What you are allowed to open during this phase. */
   rule: string;
+  /** Notification title when this phase begins. */
+  announce: string;
   seconds: number;
   /** CSS custom property, so the ring and the row agree without a lookup. */
   color: string;
@@ -271,6 +273,7 @@ export function phasesFor(capMinutes: number): Phase[] {
       id: "trying",
       label: "Trying",
       rule: "Yours alone — no tags, no hints, no editorial.",
+      announce: "On the clock",
       seconds: cap,
       color: "var(--accent)",
     },
@@ -278,6 +281,7 @@ export function phasesFor(capMinutes: number): Phase[] {
       id: "hints",
       label: "Hints",
       rule: "Tags and one hint are open. Not the solution.",
+      announce: "Hint time",
       seconds: hints,
       color: "var(--warning)",
     },
@@ -285,6 +289,7 @@ export function phasesFor(capMinutes: number): Phase[] {
       id: "tutorial",
       label: "Tutorial",
       rule: "Read the editorial once, close it, re-implement from scratch.",
+      announce: "Editorial time",
       seconds: cap * 2 - cap - hints,
       color: "var(--negative)",
     },
@@ -324,6 +329,103 @@ export function phaseAt(capMinutes: number, seconds: number): PhaseState {
   }
 
   return { phases, index: -1, phase: null, remaining: 0, total, over: true };
+}
+
+/* ---------------------------------------------------------------- alarms --- */
+
+export type AlertKind = "warn" | "enter" | "spent";
+
+export interface PhaseAlert {
+  id: string;
+  /** Seconds on the clock at which this fires. */
+  at: number;
+  kind: AlertKind;
+  title: string;
+  /** The instruction, shown beneath the problem's name. */
+  detail: string;
+}
+
+/** Longest heads-up before a boundary, and the shortest one worth sending. */
+const MAX_LEAD_SECONDS = 300;
+const MIN_LEAD_SECONDS = 60;
+
+/** "5 minutes" when it is round, "3m 20s" when the scaled lead is not. */
+function leadPhrase(seconds: number): string {
+  if (seconds % 60 === 0) {
+    const minutes = seconds / 60;
+    return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  }
+  const m = Math.floor(seconds / 60);
+  return m > 0 ? `${m}m ${String(seconds % 60).padStart(2, "0")}s` : `${seconds}s`;
+}
+
+const ENDING: Record<PhaseId, { suffix: string; detail: string }> = {
+  trying: {
+    suffix: "left on your own attempt",
+    detail: "Wrap up what you have — hints open at the cap.",
+  },
+  hints: {
+    suffix: "left with hints",
+    detail: "The editorial opens after this. Get the idea now.",
+  },
+  tutorial: {
+    suffix: "left in the budget",
+    detail: "Submit it or mark it — the attempt ends at twice the cap.",
+  },
+};
+
+/**
+ * When to interrupt during an attempt.
+ *
+ * A phase change is worth nothing if it happens silently in a tab you are not
+ * looking at, so every boundary is announced — and every boundary gets a
+ * heads-up first, because you cannot wrap up an attempt at the instant it ends.
+ * The lead scales with the phase it ends: five minutes' notice inside a
+ * five-minute phase is not a warning, it is the whole phase.
+ */
+export function alertsFor(capMinutes: number): PhaseAlert[] {
+  const phases = phasesFor(capMinutes);
+  const alerts: PhaseAlert[] = [];
+  let start = 0;
+
+  for (let i = 0; i < phases.length; i++) {
+    const phase = phases[i];
+    const end = start + phase.seconds;
+    const lead = Math.min(MAX_LEAD_SECONDS, Math.floor(phase.seconds / 3));
+
+    // Entering the first phase is the Start button; you already know.
+    if (i > 0) {
+      alerts.push({
+        id: `${phase.id}-enter`,
+        at: start,
+        kind: "enter",
+        title: phase.announce,
+        detail: phase.rule,
+      });
+    }
+
+    if (lead >= MIN_LEAD_SECONDS) {
+      alerts.push({
+        id: `${phase.id}-warn`,
+        at: end - lead,
+        kind: "warn",
+        title: `${leadPhrase(lead)} ${ENDING[phase.id].suffix}`,
+        detail: ENDING[phase.id].detail,
+      });
+    }
+
+    start = end;
+  }
+
+  alerts.push({
+    id: "spent",
+    at: start,
+    kind: "spent",
+    title: "Budget spent",
+    detail: "Twice the cap is gone. Mark it however it stands and move on.",
+  });
+
+  return alerts.sort((a, b) => a.at - b.at);
 }
 
 /* --------------------------------------------------------------- scoring --- */

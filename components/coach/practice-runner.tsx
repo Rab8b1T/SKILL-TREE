@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlarmClock,
+  BellOff,
+  BellRing,
   Check,
   ChevronRight,
   Coffee,
@@ -10,12 +12,15 @@ import {
   Flag,
   Play,
   SkipForward,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { problemUrl, ratingColor } from "@/lib/cf";
 import {
   activeSeconds,
+  alertsFor,
   phaseAt,
   totalActiveSeconds,
   type CoachBlock,
@@ -26,6 +31,7 @@ import {
 import type { RunController } from "@/lib/use-run";
 import { cn, formatClock, formatDuration } from "@/lib/utils";
 import { useNow } from "@/lib/use-now";
+import { usePhaseAlerts, type Alarm } from "@/lib/use-phase-alerts";
 import { Card, CardTitle, SectionLabel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +48,9 @@ export function PracticeRunner({
   const now = useNow(1000);
   const run = ctl.run;
   const blocks = day.practice?.blocks ?? [];
+
+  const alarms = useMemo(() => buildAlarms(run, day), [run, day]);
+  const alerts = usePhaseAlerts(alarms);
 
   if (!run) {
     return <StartCard day={day} onStart={ctl.begin} />;
@@ -92,6 +101,39 @@ export function PracticeRunner({
         </Card>
       )}
 
+      {!done && alerts.permission === "default" && (
+        <Card className="flex flex-wrap items-center gap-3 border-info/30 bg-info/5">
+          <BellRing className="size-4 shrink-0 text-info" />
+          <div className="min-w-0 grow">
+            <p className="text-[13px] font-medium text-ink">
+              Let the phases interrupt you
+            </p>
+            <p className="mt-0.5 text-[12px] text-muted">
+              This tab is hidden for most of a session, so the ring changes
+              colour where you cannot see it. Allow notifications and you get a
+              heads-up before each boundary, then hint time, editorial time and
+              the end of the budget — on time, with the tab in the background.
+            </p>
+          </div>
+          <Button variant="accent" onClick={alerts.request}>
+            <BellRing />
+            Allow
+          </Button>
+        </Card>
+      )}
+
+      {!done && alerts.permission === "denied" && (
+        <Card className="flex flex-wrap items-center gap-3 border-line-strong bg-elevated">
+          <BellOff className="size-4 shrink-0 text-muted" />
+          <p className="min-w-0 grow text-[12px] text-muted">
+            Notifications are blocked for this site, so every phase change will
+            pass in silence. Re-allow them in Chrome&rsquo;s site settings, and
+            check System Settings → Notifications → Chrome as well: macOS
+            swallows them without a word when Chrome is not enabled there.
+          </p>
+        </Card>
+      )}
+
       <Card className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-6">
           <div>
@@ -121,7 +163,31 @@ export function PracticeRunner({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {!done && alerts.permission === "granted" && (
+            <>
+              <Button
+                size="icon"
+                variant="ghost"
+                title={
+                  alerts.sound
+                    ? "Alerts chime — click to make them silent"
+                    : "Alerts are silent — click to turn the chime on"
+                }
+                onClick={() => alerts.setSound(!alerts.sound)}
+              >
+                {alerts.sound ? <Volume2 /> : <VolumeX />}
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                title="Send a test alert — check macOS is not swallowing them"
+                onClick={alerts.demo}
+              >
+                <BellRing />
+              </Button>
+            </>
+          )}
           {!done && active && (
             <Button variant="secondary" onClick={ctl.takeBreak}>
               <Coffee />
@@ -168,6 +234,45 @@ export function PracticeRunner({
       ))}
     </div>
   );
+}
+
+/**
+ * Absolute times for the boundaries still ahead of the running problem.
+ *
+ * A clock is a sum of segments, so the threshold at X seconds lands at
+ * `openedAt + (X − banked) × 1000`. Anything already behind is dropped rather
+ * than scheduled: reloading halfway through an attempt must not replay hint
+ * time, and breaking then restarting must push the rest of the schedule out by
+ * exactly the length of the break, which falls out of recomputing from the new
+ * open segment.
+ */
+function buildAlarms(run: RunDoc | null, day: CoachDay): Alarm[] | null {
+  if (!run || run.finishedAt != null || !run.activeKey) return null;
+
+  const problem = (day.practice?.blocks ?? [])
+    .flatMap((b) => b.problems)
+    .find((p) => p.key === run.activeKey);
+  if (!problem) return null;
+
+  const segments = run.entries[problem.key]?.segments ?? [];
+  const open = segments.find((s) => s.to === null);
+  if (!open) return null;
+
+  const banked = segments.reduce(
+    (sum, s) => sum + (s.to === null ? 0 : (s.to - s.from) / 1000),
+    0,
+  );
+  const floor = Date.now() + 1000;
+
+  return alertsFor(problem.capMinutes)
+    .map((alert) => ({
+      id: alert.id,
+      at: open.from + (alert.at - banked) * 1000,
+      kind: alert.kind,
+      title: alert.title,
+      body: `${problem.name} · ${alert.detail}`,
+    }))
+    .filter((alarm) => alarm.at > floor);
 }
 
 /**
@@ -304,6 +409,13 @@ function StartCard({ day, onStart }: { day: CoachDay; onStart: () => void }) {
           hand.</span>{" "}
           Break stops it, a verdict stops it, nothing else does. Reloading,
           closing the tab and sleeping the laptop all leave it running.
+        </p>
+        <p>
+          <span className="font-medium text-ink">Each phase change comes to
+          you.</span>{" "}
+          You will be in the editor, not here, so the boundaries arrive as
+          desktop notifications — a heads-up before each one, then hint time,
+          editorial time, and the end of the budget.
         </p>
       </div>
       <Button variant="accent" size="lg" className="mx-auto mt-5" onClick={onStart}>
