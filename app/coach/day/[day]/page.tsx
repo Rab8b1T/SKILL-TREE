@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
-  Coffee,
   Swords,
 } from "lucide-react";
 import { useArenaData, useCoachPlan, useSession } from "@/lib/queries";
@@ -192,7 +191,6 @@ function DaySession({
   }
 
   const analysis = analyseRun(day, kind, run);
-  const breaks = (run.breaks ?? []).filter((b) => b.to !== null);
 
   return (
     <Card flush>
@@ -212,42 +210,7 @@ function DaySession({
       </div>
 
       <div className="p-5">
-        <SessionReview
-          analysis={analysis}
-          run={run}
-          showFocus={kind === "practice"}
-        />
-
-        {breaks.length > 0 && (
-          <div className="mt-5 border-t border-line pt-4">
-            <SectionLabel>Breaks</SectionLabel>
-            <ul className="mt-2 space-y-1">
-              {breaks.map((b, i) => (
-                <li
-                  key={i}
-                  className="flex items-center gap-2 text-[12.5px] text-muted"
-                >
-                  <Coffee className="size-3.5 shrink-0 text-faint" />
-                  <span className="font-mono tabular-nums">
-                    {new Date(b.from).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  <span className="text-faint">→</span>
-                  <span className="font-mono tabular-nums">
-                    {Math.round(((b.to as number) - b.from) / 60000)}m
-                  </span>
-                  {b.auto && (
-                    <span className="text-faint">
-                      detected, not declared
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <SessionReview analysis={analysis} run={run} />
 
         {run.review && (
           <div className="mt-5 border-t border-line pt-4">

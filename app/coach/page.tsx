@@ -215,9 +215,9 @@ function SessionCard({
       {analysis && (
         <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-2">
           <Stat label="Solved" value={`${analysis.solved}/${total}`} />
-          <Stat label="Engaged" value={`${analysis.engagedMinutes}m`} />
-          {kind === "practice" && (
-            <Stat label="Focus" value={`${Math.round(analysis.focus * 100)}%`} />
+          <Stat label="On the clock" value={`${analysis.clockedMinutes}m`} />
+          {analysis.overCap > 0 && (
+            <Stat label="Past cap" value={String(analysis.overCap)} />
           )}
           {analysis.wrongAttempts > 0 && (
             <Stat label="Wrong" value={String(analysis.wrongAttempts)} />
@@ -313,7 +313,7 @@ function History({
                 </div>
                 {pa && p && (
                   <Badge variant={pa.solved === pa.total ? "positive" : "warning"}>
-                    practice {pa.solved}/{pa.total} · {pa.engagedMinutes}m
+                    practice {pa.solved}/{pa.total} · {pa.clockedMinutes}m
                   </Badge>
                 )}
                 {d.practice && !p && (

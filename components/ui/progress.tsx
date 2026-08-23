@@ -46,6 +46,92 @@ export function Progress({
   );
 }
 
+export interface RingPhase {
+  id: string;
+  seconds: number;
+  color: string;
+}
+
+/**
+ * The attempt clock: one ring, split into the phases of the attempt.
+ *
+ * Each phase keeps its own arc and its own colour, and fills independently, so
+ * the ring answers both questions at a glance — how long you have been on this
+ * problem, and how much of the current phase is left before the rule changes.
+ * A single-colour ring could only answer the first.
+ */
+export function PhaseRing({
+  phases,
+  elapsed,
+  size = 148,
+  stroke = 11,
+  children,
+}: {
+  phases: RingPhase[];
+  elapsed: number;
+  size?: number;
+  stroke?: number;
+  children?: React.ReactNode;
+}) {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const total = phases.reduce((sum, p) => sum + p.seconds, 0) || 1;
+  const gap = Math.min(7, circumference * 0.014);
+
+  const arcs = [];
+  for (let i = 0, from = 0; i < phases.length; from += phases[i].seconds, i++) {
+    const phase = phases[i];
+    const span = Math.max(0, (phase.seconds / total) * circumference - gap);
+    const done = Math.max(0, Math.min(phase.seconds, elapsed - from));
+    arcs.push({
+      id: phase.id,
+      color: phase.color,
+      start: (from / total) * circumference + gap / 2,
+      span,
+      filled: Math.min(span, (done / total) * circumference),
+    });
+  }
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        {arcs.map((arc) => (
+          <circle
+            key={`track-${arc.id}`}
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={`color-mix(in srgb, ${arc.color} 15%, transparent)`}
+            strokeWidth={stroke}
+            strokeDasharray={`${arc.span} ${circumference}`}
+            strokeDashoffset={-arc.start}
+          />
+        ))}
+        {arcs
+          .filter((arc) => arc.filled > 0)
+          .map((arc) => (
+            <circle
+              key={`fill-${arc.id}`}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke={arc.color}
+              strokeWidth={stroke}
+              strokeDasharray={`${arc.filled} ${circumference}`}
+              strokeDashoffset={-arc.start}
+              className="transition-[stroke-dasharray] duration-500 ease-linear"
+            />
+          ))}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 /** Circular variant used for the headline day score. */
 export function ProgressRing({
   value,

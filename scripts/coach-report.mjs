@@ -84,19 +84,12 @@ function analyse(day, kind, run) {
     };
   });
 
-  const engaged = run
+  // The only time measured anywhere is time the user put on a problem by hand.
+  // There is no session clock, so there is no wall-clock denominator and no
+  // focus ratio to derive from one.
+  const clocked = run
     ? Object.values(run.entries ?? {}).reduce((s, e) => s + activeSeconds(e, now), 0)
     : 0;
-  const wall = run ? ((run.finishedAt ?? now) - run.startedAt) / 1000 : 0;
-  // Declared breaks leave the denominator, so focus is work against desk time.
-  const end = run?.finishedAt ?? now;
-  const rested = run
-    ? (run.breaks ?? []).reduce(
-        (s, b) => s + (Math.min(b.to ?? end, end) - b.from) / 1000,
-        0,
-      )
-    : 0;
-  const atDesk = Math.max(1, wall - rested);
   const sealed = lines.filter((l) => l.technique);
 
   const summary = {
@@ -108,13 +101,7 @@ function analyse(day, kind, run) {
     finished: run?.finishedAt ? new Date(run.finishedAt).toISOString() : null,
     solved: lines.filter((l) => l.status === "solved").length,
     total: lines.length,
-    engagedMinutes: Math.round(engaged / 60),
-    wallMinutes: Math.round(wall / 60),
-    deskMinutes: Math.round(atDesk / 60),
-    breakMinutes: Math.round(rested / 60),
-    breakCount: (run?.breaks ?? []).length,
-    autoBreaks: (run?.breaks ?? []).filter((b) => b.auto).length,
-    focusPct: wall > 0 ? Math.round((engaged / atDesk) * 100) : 0,
+    clockedMinutes: Math.round(clocked / 60),
     overCap: lines.filter((l) => l.overCap).length,
     wrongAttempts: lines.reduce((s, l) => s + l.wrongAttempts, 0),
     discriminationAttempts: sealed.length,
@@ -154,11 +141,7 @@ function print(reports) {
     }
     console.log(
       `  solved ${r.solved}/${r.total}` +
-        `  engaged ${r.engagedMinutes}m of ${r.deskMinutes}m at desk (${r.focusPct}% focus)` +
-        (r.breakCount
-          ? `  breaks ${r.breakCount}/${r.breakMinutes}m` +
-            (r.autoBreaks ? ` (${r.autoBreaks} detected)` : "")
-          : "") +
+        `  clocked ${r.clockedMinutes}m` +
         `  past-cap ${r.overCap}  wrong ${r.wrongAttempts}` +
         (r.points !== undefined ? `  points ${r.points}` : "") +
         (r.finished ? "" : "  [UNFINISHED]"),

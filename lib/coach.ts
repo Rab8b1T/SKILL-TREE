@@ -8,11 +8,11 @@
  *   a session can never be silently edited from the browser mid-run, which is
  *   the whole point of a sealed set.
  * - **The run** is per-user state in MongoDB (`arena_data`). It records what
- *   actually happened: which minute each problem was opened, how long was spent
- *   genuinely working on it, and what the verdict was.
+ *   actually happened: which minute each problem went on the clock, how long it
+ *   stayed there, and what the verdict was.
  *
- * The run is the evidence base for the next morning's coaching, so it measures
- * engaged time rather than wall-clock time. See `activeSeconds`.
+ * The run is the evidence base for the next morning's coaching, and it measures
+ * exactly one thing: time you put on a problem yourself. See `activeSeconds`.
  */
 
 /* ------------------------------------------------------------------ plan --- */
@@ -111,41 +111,17 @@ export interface CoachPlan {
 /* ------------------------------------------------------------------- run --- */
 
 /**
- * One stretch of genuinely engaged time. `to === null` means the segment is
- * still open. Time is derived from these rather than counted by a ticking
- * integer so a reload, a closed laptop or a crashed tab cannot inflate it.
+ * One stretch of time on the clock. `to === null` means it is still running.
+ *
+ * Storing a pair of timestamps rather than a ticking integer is what makes the
+ * clock survive everything: a reload, a closed tab, a second machine and a slept
+ * laptop all resolve to the same elapsed time, because the elapsed time was
+ * never being counted anywhere in the first place.
  */
 export interface Segment {
   from: number;
   to: number | null;
 }
-
-/**
- * A break you declared, rather than one inferred from silence.
- *
- * Time inside a break is removed from the session's wall clock, so the focus
- * ratio compares real work against real waste. Without this, twenty minutes of
- * breakfast and twenty minutes of scrolling are the same number, and the ratio
- * stops being worth reading over a five-hour morning.
- */
-export interface BreakSpan {
-  from: number;
-  to: number | null;
-  /** Problem that held the clock, so ending the break can put it back. */
-  resumeKey?: string;
-  /** Detected from a machine absence rather than declared by you. */
-  auto?: boolean;
-}
-
-/**
- * An absence at least this long is a break rather than lost desk time.
- *
- * This is what makes Pause safe to press. A short pause is you thinking with
- * your hands off the keyboard and should count against focus; a long one means
- * you left, and charging a four-hour emergency to the focus ratio would only
- * teach you to stop trusting the number.
- */
-export const AUTO_BREAK_THRESHOLD_MS = 5 * 60_000;
 
 export type RunStatus = "todo" | "solved" | "failed" | "skipped";
 
@@ -157,8 +133,8 @@ export interface RunEntry {
   /** Epoch ms of the accept. */
   solvedAt?: number;
   /**
-   * Engaged seconds at the moment of the accept. This — not wall clock — is
-   * what gets compared against the cap and against Expert pace.
+   * Seconds on the clock at the moment of the accept. This — not wall clock —
+   * is what gets compared against the cap and against Expert pace.
    */
   solvedAtSeconds?: number;
   /** The technique named before coding, on a sealed problem. */
@@ -168,6 +144,20 @@ export interface RunEntry {
   note?: string;
 }
 
+/**
+ * A session, and the per-problem clocks inside it.
+ *
+ * The session itself is not timed. Nothing here measures how long the tab was
+ * open, how attentive you were, or what share of the morning was "engaged" —
+ * those numbers were guesses dressed as measurements, and the machinery that
+ * produced them could only ever be wrong in the browser's favour. What is left
+ * is a stopwatch per problem, started and stopped by hand.
+ *
+ * A clock therefore runs until you stop it. Reloading, closing the tab, sleeping
+ * the laptop and switching machines all leave it running, because an open
+ * segment is a pair of timestamps rather than a ticking integer, and nothing
+ * trims it after the fact.
+ */
 export interface RunDoc {
   id: string;
   kind: "practice" | "contest";
@@ -178,87 +168,14 @@ export interface RunDoc {
   /** Problem key currently on the clock; only ever one at a time. */
   activeKey: string | null;
   entries: Record<string, RunEntry>;
-  /** Declared breaks, oldest first. The last one is open while resting. */
-  breaks?: BreakSpan[];
   /**
-   * An open pause. Held rather than resolved immediately because a pause only
-   * becomes a break once it turns out to be a long one — see `AUTO_BREAK_MS`.
+   * The problem a break was taken from, so coming back is one click. Breaks
+   * carry no timestamps: the time inside one is simply not on any clock, which
+   * is the whole of what a break means now.
    */
-  paused?: { at: number; key?: string } | null;
-  /**
-   * Last time the running tab said it was alive. A tab that dies with a segment
-   * open would otherwise leave it open forever and bill every hour since, so
-   * `repairRun` trims dangling segments back to this instant.
-   */
-  heartbeat?: number;
+  restingKey?: string | null;
   /** Free-text post-mortem, written at the end. */
   review?: string;
-}
-
-/**
- * How long after the last heartbeat a dangling segment is assumed dead.
- *
- * Generous on purpose. The heartbeat is a timer, and a hidden tab's timers are
- * throttled to roughly once a minute, so a tab that is alive and working can
- * legitimately be a minute stale before its write is even queued. A grace
- * tighter than that would delete real work on every reload to save at most a
- * couple of minutes of over-billing on a tab that genuinely died.
- */
-export const HEARTBEAT_GRACE_MS = 3 * 60_000;
-
-/**
- * Closes segments left open by a tab that never came back.
- *
- * Without this a laptop closed mid-problem reads as eight hours of engaged
- * effort the next morning, which would make the focus ratio a lie in exactly
- * the direction that flatters.
- */
-export function repairRun(run: RunDoc, now = Date.now()): RunDoc {
-  const deadline = Math.min(now, (run.heartbeat ?? run.startedAt) + HEARTBEAT_GRACE_MS);
-  let touched = false;
-  const entries: Record<string, RunEntry> = {};
-
-  for (const [key, entry] of Object.entries(run.entries)) {
-    const segments = entry.segments.map((s) => {
-      if (s.to !== null) return s;
-      touched = true;
-      return { from: s.from, to: Math.max(s.from, deadline) };
-    });
-    entries[key] = touched ? { ...entry, segments } : entry;
-  }
-
-  if (!touched) return run;
-  // The trimmed tail becomes a pause rather than vanishing, so a refresh, a
-  // closed tab and a slept laptop all land in the same visible state: the clock
-  // is holding, resuming puts it back on the same problem, and if the absence
-  // turned out to be long it settles as a break.
-  return {
-    ...run,
-    entries,
-    activeKey: null,
-    paused: run.paused ?? { at: deadline, key: run.activeKey ?? undefined },
-  };
-}
-
-/**
- * Resolves an open pause against the clock.
- *
- * A pause shorter than the threshold stays as desk time — you were here, not
- * working. A longer one is reclassified as a break, which is what lets you walk
- * out mid-problem without the session punishing you for it.
- */
-export function settlePause(run: RunDoc, at = Date.now()): RunDoc {
-  const paused = run.paused;
-  if (!paused) return run;
-  if (at - paused.at < AUTO_BREAK_THRESHOLD_MS) return { ...run, paused: null };
-  return {
-    ...run,
-    paused: null,
-    breaks: [
-      ...(run.breaks ?? []),
-      { from: paused.at, to: at, auto: true, resumeKey: paused.key },
-    ],
-  };
 }
 
 export interface ArenaDataDoc {
@@ -292,7 +209,7 @@ export function emptyRun(
 
 /* ----------------------------------------------------------------- time --- */
 
-/** Engaged seconds on one problem. An open segment is counted up to `now`. */
+/** Seconds on the clock for one problem. An open segment runs up to `now`. */
 export function activeSeconds(entry: RunEntry | undefined, now: number): number {
   if (!entry) return 0;
   let total = 0;
@@ -302,54 +219,12 @@ export function activeSeconds(entry: RunEntry | undefined, now: number): number 
   return Math.max(0, Math.floor(total));
 }
 
-/** Engaged seconds across every problem in the run. */
+/** Seconds on the clock across every problem in the run. */
 export function totalActiveSeconds(run: RunDoc, now: number): number {
   return Object.values(run.entries).reduce(
     (sum, e) => sum + activeSeconds(e, now),
     0,
   );
-}
-
-/** True while a declared break is open. */
-export function isOnBreak(run: RunDoc): boolean {
-  const last = run.breaks?.[run.breaks.length - 1];
-  return !!last && last.to === null;
-}
-
-/**
- * Total break time. An open break is counted up to `now`, and so is an open
- * pause once it has run past `AUTO_BREAK_THRESHOLD_MS` — that pause is going to
- * be recorded as a break the moment it is settled, so counting it now keeps the
- * live focus ratio from sagging during a long absence and then jumping back on
- * resume.
- */
-export function breakSeconds(run: RunDoc, now: number): number {
-  const end = run.finishedAt ?? now;
-  const declared = (run.breaks ?? []).reduce(
-    (sum, b) => sum + (Math.min(b.to ?? end, end) - b.from) / 1000,
-    0,
-  );
-  const held = run.paused ? Math.max(0, end - run.paused.at) : 0;
-  const pending = held >= AUTO_BREAK_THRESHOLD_MS ? held / 1000 : 0;
-  return Math.max(0, Math.floor(declared + pending));
-}
-
-/** Wall time since the session opened, with declared breaks removed. */
-export function availableSeconds(run: RunDoc, now: number): number {
-  const wall = ((run.finishedAt ?? now) - run.startedAt) / 1000;
-  return Math.max(1, wall - breakSeconds(run, now));
-}
-
-/**
- * Engaged time as a share of the time you were actually at the desk.
- *
- * This is the number that answers "am I working or is the tab just open?". A
- * four-hour sitting at 45% is 108 minutes of work and 132 minutes of
- * self-deception, and it should read that way — but only time you did not
- * declare as a break counts against you.
- */
-export function focusRatio(run: RunDoc, now: number): number {
-  return Math.min(1, totalActiveSeconds(run, now) / availableSeconds(run, now));
 }
 
 export function isOverCap(problem: CoachProblem, seconds: number): boolean {
@@ -359,6 +234,96 @@ export function isOverCap(problem: CoachProblem, seconds: number): boolean {
 /** Seconds left before the cap bites; negative once it has. */
 export function capRemaining(problem: CoachProblem, seconds: number): number {
   return problem.capMinutes * 60 - seconds;
+}
+
+/* --------------------------------------------------------------- phases --- */
+
+export type PhaseId = "trying" | "hints" | "tutorial";
+
+export interface Phase {
+  id: PhaseId;
+  label: string;
+  /** What you are allowed to open during this phase. */
+  rule: string;
+  seconds: number;
+  /** CSS custom property, so the ring and the row agree without a lookup. */
+  color: string;
+}
+
+/**
+ * The three phases of one attempt, derived from the problem's cap.
+ *
+ * The cap is how long the problem is yours alone. Past it the question stops
+ * being "can I solve this" and becomes "how fast can I learn it", and the
+ * answer to that is not more staring — so a third of the cap buys hints, and
+ * whatever is left of a second cap is the editorial re-implementation. Every
+ * attempt is therefore over at twice the cap, whatever state the code is in.
+ *
+ * A 30-minute problem is 30 trying, 10 on hints, 20 with the tutorial; a
+ * 15-minute one is 15 / 5 / 10. The arithmetic is in seconds so the ratio holds
+ * for caps that do not divide by three.
+ */
+export function phasesFor(capMinutes: number): Phase[] {
+  const cap = Math.max(1, Math.round(capMinutes * 60));
+  const hints = Math.round(cap / 3);
+  return [
+    {
+      id: "trying",
+      label: "Trying",
+      rule: "Yours alone — no tags, no hints, no editorial.",
+      seconds: cap,
+      color: "var(--accent)",
+    },
+    {
+      id: "hints",
+      label: "Hints",
+      rule: "Tags and one hint are open. Not the solution.",
+      seconds: hints,
+      color: "var(--warning)",
+    },
+    {
+      id: "tutorial",
+      label: "Tutorial",
+      rule: "Read the editorial once, close it, re-implement from scratch.",
+      seconds: cap * 2 - cap - hints,
+      color: "var(--negative)",
+    },
+  ];
+}
+
+export interface PhaseState {
+  phases: Phase[];
+  /** Index into `phases`, or -1 once the whole budget is spent. */
+  index: number;
+  phase: Phase | null;
+  /** Seconds left in the current phase. */
+  remaining: number;
+  /** The whole attempt budget — always twice the cap. */
+  total: number;
+  over: boolean;
+}
+
+export function phaseAt(capMinutes: number, seconds: number): PhaseState {
+  const phases = phasesFor(capMinutes);
+  const total = phases.reduce((sum, p) => sum + p.seconds, 0);
+  let start = 0;
+
+  for (let i = 0; i < phases.length; i++) {
+    const end = start + phases[i].seconds;
+    if (seconds < end) {
+      return {
+        phases,
+        index: i,
+        phase: phases[i],
+        remaining: Math.ceil(end - seconds),
+        total,
+        over: false,
+      };
+    }
+    start = end;
+  }
+
+  return { phases, index: -1, phase: null, remaining: 0, total, over: true };
 }
 
 /* --------------------------------------------------------------- scoring --- */
@@ -472,11 +437,8 @@ export interface RunAnalysis {
   kind: "practice" | "contest";
   solved: number;
   total: number;
-  engagedMinutes: number;
-  wallMinutes: number;
-  breakMinutes: number;
-  breakCount: number;
-  focus: number;
+  /** Sum of the per-problem clocks. Nothing measures the session itself. */
+  clockedMinutes: number;
   overCap: number;
   wrongAttempts: number;
   /** Sealed problems where the named technique was wrong. */
@@ -517,8 +479,6 @@ export function analyseRun(
   });
 
   const sealed = lines.filter((l) => l.problem.sealed && l.technique);
-  const engaged = run ? totalActiveSeconds(run, now) : 0;
-  const wall = run ? ((run.finishedAt ?? now) - run.startedAt) / 1000 : 0;
 
   return {
     day: day.day,
@@ -526,11 +486,7 @@ export function analyseRun(
     kind,
     solved: lines.filter((l) => l.status === "solved").length,
     total: problems.length,
-    engagedMinutes: Math.round(engaged / 60),
-    wallMinutes: Math.round(wall / 60),
-    breakMinutes: run ? Math.round(breakSeconds(run, now) / 60) : 0,
-    breakCount: run?.breaks?.length ?? 0,
-    focus: run ? focusRatio(run, now) : 0,
+    clockedMinutes: run ? Math.round(totalActiveSeconds(run, now) / 60) : 0,
     overCap: lines.filter((l) => l.overCap).length,
     wrongAttempts: lines.reduce((s, l) => s + l.wrongAttempts, 0),
     discriminationErrors: sealed.filter((l) => l.techniqueRight === false).length,

@@ -14,29 +14,15 @@ import { Badge } from "@/components/ui/badge";
 export function SessionReview({
   analysis,
   run,
-  showFocus,
 }: {
   analysis: RunAnalysis;
   run: RunDoc;
-  showFocus: boolean;
 }) {
-  const deskMinutes = Math.max(0, analysis.wallMinutes - analysis.breakMinutes);
-
   return (
     <div>
       <div className="flex flex-wrap gap-x-6 gap-y-3">
         <Stat label="Solved" value={`${analysis.solved}/${analysis.total}`} />
-        <Stat label="Engaged" value={`${analysis.engagedMinutes}m`} />
-        <Stat label="At the desk" value={`${deskMinutes}m`} />
-        {analysis.breakMinutes > 0 && (
-          <Stat
-            label={`Break${analysis.breakCount > 1 ? `s (${analysis.breakCount})` : ""}`}
-            value={`${analysis.breakMinutes}m`}
-          />
-        )}
-        {showFocus && (
-          <Stat label="Focus" value={`${Math.round(analysis.focus * 100)}%`} />
-        )}
+        <Stat label="On the clock" value={`${analysis.clockedMinutes}m`} />
         {analysis.overCap > 0 && (
           <Stat label="Over cap" value={String(analysis.overCap)} tone="warning" />
         )}
@@ -58,7 +44,8 @@ export function SessionReview({
 
       {!run.finishedAt && (
         <p className="mt-3 text-[12px] text-warning">
-          This session was never closed out, so the desk figure runs to now.
+          This session was never closed out, so any clock left running is still
+          running.
         </p>
       )}
 
@@ -148,7 +135,7 @@ function ProblemLine({ line, run }: { line: ProblemVerdictLine; run: RunDoc }) {
 
       {status === "solved" && entry?.solvedAtSeconds !== undefined && (
         <p className="mt-1 pl-7 text-[11.5px] text-faint">
-          Accepted after {formatDuration(entry.solvedAtSeconds)} of engaged work.
+          Accepted after {formatDuration(entry.solvedAtSeconds)} on the clock.
         </p>
       )}
     </li>

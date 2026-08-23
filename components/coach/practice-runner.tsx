@@ -8,8 +8,6 @@ import {
   Coffee,
   Eye,
   Flag,
-  MoonStar,
-  Pause,
   Play,
   SkipForward,
   X,
@@ -18,11 +16,7 @@ import { toast } from "sonner";
 import { problemUrl, ratingColor } from "@/lib/cf";
 import {
   activeSeconds,
-  AUTO_BREAK_THRESHOLD_MS,
-  availableSeconds,
-  breakSeconds,
-  capRemaining,
-  focusRatio,
+  phaseAt,
   totalActiveSeconds,
   type CoachBlock,
   type CoachDay,
@@ -35,7 +29,7 @@ import { useNow } from "@/lib/use-now";
 import { Card, CardTitle, SectionLabel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress, ProgressRing } from "@/components/ui/progress";
+import { PhaseRing, Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 
 export function PracticeRunner({
@@ -54,145 +48,64 @@ export function PracticeRunner({
   }
 
   const t = now ?? run.startedAt;
-  const engaged = totalActiveSeconds(run, t);
-  const rested = breakSeconds(run, t);
-  const atDesk = availableSeconds(run, t);
-  const focus = focusRatio(run, t);
   const done = run.finishedAt != null;
-  const resting = ctl.onBreak;
-  const openBreak = run.breaks?.[run.breaks.length - 1];
-  const restingFor =
-    resting && openBreak ? Math.floor((t - openBreak.from) / 1000) : 0;
-  const paused = ctl.paused;
-  const pausedFor = paused ? Math.floor((t - paused.at) / 1000) : 0;
-  const pausedLong = pausedFor * 1000 >= AUTO_BREAK_THRESHOLD_MS;
 
   const all = blocks.flatMap((b) => b.problems);
   const solved = all.filter((p) => run.entries[p.key]?.status === "solved").length;
   const overCap = all.filter(
     (p) => activeSeconds(run.entries[p.key], t) > p.capMinutes * 60,
   ).length;
+  const clocked = totalActiveSeconds(run, t);
 
-  // A clock left running is the one way this can lie in your favour, and the
-  // cap is the only signal available for it — there is no way to observe you
-  // working in another window.
-  const active = all.find((p) => p.key === run.activeKey);
-  const activeSecs = active ? activeSeconds(run.entries[active.key], t) : 0;
-  const overrunning =
-    active && activeSecs > active.capMinutes * 60 * 2
-      ? { name: active.name, seconds: activeSecs, capMinutes: active.capMinutes }
-      : null;
+  const active = all.find((p) => p.key === run.activeKey) ?? null;
+  const resting = ctl.restingKey
+    ? (all.find((p) => p.key === ctl.restingKey) ?? null)
+    : null;
 
   return (
     <div className="space-y-4">
-      {paused && !resting && !done && (
-        <Card className="flex flex-wrap items-center gap-3 border-line-strong bg-elevated">
-          <Pause className="size-4 shrink-0 text-muted" />
-          <div className="grow">
-            <p className="text-[13px] font-medium text-ink">
-              Paused for {formatClock(pausedFor)}
-              {pausedLong && " — counted as a break"}
-            </p>
-            <p className="mt-0.5 text-[12px] text-muted">
-              {pausedLong
-                ? "You have been away long enough that this time has left the session, so it costs your focus nothing."
-                : "Under five minutes still counts as desk time. Past that it becomes a break automatically, so you can walk away without thinking about it."}
-              {paused.key
-                ? " Resuming puts the clock back where you left it."
-                : ""}
-            </p>
-          </div>
-          <Button variant="accent" onClick={ctl.resumePaused}>
-            <Play />
-            Resume
-          </Button>
-        </Card>
+      {active && !done && (
+        <OnTheClock
+          problem={active}
+          seconds={activeSeconds(run.entries[active.key], t)}
+          ctl={ctl}
+        />
       )}
 
-      {resting && !done && (
-        <Card className="flex flex-wrap items-center gap-3 border-accent/40 bg-accent-soft">
-          <Coffee className="size-4 shrink-0 text-accent" />
+      {!active && resting && !done && (
+        <Card className="flex flex-wrap items-center gap-3 border-line-strong bg-elevated">
+          <Coffee className="size-4 shrink-0 text-muted" />
           <div className="grow">
             <p className="text-[13px] font-medium text-ink">
-              On a break for {formatClock(restingFor)}
+              On a break — {resting.name} is stopped at{" "}
+              {formatClock(activeSeconds(run.entries[resting.key], t))}
             </p>
             <p className="mt-0.5 text-[12px] text-muted">
-              This time is taken out of the session entirely, so it costs your
-              focus nothing. {openBreak?.resumeKey
-                ? "Ending it puts the clock back on the problem you left."
-                : "Pick a problem when you are back."}
+              Nothing is being timed. Take as long as you need; the break itself
+              is not recorded anywhere.
             </p>
           </div>
-          <Button variant="accent" onClick={ctl.endBreak}>
+          <Button variant="accent" onClick={() => ctl.startProblem(resting.key)}>
             <Play />
             Back to work
           </Button>
         </Card>
       )}
 
-      {ctl.interrupted && !done && (
-        <Card className="flex flex-wrap items-center gap-3 border-warning/40 bg-warning/5">
-          <MoonStar className="size-4 shrink-0 text-warning" />
-          <div className="grow">
-            <p className="text-[13px] font-medium text-ink">
-              Clock stopped — this machine was away for{" "}
-              {formatDuration(ctl.interrupted.awaySeconds)}
-            </p>
-            <p className="mt-0.5 text-[12px] text-muted">
-              Long enough to count as a break, so it has been taken out of the
-              session rather than charged to your focus. Time in another tab is
-              never counted as absence — only the machine actually stopping.
-            </p>
-          </div>
-          <Button variant="accent" onClick={ctl.resume}>
-            <Play />
-            Resume
-          </Button>
-        </Card>
-      )}
-
-      {overrunning && !done && (
-        <Card className="flex flex-wrap items-center gap-3 border-negative/40 bg-negative/5">
-          <AlarmClock className="size-4 shrink-0 text-negative" />
-          <p className="grow text-[13px] text-ink">
-            <span className="font-medium">{overrunning.name}</span> has been on
-            the clock for {formatDuration(overrunning.seconds)} against a{" "}
-            {overrunning.capMinutes}-minute cap. Either you are past the point of
-            learning anything, or you forgot to stop the timer. Both are worth
-            fixing now.
-          </p>
-        </Card>
-      )}
-
       <Card className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-5">
-          <ProgressRing value={focus * 100} size={104} stroke={9}
-            color={focus >= 0.7 ? "var(--positive)" : focus >= 0.5 ? "var(--warning)" : "var(--negative)"}>
-            <span className="font-mono text-xl font-bold tabular-nums text-ink">
-              {Math.round(focus * 100)}%
-            </span>
-            <span className="text-[10px] font-medium uppercase tracking-wider text-faint">
-              focus
-            </span>
-          </ProgressRing>
-          <div>
-            <SectionLabel>Engaged</SectionLabel>
-            <p className="mt-1 font-mono text-3xl font-bold leading-none tabular-nums text-ink">
-              {formatClock(engaged)}
-            </p>
-            <p className="mt-1.5 text-[12px] text-muted">
-              of {formatDuration(atDesk)} at the desk
-              {rested > 0 && ` · ${formatDuration(rested)} on break`}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-6">
           <div>
             <SectionLabel>Solved</SectionLabel>
             <p className="mt-1 font-mono text-2xl font-semibold leading-none tabular-nums text-positive">
               {solved}
               <span className="text-base text-faint">/{all.length}</span>
+            </p>
+          </div>
+          <div>
+            <SectionLabel>On the clock</SectionLabel>
+            <p className="mt-1 font-mono text-2xl font-semibold leading-none tabular-nums text-ink">
+              {Math.round(clocked / 60)}
+              <span className="text-base text-faint">m</span>
             </p>
           </div>
           <div>
@@ -209,22 +122,10 @@ export function PracticeRunner({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {!done && !resting && (
-            <Button variant="secondary" onClick={ctl.startBreak}>
+          {!done && active && (
+            <Button variant="secondary" onClick={ctl.takeBreak}>
               <Coffee />
               Break
-            </Button>
-          )}
-          {!done && !resting && paused && (
-            <Button variant="accent" onClick={ctl.resumePaused}>
-              <Play />
-              Resume
-            </Button>
-          )}
-          {!done && !resting && !paused && (
-            <Button variant="secondary" onClick={ctl.pause} disabled={!run.activeKey}>
-              <Pause />
-              Pause
             </Button>
           )}
           {done ? (
@@ -245,10 +146,10 @@ export function PracticeRunner({
         <Card className="border-accent/30 bg-accent-soft">
           <CardTitle>Session closed</CardTitle>
           <p className="mt-1 text-[13px] text-muted">
-            {solved} of {all.length} solved in {formatDuration(engaged)} of engaged
-            work at {Math.round(focus * 100)}% focus
-            {rested > 0 &&
-              `, with ${formatDuration(rested)} of declared breaks excluded`}
+            {solved} of {all.length} solved, {formatDuration(clocked)} on the
+            clock across {all.length} problems
+            {overCap > 0 &&
+              `, ${overCap} of them past the cap`}
             . This is what the coach reads in the morning — nothing else needs
             doing tonight.
           </p>
@@ -269,6 +170,109 @@ export function PracticeRunner({
   );
 }
 
+/**
+ * The attempt clock for whichever problem is running.
+ *
+ * This is the only clock in the session, and it is the one thing worth looking
+ * at mid-problem: how long you have been on this, which phase that puts you in,
+ * and how long before the rule changes.
+ */
+function OnTheClock({
+  problem,
+  seconds,
+  ctl,
+}: {
+  problem: CoachProblem;
+  seconds: number;
+  ctl: RunController;
+}) {
+  const state = phaseAt(problem.capMinutes, seconds);
+  const phase = state.phase;
+
+  return (
+    <Card
+      className={cn(
+        "flex flex-col gap-6 sm:flex-row sm:items-center",
+        state.over ? "border-negative/40 bg-negative/5" : "border-accent/40",
+      )}
+    >
+      <PhaseRing phases={state.phases} elapsed={seconds} size={152}>
+        <span className="font-mono text-[27px] font-bold leading-none tabular-nums text-ink">
+          {formatClock(seconds)}
+        </span>
+        <span
+          className="mt-1.5 text-[10px] font-semibold uppercase tracking-widest"
+          style={{ color: phase?.color ?? "var(--negative)" }}
+        >
+          {phase?.label ?? "over"}
+        </span>
+      </PhaseRing>
+
+      <div className="min-w-0 grow">
+        <SectionLabel>On the clock</SectionLabel>
+        <a
+          href={problemUrl(problem)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 block truncate text-[17px] font-semibold text-ink hover:text-accent"
+        >
+          {problem.name}
+        </a>
+
+        <p className="mt-2 text-[13px] text-ink">
+          {phase
+            ? phase.rule
+            : "Twice the cap is gone. Mark it however it stands and move on — nothing after this point is learning."}
+        </p>
+        <p className="mt-1 text-[12.5px] text-muted">
+          {phase
+            ? `${formatDuration(state.remaining)} left in ${phase.label}, then ${
+                state.index === 0
+                  ? "tags and a hint open up"
+                  : state.index === 1
+                    ? "the editorial opens up"
+                    : "the attempt is over"
+              }.`
+            : `${formatDuration(seconds - state.total)} past the whole budget.`}
+        </p>
+
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+          {state.phases.map((p, i) => (
+            <span
+              key={p.id}
+              className={cn(
+                "text-[11.5px]",
+                i === state.index ? "font-semibold" : "text-faint",
+              )}
+              style={i === state.index ? { color: p.color } : undefined}
+            >
+              {p.label} {Math.round(p.seconds / 60)}m
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex shrink-0 gap-2 sm:flex-col">
+        <Button variant="secondary" onClick={ctl.takeBreak}>
+          <Coffee />
+          Break
+        </Button>
+        <Button
+          variant="accent"
+          onClick={() => ctl.setStatus(problem.key, "solved")}
+        >
+          <Check />
+          Solved
+        </Button>
+        <Button variant="ghost" onClick={() => ctl.addWrong(problem.key)}>
+          <X />
+          Wrong
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 function StartCard({ day, onStart }: { day: CoachDay; onStart: () => void }) {
   const blocks = day.practice?.blocks ?? [];
   const total = blocks.reduce((s, b) => s + b.minutes, 0);
@@ -284,20 +288,22 @@ function StartCard({ day, onStart }: { day: CoachDay; onStart: () => void }) {
       </p>
       <div className="mx-auto mt-4 max-w-md space-y-1.5 text-left text-[12.5px] text-muted">
         <p>
-          <span className="font-medium text-ink">One at a time.</span> Starting a
-          problem locks the others until you pause it or give it a verdict, so
-          you cannot drift between problems without deciding to.
+          <span className="font-medium text-ink">The session is not timed.</span>{" "}
+          Only problems are. Pressing Start on one puts it on the clock; nothing
+          else in here measures you.
         </p>
         <p>
-          <span className="font-medium text-ink">Leave whenever you need to.</span>{" "}
-          Pause holds the clock and resumes on the same problem; anything longer
-          than five minutes leaves the session as a break and costs your focus
-          nothing. Use Break instead when you already know you are going.
+          <span className="font-medium text-ink">Every attempt has three
+          phases.</span>{" "}
+          The cap is yours alone, then a third of it for hints, then the rest of
+          a second cap for the editorial. A 30-minute problem is 30 trying, 10 on
+          hints, 20 with the tutorial.
         </p>
         <p>
-          <span className="font-medium text-ink">The clock trusts you.</span> It
-          keeps running while you are in the editor or on Codeforces, and only
-          stops itself if this machine actually goes away.
+          <span className="font-medium text-ink">The clock only stops by
+          hand.</span>{" "}
+          Break stops it, a verdict stops it, nothing else does. Reloading,
+          closing the tab and sleeping the laptop all leave it running.
         </p>
       </div>
       <Button variant="accent" size="lg" className="mx-auto mt-5" onClick={onStart}>
@@ -321,7 +327,7 @@ function BlockCard({
   ctl: RunController;
   locked: boolean;
 }) {
-  const engaged = block.problems.reduce(
+  const clocked = block.problems.reduce(
     (s, p) => s + activeSeconds(run.entries[p.key], now),
     0,
   );
@@ -336,15 +342,15 @@ function BlockCard({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={engaged > block.minutes * 60 ? "warning" : "neutral"}>
-            {formatDuration(engaged)} / {block.minutes}m
+          <Badge variant={clocked > block.minutes * 60 ? "warning" : "neutral"}>
+            {formatDuration(clocked)} / {block.minutes}m
           </Badge>
         </div>
       </div>
 
       <div className="divide-y divide-line">
         {block.problems.map((p) => (
-          <ProblemTimer
+          <ProblemRow
             key={p.key}
             problem={p}
             run={run}
@@ -359,7 +365,7 @@ function BlockCard({
   );
 }
 
-function ProblemTimer({
+function ProblemRow({
   problem,
   run,
   now,
@@ -377,12 +383,11 @@ function ProblemTimer({
 }) {
   const entry = run.entries[problem.key];
   const seconds = activeSeconds(entry, now);
-  const left = capRemaining(problem, seconds);
   const active = run.activeKey === problem.key;
   const status = entry?.status ?? "todo";
   const solved = status === "solved";
   const settled = status !== "todo";
-  const pct = (seconds / (problem.capMinutes * 60)) * 100;
+  const state = phaseAt(problem.capMinutes, seconds);
 
   const [technique, setTechniqueLocal] = useState(entry?.technique ?? "");
   const [revealed, setRevealed] = useState(false);
@@ -399,14 +404,11 @@ function ProblemTimer({
     }
     ctl.setTechnique(problem.key, value);
     if (blocked) {
-      toast.info("Saved. Pause or finish the running problem to start this one.");
+      toast.info("Saved. Break the running problem to start this one.");
       return;
     }
-    ctl.focusProblem(problem.key);
+    ctl.startProblem(problem.key);
   }
-
-  const barColor =
-    left < 0 ? "var(--negative)" : pct > 80 ? "var(--warning)" : "var(--accent)";
 
   return (
     <div className={cn("p-4 transition-colors", active && "bg-accent-soft/50")}>
@@ -471,14 +473,27 @@ function ProblemTimer({
           <p
             className={cn(
               "font-mono text-lg font-semibold leading-none tabular-nums",
-              left < 0 ? "text-negative" : active ? "text-accent" : "text-muted",
+              active ? "text-accent" : seconds > 0 ? "text-muted" : "text-faint",
             )}
           >
             {formatClock(seconds)}
           </p>
-          <p className="mt-0.5 text-[10.5px] text-faint">
-            {left < 0 ? `${formatDuration(-left)} over` : `${formatDuration(left)} left`}
-          </p>
+          {settled ? (
+            <p className="mt-0.5 text-[10.5px] text-faint">{status}</p>
+          ) : active || seconds > 0 ? (
+            <p
+              className="mt-0.5 text-[10.5px]"
+              style={{ color: state.phase?.color ?? "var(--negative)" }}
+            >
+              {state.phase
+                ? `${state.phase.label} · ${formatDuration(state.remaining)} left`
+                : "budget spent"}
+            </p>
+          ) : (
+            <p className="mt-0.5 text-[10.5px] text-faint">
+              {Math.round(state.total / 60)}m budget
+            </p>
+          )}
         </div>
 
         {!locked && (
@@ -510,13 +525,15 @@ function ProblemTimer({
                 disabled={blocked}
                 title={
                   blocked
-                    ? "Pause or finish the running problem first — one at a time"
+                    ? "Break the running problem first — one at a time"
                     : undefined
                 }
-                onClick={() => (active ? ctl.pause() : ctl.focusProblem(problem.key))}
+                onClick={() =>
+                  active ? ctl.takeBreak() : ctl.startProblem(problem.key)
+                }
               >
-                {active ? <Pause /> : <Play />}
-                {active ? "Pause" : "Work"}
+                {active ? <Coffee /> : <Play />}
+                {active ? "Break" : "Start"}
               </Button>
             )}
             <Button
@@ -533,8 +550,8 @@ function ProblemTimer({
 
       {(active || seconds > 0) && (
         <Progress
-          value={Math.min(100, pct)}
-          color={barColor}
+          value={(seconds / state.total) * 100}
+          color={state.phase?.color ?? "var(--negative)"}
           size="sm"
           className="mt-3"
         />
