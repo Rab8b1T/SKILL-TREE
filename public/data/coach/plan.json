@@ -1,13 +1,13 @@
 {
-  "updatedAt": "2026-08-21T07:30:00+05:30",
+  "updatedAt": "2026-08-23T09:55:00+05:30",
   "handle": "rab8bit",
   "mentor": {
     "rating": 1132,
     "rank": "Newbie",
     "goalRating": 1600,
     "goalDate": "2026-10-31",
-    "headline": "You are walking around trees, and trees is what cost you C in a live round.",
-    "detail": "Of the day-21 set, 1927D and 1793C were both accepted and 2257C fell at 01:40 — everything except the tree problem. 1676G was dropped, then its prerequisite toolkit was scheduled for day 23 and never started, so 20AUG26/toolkit.py is still five empty stubs. Trees is also the blind spot with 0 solves rated 1300+, and 2257C in Round 1117 was a tree problem that never got read. Today is its second scheduling. Build the toolkit first, then use it twice.",
+    "headline": "The tree toolkit now passes; today the carried set has to become verdicts.",
+    "detail": "Day 24 closed at 1/7: only 1613C landed. The local rooted-tree toolkit was completed afterward and now agrees with an independent brute force on random trees plus a 200000-node path, so the prerequisite is no longer the blocker. Four Codeforces debts remain. 1520E has already been scheduled twice, which makes today its third and final scheduling; 1366B, 1676G and 1830A also carry forward. Trees remains a blind spot with 0 solves rated 1300+, so after the mixed opener the order is debt first, then the two tree applications.",
     "weaknesses": [
       {
         "id": "contest-speed-ab",
@@ -217,6 +217,142 @@
                 "why": "The only open debt, four days old, first reschedule. BONUS ON PURPOSE: start it only once the toolkit and both tree problems are finished. Sealed — name the technique in one line first.",
                 "sealed": true,
                 "reveal": "Collect the sheep positions, then subtract i from the i-th of them, which turns 'adjacent' into 'equal'. Move every normalised value to their median; the sum of absolute deviations is minimised at the median, and that exchange argument is the thing to write down. n is up to 1e6, so read with sys.stdin.buffer, keep the arithmetic integer, and do not build extra lists."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "day": 26,
+      "date": "2026-08-23",
+      "focus": "Trees after the toolkit: process vertices in the one order that makes every dependency ready",
+      "concept": "DAY 26 OF 180. Rating 1132, still Newbie, with 290 rated solves and 6 rounds. The day-20 milestone wanted 1200, so the account is 68 points behind; day 40 wants 1300 in 14 days, which needs another 168. The binding Newbie failure is still reading and rigour under time, not missing advanced algorithms. || DAY 24 IS NOW CLOSED AT 1/7. Poisoned Dagger was accepted; the other Codeforces problems carried forward. One important prerequisite did land afterward: 20AUG26/toolkit.py now passes the independent random-tree oracle and the 200000-node path check. You can build parent[], an order, subtree sizes and depths iteratively. Today uses that toolkit instead of scheduling it again. || DEBT BEFORE NEW VOLUME. Arranging The Sheep has already appeared twice, so this is its third and final scheduling: finish it today or explicitly drop it; a fourth scheduling is forbidden. Shuffle is next, then the two tree problems owed from day 24. No new core problem is added while these four remain open. || TODAY'S TREE IDEA. A rooted-tree computation becomes a loop once you choose an order that makes every dependency ready. For a subtree aggregate, children must be finished before their parent, so process a parent-before-child order in reverse. For a root-to-node state, the parent must be finished first, so process that same order forward. Before either loop, write one sentence defining exactly what the array at index v means. || MIXED OPENER. Both cold re-solves are from covered topics, both are sealed, and both have a hard 15-minute cap. Before code, write one line naming the technique and the condition that licenses it. The current discrimination rate is 2 wrong calls in 4 attempts; the line is data, not ceremony. || VERIFICATION GATE. Hand over each final practice file before submitting. Samples, edge cases and a differential oracle where feasible are coach work outside the four-hour budget. Submit accepted candidates as PyPy 3-64. || RATED ROUND. Codeforces Round (Div. 2) is Saturday 29 August at 20:05 IST for 120 minutes. Rating only moves in rounds; confirm whether you are playing.",
+      "watchFor": "Do not start from traversal syntax. First write the state meaning and the dependency direction: does v need its children finished, or only its parent? Then choose reverse order or forward order. For every sealed problem, write the technique line before touching code; for 1520E, the third scheduling means a verdict today, not another partial start.",
+      "practice": {
+        "title": "Morning — 4h. Mixed opener, oldest debt first, then the two tree applications.",
+        "blocks": [
+          {
+            "id": "mixed",
+            "label": "Mixed opener — tags withheld",
+            "minutes": 30,
+            "note": "Two overdue cold re-solves from covered topics. Blank file, no old code or notes, 15 minutes each and the caps are hard. Write ONE LINE naming the technique and why it applies before coding. A wrong line is a discrimination error to record at close.",
+            "problems": [
+              {
+                "key": "1372-B",
+                "contestId": 1372,
+                "index": "B",
+                "name": "Omkar and Last Class of Math",
+                "rating": 1300,
+                "tags": [
+                  "greedy",
+                  "math",
+                  "number theory"
+                ],
+                "capMinutes": 15,
+                "role": "mixed",
+                "why": "Oldest cold re-solve, rep 1 of 2, six days overdue. Before optimising anything, define in words the exact quantity your loop returns.",
+                "sealed": true,
+                "reveal": "Minimising lcm(a, b) with a + b = n means making a the largest proper divisor of n. Find the smallest divisor d > 1 by scanning only to sqrt(n); then a = n // d and b = n - a. If n is prime, use a = 1 and b = n - 1. The earlier wrong rewrite returned a different divisor quantity, first exposed by n = 12."
+              },
+              {
+                "key": "706-B",
+                "contestId": 706,
+                "index": "B",
+                "name": "Interesting drink",
+                "rating": 1100,
+                "tags": [
+                  "binary search",
+                  "dp",
+                  "implementation"
+                ],
+                "capMinutes": 15,
+                "role": "mixed",
+                "why": "Cold re-solve, rep 1 of 2, five days overdue after wrong submissions. State what one query asks you to count before choosing any search boundary.",
+                "sealed": true,
+                "reveal": "Sort the shop prices once. For each budget m, bisect_right(prices, m) returns the index of the first price greater than m, which is also the number of prices less than or equal to m. The boundary invariant is: everything left of the returned index is affordable and everything from it onward is too expensive. O(n log n + q log n)."
+              }
+            ]
+          },
+          {
+            "id": "debt",
+            "label": "Debt — verdicts before new volume",
+            "minutes": 80,
+            "note": "These are carried work, not optional bonuses. 1520E is first because this is scheduling three; there is no fourth. Both remain sealed, so name the technique and why before code. At the cap, read the editorial once, close it, and re-implement from an empty file.",
+            "problems": [
+              {
+                "key": "1520-E",
+                "contestId": 1520,
+                "index": "E",
+                "name": "Arranging The Sheep",
+                "rating": 1400,
+                "tags": [
+                  "greedy",
+                  "math"
+                ],
+                "capMinutes": 40,
+                "role": "debt — third and final scheduling",
+                "why": "Oldest open debt, six days old and already scheduled twice. This slot ends in a verified submission or an explicit drop, never another carry.",
+                "sealed": true,
+                "reveal": "Collect the sheep positions, then subtract i from the i-th position; this transforms the target of consecutive positions into making all normalised values equal. Move every normalised value to their median because the sum of absolute deviations is minimised at a median. n reaches 1e6, so use buffered input, integer arithmetic and no unnecessary extra structures."
+              },
+              {
+                "key": "1366-B",
+                "contestId": 1366,
+                "index": "B",
+                "name": "Shuffle",
+                "rating": 1300,
+                "tags": [
+                  "math",
+                  "two pointers"
+                ],
+                "capMinutes": 35,
+                "role": "debt",
+                "why": "Carried from day 24 without an attempt. n and the operation count rule out touching the whole array after every operation; identify what compact state survives each operation.",
+                "sealed": true,
+                "reveal": "Do not simulate the array. The positions the single 1 can occupy always form one contiguous interval [lo, hi]. Start [lo, hi] = [x, x]. For each [l, r], if it intersects the current interval, widen to [min(lo, l), max(hi, r)]; otherwise ignore it. Any intersecting operation lets the 1 move anywhere across the union, which proves the invariant. Answer hi - lo + 1 in O(m)."
+              }
+            ]
+          },
+          {
+            "id": "core",
+            "label": "Core — one rooted-tree order, two dependency directions",
+            "minutes": 110,
+            "note": "The prerequisite toolkit already passes. These two are the blocked acquisition half: tags are shown, and the goal is to use one parent-before-child order first in reverse and then forward. Define every per-vertex state before coding it.",
+            "problems": [
+              {
+                "key": "1676-G",
+                "contestId": 1676,
+                "index": "G",
+                "name": "White-Black Balanced Subtrees",
+                "rating": 1300,
+                "tags": [
+                  "dfs and similar",
+                  "dp",
+                  "graphs",
+                  "trees"
+                ],
+                "capMinutes": 45,
+                "role": "core",
+                "why": "First use of the verified toolkit. Before coding, decide whether the input already gives a valid parent-before-child order, then write exactly what the accumulator stores for v.",
+                "reveal": "Map W to +1 and B to -1 and let f[v] be the colour sum over v's entire subtree. The input guarantees p_i < i, so vertices 1..n already form a parent-before-child order. Process v from n down to 2 and add f[v] into f[parent[v]]. Every child is finished before its parent is read. Count vertices with f[v] == 0. O(n), with no adjacency list or traversal needed."
+              },
+              {
+                "key": "1830-A",
+                "contestId": 1830,
+                "index": "A",
+                "name": "Copil Copac Draws Trees",
+                "rating": 1400,
+                "tags": [
+                  "dfs and similar",
+                  "dp",
+                  "graphs",
+                  "trees"
+                ],
+                "capMinutes": 50,
+                "role": "core",
+                "why": "The edges arrive in arbitrary order, so this time you must build parent and order. Replace process simulation with one per-vertex state whose maximum is the answer.",
+                "reveal": "Store each edge's input index. Root the tree at 1. Let pass[1] = 1; if v is joined to parent u by edge index idx[v], then pass[v] = pass[u] + (idx[v] < idx[u]), with idx[1] = 0. During one scan, a path can continue only through increasing edge indices; every decrease forces the next scan. Build parent and a parent-before-child order iteratively, process it forward, and return max(pass). O(n)."
               }
             ]
           }
