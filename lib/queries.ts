@@ -231,7 +231,8 @@ export const useSaveArenaData = (handle?: string | null) =>
 export function useCoachPlan() {
   return useQuery({
     queryKey: ["coach", "plan"],
-    queryFn: () => request<CoachPlan>("/data/coach/plan.json"),
+    queryFn: () =>
+      request<CoachPlan>("/data/coach/plan.json", { cache: "no-store" }),
     staleTime: 0,
     refetchOnWindowFocus: true,
     retry: 1,

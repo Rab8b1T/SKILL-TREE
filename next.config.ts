@@ -18,6 +18,17 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=3600, s-maxage=86400" },
         ],
       },
+      {
+        // The coach publishes a new static plan during an active session. This
+        // more-specific rule comes last so it overrides the dataset cache above.
+        source: "/data/coach/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, max-age=0, must-revalidate",
+          },
+        ],
+      },
     ];
   },
 };
