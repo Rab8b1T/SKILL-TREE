@@ -27,14 +27,27 @@ const dayArg = args.includes("--day")
   : null;
 
 async function env() {
-  const raw = await readFile(path.join(ROOT, ".env.local"), "utf8");
+  let raw = "";
+  for (const name of [".env.local", ".env"]) {
+    try {
+      raw = await readFile(path.join(ROOT, name), "utf8");
+      break;
+    } catch (err) {
+      if (err?.code !== "ENOENT") throw err;
+    }
+  }
   const read = (key) => {
     const m = raw.match(new RegExp(`^${key}=(.*)$`, "m"));
     return m ? m[1].trim().replace(/^["']|["']$/g, "") : null;
   };
-  const uri = read("MONGODB_URI");
-  if (!uri) throw new Error("MONGODB_URI missing from .env.local");
-  return { uri, dbName: read("DB_NAME") ?? "skilltree" };
+  const uri = process.env.MONGODB_URI ?? read("MONGODB_URI");
+  if (!uri) {
+    throw new Error("MONGODB_URI missing from the environment, .env.local, and .env");
+  }
+  return {
+    uri,
+    dbName: process.env.DB_NAME ?? read("DB_NAME") ?? "skilltree",
+  };
 }
 
 const activeSeconds = (entry, now) =>
