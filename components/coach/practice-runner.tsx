@@ -139,9 +139,9 @@ export function PracticeRunner({
               {formatDuration(ctl.interrupted.awaySeconds)}
             </p>
             <p className="mt-0.5 text-[12px] text-muted">
-              {ctl.interrupted.excluded
-                ? "Long enough to count as a break, so it has been taken out of the session rather than charged to your focus."
-                : "Too short to call a break; it stays as desk time you were not working."}
+              Long enough to count as a break, so it has been taken out of the
+              session rather than charged to your focus. Time in another tab is
+              never counted as absence — only the machine actually stopping.
             </p>
           </div>
           <Button variant="accent" onClick={ctl.resume}>

@@ -33,9 +33,22 @@ import {
  * an inference about your attention.
  */
 const TICK_MS = 15_000;
-/** A tick this late means time passed without the machine running. */
-const GAP_MS = 45_000;
-const AUTO_BREAK_MS = AUTO_BREAK_THRESHOLD_MS;
+/**
+ * A tick this late means time passed without the machine running.
+ *
+ * The threshold has to clear the browser's own scheduling noise, and that noise
+ * is enormous. Once a page has been hidden for five minutes Chrome checks its
+ * chained timers **once a minute**, so the tab left behind to read the
+ * statement reports a ~60s gap on every single tick for as long as you are
+ * away. A threshold anywhere near that reads a tab switch as the machine going
+ * away — the exact inference the note above says never to make — and stops the
+ * clock once a minute for the whole session.
+ *
+ * Five minutes sits well clear of that floor, and it is already this app's
+ * definition of an absence worth recording, so a gap that trips it is a break
+ * by construction.
+ */
+const GAP_MS = AUTO_BREAK_THRESHOLD_MS;
 /** How often a running tab records that it is still alive. */
 const HEARTBEAT_MS = 20_000;
 /** Writes are coalesced this long so a burst of clicks is one request. */
@@ -44,8 +57,6 @@ const FLUSH_DEBOUNCE_MS = 1_200;
 export interface Interruption {
   key: string;
   awaySeconds: number;
-  /** Whether the gap was long enough to be excluded as a break. */
-  excluded: boolean;
 }
 
 export interface RunController {
@@ -357,38 +368,39 @@ export function useRun(
   // timers, so a tick arriving late is the only honest evidence that time
   // passed while nobody was here — and it is the one case timestamps alone get
   // wrong, because an open segment would otherwise bill the whole sleep.
+  //
+  // The reference point is a ref, not a local: this effect is re-created every
+  // time `persist` changes identity, and a local would reset the detector's
+  // memory on an unrelated re-render.
+  const lastTick = useRef(0);
+
   useEffect(() => {
-    if (!running) return;
-    let lastTick = Date.now();
+    if (!running) {
+      lastTick.current = 0;
+      return;
+    }
+    if (!lastTick.current) lastTick.current = Date.now();
 
     const check = () => {
       const now = Date.now();
-      const gap = now - lastTick;
-      const seen = lastTick;
-      lastTick = now;
+      const seen = lastTick.current;
+      const gap = now - seen;
+      lastTick.current = now;
       if (gap <= GAP_MS) return;
 
-      const excluded = gap >= AUTO_BREAK_MS;
       setRun((prev) => {
         if (!prev?.activeKey) return prev;
-        setInterrupted({
-          key: prev.activeKey,
-          awaySeconds: Math.floor(gap / 1000),
-          excluded,
-        });
-        let next = closeOpen(prev, seen);
-        if (excluded) {
-          // Long absences leave the denominator too. A closed lid over lunch is
-          // a break, and charging it to the focus ratio would only teach you to
-          // distrust the number.
-          next = {
-            ...next,
-            breaks: [
-              ...(next.breaks ?? []),
-              { from: seen, to: now, auto: true, resumeKey: prev.activeKey },
-            ],
-          };
-        }
+        setInterrupted({ key: prev.activeKey, awaySeconds: Math.floor(gap / 1000) });
+        // The gap leaves the denominator too. A closed lid over lunch is a
+        // break, and charging it to the focus ratio would only teach you to
+        // distrust the number.
+        const next = {
+          ...closeOpen(prev, seen),
+          breaks: [
+            ...(prev.breaks ?? []),
+            { from: seen, to: now, auto: true, resumeKey: prev.activeKey },
+          ],
+        };
         persist(next);
         return next;
       });

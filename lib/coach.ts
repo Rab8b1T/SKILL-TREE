@@ -195,8 +195,16 @@ export interface RunDoc {
   review?: string;
 }
 
-/** How long after the last heartbeat a dangling segment is assumed dead. */
-export const HEARTBEAT_GRACE_MS = 60_000;
+/**
+ * How long after the last heartbeat a dangling segment is assumed dead.
+ *
+ * Generous on purpose. The heartbeat is a timer, and a hidden tab's timers are
+ * throttled to roughly once a minute, so a tab that is alive and working can
+ * legitimately be a minute stale before its write is even queued. A grace
+ * tighter than that would delete real work on every reload to save at most a
+ * couple of minutes of over-billing on a tab that genuinely died.
+ */
+export const HEARTBEAT_GRACE_MS = 3 * 60_000;
 
 /**
  * Closes segments left open by a tab that never came back.
