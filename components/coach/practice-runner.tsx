@@ -504,9 +504,12 @@ function ProblemRow({
   const [technique, setTechniqueLocal] = useState(entry?.technique ?? "");
   const [revealed, setRevealed] = useState(false);
 
-  // A sealed problem cannot start until the technique is named. That single line
-  // is the whole measurement: naming it wrong is the error worth catching.
-  const needsTechnique = !!problem.sealed && !entry?.technique;
+  // A sealed problem still owes a technique line — naming it wrong is the whole
+  // measurement — but it does not gate the clock. Reading the statement and
+  // finding the idea *is* the attempt, and you cannot name a technique before
+  // you have done that, so making Start wait for it just hid the first minutes
+  // of every problem from the timer.
+  const owesTechnique = !!problem.sealed && !entry?.technique;
 
   function commitTechnique() {
     const value = technique.trim();
@@ -515,11 +518,7 @@ function ProblemRow({
       return;
     }
     ctl.setTechnique(problem.key, value);
-    if (blocked) {
-      toast.info("Saved. Break the running problem to start this one.");
-      return;
-    }
-    ctl.startProblem(problem.key);
+    toast.success("Called it — mark it right or wrong when you know");
   }
 
   return (
@@ -630,7 +629,7 @@ function ProblemRow({
                 <SkipForward />
               </Button>
             )}
-            {!needsTechnique && !settled && (
+            {!settled && (
               <Button
                 size="sm"
                 variant={active ? "primary" : "secondary"}
@@ -669,14 +668,15 @@ function ProblemRow({
         />
       )}
 
-      {needsTechnique && !locked && (
+      {owesTechnique && !settled && !locked && (
         <div className="mt-3 rounded-xl border border-info/30 bg-info/5 p-3">
           <p className="text-[12px] font-medium text-ink">
             Name the technique before you code
           </p>
           <p className="mt-0.5 text-[11.5px] text-muted">
-            One line: the method, and the invariant or sort key it turns on. A
-            wrong line here is the single most useful thing this session records.
+            One line: the method, and the invariant or sort key it turns on.
+            Write it the moment you have the idea — it does not hold the clock,
+            and a wrong line here is the most useful thing this session records.
           </p>
           <div className="mt-2.5 flex gap-2">
             <Input
@@ -687,7 +687,7 @@ function ProblemRow({
             />
             <Button variant="accent" onClick={commitTechnique}>
               <ChevronRight />
-              {blocked ? "Save" : "Start"}
+              Save
             </Button>
           </div>
         </div>
@@ -699,7 +699,7 @@ function ProblemRow({
             Called it
           </span>
           <span className="grow text-[12.5px] text-ink">{entry.technique}</span>
-          {settled && !locked && (
+          {!locked && (
             <div className="flex gap-1.5">
               <Button
                 size="sm"
