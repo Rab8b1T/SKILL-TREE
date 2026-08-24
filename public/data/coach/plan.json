@@ -1,13 +1,13 @@
 {
-  "updatedAt": "2026-08-23T10:10:00+05:30",
+  "updatedAt": "2026-08-24T07:30:00+05:30",
   "handle": "rab8bit",
   "mentor": {
     "rating": 1132,
     "rank": "Newbie",
     "goalRating": 1600,
     "goalDate": "2026-10-31",
-    "headline": "The tree toolkit now passes; today the carried set has to become verdicts.",
-    "detail": "Day 24 now records 2/7: 1613C landed and the local rooted-tree toolkit was completed afterward. The toolkit agrees with an independent brute force on random trees plus a 200000-node path, so the prerequisite is no longer the blocker. Four Codeforces debts remain. 1520E has already been scheduled twice, which makes today its third and final scheduling; 1366B, 1676G and 1830A also carry forward. Trees remains a blind spot with 0 solves rated 1300+, so after the mixed opener the order is debt first, then the two tree applications.",
+    "headline": "Today is a completion test: three debts get their third and final slot.",
+    "detail": "Day 26 closed 0/6. The arena records 71 minutes on 1372B, a wrong technique call, and none of the other five problems started; the mixed-set discrimination rate is now 3 wrong calls in 5 attempts. 1520E was dropped after three scheduled sessions without an attempt because a fourth silent carry is forbidden. The remaining debts — 1366B, 1676G and 1830A — have each appeared twice, so today ends each one with a verdict or an explicit drop. No new volume is added. The two oldest useful retention reps and the failed 1372B re-solve fill the rest of the four-hour block.",
     "weaknesses": [
       {
         "id": "contest-speed-ab",
@@ -30,8 +30,8 @@
         "severity": 5
       },
       {
-        "id": "rooted-tree-toolkit-absent",
-        "label": "No working representation for a rooted tree",
+        "id": "prefix-state-undefined",
+        "label": "Building accumulation arrays before defining what each cell stores",
         "severity": 4
       }
     ],
@@ -353,6 +353,161 @@
                 "role": "core",
                 "why": "The edges arrive in arbitrary order, so this time you must build parent and order. Replace process simulation with one per-vertex state whose maximum is the answer.",
                 "reveal": "Store each edge's input index. Root the tree at 1. Let pass[1] = 1; if v is joined to parent u by edge index idx[v], then pass[v] = pass[u] + (idx[v] < idx[u]), with idx[1] = 0. During one scan, a path can continue only through increasing edge indices; every decrease forces the next scan. Build parent and a parent-before-child order iteratively, process it forward, and return max(pass). O(n)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "day": 27,
+      "date": "2026-08-24",
+      "focus": "Finish the queue: define one compact state, obey the cap, and turn every start into a verdict",
+      "concept": "DAY 27 OF 180. Rating 1132, Newbie, with 290 rated solves and 6 rounds. Day 20 wanted 1200, so the account is 68 points behind; day 40 wants 1300 on 6 September, 13 days away, which needs +168. The binding Newbie failure is still execution: exact reading, a stated invariant, hard caps and submitted verdicts. || YESTERDAY CLOSED 0/6. The arena records 71 minutes on 1372B, a wrong technique line and no Codeforces verdict. The previous accepted solution was opened, so that was an aided retention failure, not a solve. The mixed-set metric is now 3 wrong calls in 5 attempts: 60%. || THE THREE-SCHEDULING RULE IS ACTIVE. 1520E consumed three scheduled days without an attempt and is now explicitly dropped; that is not success, but it stops a fake to-do from rolling forever. 1366B, 1676G and 1830A have each appeared twice. Today is their third and final slot: each leaves with a verified verdict or is dropped at close. No fourth scheduling. || ONE IDEA ACROSS THE DEBT. Do not simulate the story. Before syntax, write exactly what one variable or per-vertex value means, what information it preserves, and which processing order makes its dependencies ready. If that sentence is blank, coding has not started. || MIXED OPENER. 706B and 1915E come from different covered topics. Tags and patterns are withheld, the cap is 15 minutes each, and before code you write one technique line plus four cumulative timestamps: understood, chosen, coded, submitted. A wrong line is data; ignoring the cap is a process failure. || RETENTION. Re-derive 1372B from the objective without opening old code, then cold re-solve 1201C from a blank file. Both require fresh PyPy 3-64 submissions; an old AC is not today's verdict. || LAST NIGHT'S GUIDE, ALL THREE DRILLS. The sealed pair supplies the clocked A/B rep. During the 30-minute close, spend 10 minutes reimplementing diagnose(times) with the guide closed, then 5 minutes reconstructing only the known contest-2257 timestamps and marking unknowns honestly. || VERIFICATION GATE. Hand every final practice file to the coach before submitting. Samples, targeted edges and a differential oracle where feasible are coach work outside the four-hour budget. || RATED ROUND. Codeforces Round (Div. 2) is Saturday 29 August at 20:05 IST for 120 minutes. Rating only moves in rounds; confirm whether you are playing.",
+      "watchFor": "One active problem at a time. At every cap, continue only if you can write one concrete next hypothesis; otherwise read the editorial once, close it and re-implement, or record the required drop. For every sealed item, write the technique line before code. For every item, record understood/chosen/coded/submitted timestamps. The seven problem caps total 210 minutes; the remaining 30 minutes are transitions, the two guide-close drills and the final log.",
+      "practice": {
+        "title": "Morning — 4h. Mixed opener, three final debt slots, then retention.",
+        "blocks": [
+          {
+            "id": "mixed",
+            "label": "Mixed opener — tags withheld, four timestamps each",
+            "minutes": 30,
+            "note": "Two covered but different techniques, 15 minutes each. Blank file, no notes and no old code. Before typing, write ONE LINE naming the technique and why the statement licenses it. Record cumulative minutes for understood, chosen, coded and submitted.",
+            "problems": [
+              {
+                "key": "706-B",
+                "contestId": 706,
+                "index": "B",
+                "name": "Interesting drink",
+                "rating": 1100,
+                "tags": [
+                  "binary search",
+                  "dp",
+                  "implementation"
+                ],
+                "capMinutes": 15,
+                "role": "mixed",
+                "why": "Cold re-solve, rep 1 of 2, six days overdue after wrong submissions. State exactly what one query asks you to count before choosing any boundary.",
+                "sealed": true,
+                "reveal": "Sort the prices once. For each budget m, bisect_right(prices, m) returns the first index whose price is greater than m; that index is also the number of affordable shops. Boundary invariant: every price left of the returned index is <= m and every price from it onward is > m. O(n log n + q log n)."
+              },
+              {
+                "key": "1915-E",
+                "contestId": 1915,
+                "index": "E",
+                "name": "Romantic Glasses",
+                "rating": 1300,
+                "tags": [
+                  "data structures",
+                  "greedy",
+                  "math"
+                ],
+                "capMinutes": 15,
+                "role": "mixed",
+                "why": "Cold re-solve, rep 1 of 2, five days overdue after two TLEs before the AC. Translate the segment condition into one equality before choosing storage.",
+                "sealed": true,
+                "reveal": "Give alternating positions opposite signs and maintain the transformed prefix balance. A segment satisfies the required equality exactly when the same balance appears at two boundaries, so start seen = {0} and answer YES on the first repeated balance. Reset seen per test case. O(n) expected time and O(n) memory."
+              }
+            ]
+          },
+          {
+            "id": "debt",
+            "label": "Debt — third and final scheduling",
+            "minutes": 130,
+            "note": "These are not new volume. Each has already appeared twice and must leave today with a verified verdict or an explicit drop. At the cap, continue only with a concrete hypothesis; otherwise read the editorial once, close it and implement from an empty file.",
+            "problems": [
+              {
+                "key": "1366-B",
+                "contestId": 1366,
+                "index": "B",
+                "name": "Shuffle",
+                "rating": 1300,
+                "tags": [
+                  "math",
+                  "two pointers"
+                ],
+                "capMinutes": 35,
+                "role": "debt — third and final scheduling",
+                "why": "Two prior schedules, no attempt. Write the smallest state that can represent every still-reachable answer after an operation; do not touch the whole array per operation.",
+                "sealed": true,
+                "reveal": "The possible positions of the single 1 always form one interval [lo, hi]. Start [x, x]. An operation [l, r] changes nothing when disjoint; when it intersects, every position in the union becomes reachable, so widen to [min(lo, l), max(hi, r)]. Answer hi - lo + 1 in O(m)."
+              },
+              {
+                "key": "1676-G",
+                "contestId": 1676,
+                "index": "G",
+                "name": "White-Black Balanced Subtrees",
+                "rating": 1300,
+                "tags": [
+                  "dfs and similar",
+                  "dp",
+                  "graphs",
+                  "trees"
+                ],
+                "capMinutes": 45,
+                "role": "debt — third and final scheduling",
+                "why": "Two prior schedules, no attempt. Before code, define the value stored for vertex v and decide whether the input already supplies an order in which its dependencies are ready.",
+                "reveal": "Map W to +1 and B to -1 and let f[v] be the colour sum of v's whole subtree. The input guarantees parent[v] < v, so n,n-1,...,2 is already child-before-parent: add f[v] to f[parent[v]], then count f[v] == 0. No adjacency list or traversal is needed. O(n)."
+              },
+              {
+                "key": "1830-A",
+                "contestId": 1830,
+                "index": "A",
+                "name": "Copil Copac Draws Trees",
+                "rating": 1400,
+                "tags": [
+                  "dfs and similar",
+                  "dp",
+                  "graphs",
+                  "trees"
+                ],
+                "capMinutes": 50,
+                "role": "debt — third and final scheduling",
+                "why": "Two prior schedules, no attempt. Replace repeated drawing passes with one state per vertex, then process only after its parent state is ready.",
+                "reveal": "Store every edge's input index. Root at 1. Let pass[1] = 1 and edge_index[1] = 0. For child v of u, pass[v] = pass[u] + (edge_index[v] < edge_index[u]); a decreasing edge index is exactly where a new scan is forced. Build parent and a parent-before-child order iteratively, process it forward and return max(pass). O(n)."
+              }
+            ]
+          },
+          {
+            "id": "retention",
+            "label": "Failed re-solve repair + oldest in-band retention",
+            "minutes": 50,
+            "note": "Blank files and fresh submissions. Do not open an old accepted file. These are re-derivations, not recognition checks; write the objective or predicate before choosing the loop.",
+            "problems": [
+              {
+                "key": "1372-B",
+                "contestId": 1372,
+                "index": "B",
+                "name": "Omkar and Last Class of Math",
+                "rating": 1300,
+                "tags": [
+                  "greedy",
+                  "math",
+                  "number theory"
+                ],
+                "capMinutes": 20,
+                "role": "failed retention upsolve",
+                "why": "Yesterday's mixed attempt chose the wrong technique, ran 71 minutes and ended by opening the old AC. Re-derive from lcm(a,b) and test n = 12 before submitting.",
+                "sealed": true,
+                "reveal": "For a + b = n, minimising lcm(a,b) is achieved by taking a as the largest proper divisor of n. Find the smallest divisor d > 1 up to sqrt(n); then a = n // d and b = n - a. If none exists, n is prime and the pair is 1, n-1. The old wrong rewrite is exposed by n = 12."
+              },
+              {
+                "key": "1201-C",
+                "contestId": 1201,
+                "index": "C",
+                "name": "Maximum Median",
+                "rating": 1400,
+                "tags": [
+                  "binary search",
+                  "greedy",
+                  "math",
+                  "sortings"
+                ],
+                "capMinutes": 30,
+                "role": "cold re-solve",
+                "why": "Cold re-solve, rep 1 of 2, six days overdue after a WA before AC. Write the monotone predicate, whether the answer is first-false or last-true, and both boundary meanings before coding.",
+                "sealed": true,
+                "reveal": "Sort a. A candidate x is feasible when sum(max(0, x-a[i]) for i from n//2 to n-1) <= k; lower-half values cannot affect the median. Feasibility is true then false as x rises. Keep lo = a[n//2] feasible and hi = lo+k+1 infeasible, binary-search the last feasible x, and print lo. O(n log n + n log k)."
               }
             ]
           }
