@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-24T07:30:00+05:30",
+  "updatedAt": "2026-08-24T11:35:00+05:30",
   "handle": "rab8bit",
   "mentor": {
     "rating": 1132,
@@ -389,7 +389,48 @@
                 "role": "mixed",
                 "why": "Cold re-solve, rep 1 of 2, six days overdue after wrong submissions. State exactly what one query asks you to count before choosing any boundary.",
                 "sealed": true,
-                "reveal": "Sort the prices once. For each budget m, bisect_right(prices, m) returns the first index whose price is greater than m; that index is also the number of affordable shops. Boundary invariant: every price left of the returned index is <= m and every price from it onward is > m. O(n log n + q log n)."
+                "reveal": "Sort the prices once. For each budget m, bisect_right(prices, m) returns the first index whose price is greater than m; that index is also the number of affordable shops. Boundary invariant: every price left of the returned index is <= m and every price from it onward is > m. O(n log n + q log n).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "For one budget m, what is the answer actually counting?",
+                      "say": "Ignore the story: count how many prices are less than or equal to m. The same sorted price list serves every query."
+                    },
+                    {
+                      "ask": "After sorting, which boundary keeps shops whose price is exactly m?",
+                      "say": "Find the first price strictly greater than m. Using the first price greater than or equal to m would wrongly exclude equal prices.",
+                      "figure": {
+                        "kind": "array",
+                        "cells": [2, 3, 5, 5, 8],
+                        "indexed": true,
+                        "marks": [
+                          {"at": [0, 3], "tone": "good", "label": "price <= 5"},
+                          {"at": 4, "tone": "muted"}
+                        ],
+                        "pointers": [
+                          {"at": 4, "label": "first > 5", "tone": "accent"}
+                        ],
+                        "caption": "Equal prices stay affordable, so the boundary goes after both 5s."
+                      }
+                    },
+                    {
+                      "ask": "Why is the boundary index itself the number of affordable shops?",
+                      "say": "With zero-based indexing, an insertion point k has exactly k elements to its left. bisect_right(prices, m) therefore returns the count directly."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Sort prices once. For every budget m, compute k = bisect_right(prices, m) and print k. Everything before k is <= m and everything from k onward is > m. Sorting costs O(n log n); all queries cost O(q log n).",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Sort all shop prices once", "tone": "accent"},
+                        {"text": "Find the first price > m", "tone": "warn", "via": "each query"},
+                        {"text": "Return its zero-based index", "tone": "good", "via": "count"}
+                      ],
+                      "caption": "Preprocess once, then answer each independent budget with one upper-bound search."
+                    }
+                  }
+                }
               },
               {
                 "key": "1915-E",
@@ -406,7 +447,50 @@
                 "role": "mixed",
                 "why": "Cold re-solve, rep 1 of 2, five days overdue after two TLEs before the AC. Translate the segment condition into one equality before choosing storage.",
                 "sealed": true,
-                "reveal": "Give alternating positions opposite signs and maintain the transformed prefix balance. A segment satisfies the required equality exactly when the same balance appears at two boundaries, so start seen = {0} and answer YES on the first repeated balance. Reset seen per test case. O(n) expected time and O(n) memory."
+                "reveal": "Give alternating positions opposite signs and maintain the transformed prefix balance. A segment satisfies the required equality exactly when the same balance appears at two boundaries, so start seen = {0} and answer YES on the first repeated balance. Reset seen per test case. O(n) expected time and O(n) memory.",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "Can you turn 'the two parity sums are equal' into one sum being zero?",
+                      "say": "Give one parity a plus sign and the other a minus sign. A valid segment then has transformed sum zero."
+                    },
+                    {
+                      "ask": "When does a subarray have transformed sum zero in terms of prefix balances?",
+                      "say": "Exactly when the balance before it equals the balance after it. You only need to detect a repeated prefix balance.",
+                      "figure": {
+                        "kind": "array",
+                        "label": "prefix",
+                        "cells": [0, 4, 2, 4, -1, 0],
+                        "indexed": true,
+                        "marks": [
+                          {"at": [1, 3], "tone": "good", "label": "same balance = 4"}
+                        ],
+                        "pointers": [
+                          {"at": 1, "label": "before", "tone": "accent"},
+                          {"at": 3, "label": "after", "tone": "accent"}
+                        ],
+                        "caption": "The equal 4s enclose a zero-sum transformed segment."
+                      }
+                    },
+                    {
+                      "ask": "Which prefix must be present before reading the first number, and what Python trap remains?",
+                      "say": "Seed the set with balance 0 so a valid prefix from index 0 is found. On Codeforces/PyPy, salt integer keys with a random 64-bit XOR to avoid adversarial integer-hash collisions."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Scan left to right and add alternating signed values to balance. Store each prefix balance in a set; if the current balance has appeared before, the values between those two boundaries form a valid segment, so print YES. Seed the set with zero and reset it per test case. For PyPy on this problem, store balance ^ salt where salt = getrandbits(64), and seed with salt. The algorithm is O(n) expected time and O(n) memory.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Alternate +value and -value", "tone": "accent"},
+                        {"text": "Update the prefix balance", "tone": "neutral"},
+                        {"text": "Seen before? Answer YES", "tone": "good", "via": "repeat"},
+                        {"text": "Otherwise store and continue", "tone": "warn", "via": "new"}
+                      ],
+                      "caption": "Repeated prefix state is the whole invariant; no subarray enumeration is needed."
+                    }
+                  }
+                }
               }
             ]
           },
@@ -430,7 +514,50 @@
                 "role": "debt — third and final scheduling",
                 "why": "Two prior schedules, no attempt. Write the smallest state that can represent every still-reachable answer after an operation; do not touch the whole array per operation.",
                 "sealed": true,
-                "reveal": "The possible positions of the single 1 always form one interval [lo, hi]. Start [x, x]. An operation [l, r] changes nothing when disjoint; when it intersects, every position in the union becomes reachable, so widen to [min(lo, l), max(hi, r)]. Answer hi - lo + 1 in O(m)."
+                "reveal": "The possible positions of the single 1 always form one interval [lo, hi]. Start [x, x]. An operation [l, r] changes nothing when disjoint; when it intersects, every position in the union becomes reachable, so widen to [min(lo, l), max(hi, r)]. Answer hi - lo + 1 in O(m).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "After several operations, what is the smallest shape that can represent every possible position of the 1?",
+                      "say": "The reachable positions never develop holes. Keep only one interval [lo, hi], starting at [x, x]."
+                    },
+                    {
+                      "ask": "When can an operation [l, r] affect that reachable interval?",
+                      "say": "It matters whenever the intervals intersect, including touching at one endpoint. It does nothing only when r < lo or l > hi.",
+                      "figure": {
+                        "kind": "line",
+                        "from": 1,
+                        "to": 10,
+                        "ticks": [1, 4, 6, 9, 10],
+                        "spans": [
+                          {"from": 4, "to": 6, "tone": "accent", "label": "reachable"},
+                          {"from": 6, "to": 9, "tone": "warn", "label": "operation"}
+                        ],
+                        "points": [
+                          {"at": 6, "label": "intersection", "tone": "good"}
+                        ],
+                        "caption": "Sharing position 6 is enough to connect the whole union [4, 9]."
+                      }
+                    },
+                    {
+                      "ask": "If the intervals intersect, what are the new boundaries?",
+                      "say": "Take their union: lo = min(lo, l), hi = max(hi, r). The final count is hi - lo + 1."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Maintain the interval of positions where the 1 could currently be. Begin with lo = hi = x. For each operation [l, r], ignore it when it is completely disjoint; otherwise replace the current interval by its union with [l, r]. Print hi - lo + 1. Every operation is processed once, so the work is O(m) and the state is O(1).",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Start with [lo, hi] = [x, x]", "tone": "accent"},
+                        {"text": "Is [l, r] disjoint?", "tone": "neutral"},
+                        {"text": "Keep the current interval", "tone": "muted", "via": "yes"},
+                        {"text": "Otherwise widen to the union", "tone": "good", "via": "no"}
+                      ],
+                      "caption": "The story reduces to one interval and one intersection test."
+                    }
+                  }
+                }
               },
               {
                 "key": "1676-G",
@@ -447,7 +574,46 @@
                 "capMinutes": 45,
                 "role": "debt — third and final scheduling",
                 "why": "Two prior schedules, no attempt. Before code, define the value stored for vertex v and decide whether the input already supplies an order in which its dependencies are ready.",
-                "reveal": "Map W to +1 and B to -1 and let f[v] be the colour sum of v's whole subtree. The input guarantees parent[v] < v, so n,n-1,...,2 is already child-before-parent: add f[v] to f[parent[v]], then count f[v] == 0. No adjacency list or traversal is needed. O(n)."
+                "reveal": "Map W to +1 and B to -1 and let f[v] be the colour sum of v's whole subtree. The input guarantees parent[v] < v, so n,n-1,...,2 is already child-before-parent: add f[v] to f[parent[v]], then count f[v] == 0. No adjacency list or traversal is needed. O(n).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "Can one signed number replace the separate white and black counts?",
+                      "say": "Map W to +1 and B to -1. A subtree is balanced exactly when its signed total is zero."
+                    },
+                    {
+                      "ask": "What processing order guarantees every child's total is ready before its parent?",
+                      "say": "The statement gives parent[v] < v. Therefore processing vertices n, n-1, ..., 2 is already a child-before-parent order.",
+                      "figure": {
+                        "kind": "tree",
+                        "parent": [null, 0, 0, 1, 2, 2, 4],
+                        "labels": ["W", "B", "B", "W", "W", "B", "W"],
+                        "marks": [
+                          {"node": 1, "tone": "good"},
+                          {"node": 2, "tone": "good"}
+                        ],
+                        "caption": "Green nodes are the sample's balanced subtrees; each node contributes only +1 or -1."
+                      }
+                    },
+                    {
+                      "ask": "Once balance[v] contains its whole subtree, where should it go?",
+                      "say": "Count it if it is zero, then add it to balance[parent[v]]. Check the root separately after every child has been propagated."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Initialize balance[v] to +1 for W and -1 for B. Visit vertices from n down to 2. At that moment all descendants of v have already contributed, so balance[v] is the sum of its whole subtree: count it when zero, then add it to its parent. Finally check the root. This uses the input's parent ordering directly—no adjacency list, DFS or recursion—and runs in O(n) time with O(n) arrays.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "W = +1, B = -1", "tone": "accent"},
+                        {"text": "Process v from n down to 2", "tone": "neutral"},
+                        {"text": "Count balance[v] == 0", "tone": "good"},
+                        {"text": "Add balance[v] to parent[v]", "tone": "warn"}
+                      ],
+                      "caption": "Descending labels are already the postorder this input format needs."
+                    }
+                  }
+                }
               },
               {
                 "key": "1830-A",
@@ -464,7 +630,51 @@
                 "capMinutes": 50,
                 "role": "debt — third and final scheduling",
                 "why": "Two prior schedules, no attempt. Replace repeated drawing passes with one state per vertex, then process only after its parent state is ready.",
-                "reveal": "Store every edge's input index. Root at 1. Let pass[1] = 1 and edge_index[1] = 0. For child v of u, pass[v] = pass[u] + (edge_index[v] < edge_index[u]); a decreasing edge index is exactly where a new scan is forced. Build parent and a parent-before-child order iteratively, process it forward and return max(pass). O(n)."
+                "reveal": "Store every edge's input index. Root at 1. Let pass[1] = 1 and edge_index[1] = 0. For child v of u, pass[v] = pass[u] + (edge_index[v] < edge_index[u]); a decreasing edge index is exactly where a new scan is forced. Build parent and a parent-before-child order iteratively, process it forward and return max(pass). O(n).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "If edge number k draws a vertex, which adjacent edges can still draw its children during that same scan?",
+                      "say": "Only edges whose input index is greater than k are still ahead in the current scan. A smaller index has already been passed."
+                    },
+                    {
+                      "ask": "After rooting the undirected tree at 1, what two values must each vertex inherit from its parent?",
+                      "say": "Store the reading number that reached it and the input index of the edge that reached it. The endpoints' written order does not define parent and child.",
+                      "figure": {
+                        "kind": "tree",
+                        "parent": [null, 0, 0, 2, 3, 0],
+                        "edgeMarks": [
+                          {"node": 1, "tone": "muted", "label": "#3"},
+                          {"node": 2, "tone": "accent", "label": "#2"},
+                          {"node": 3, "tone": "accent", "label": "#4"},
+                          {"node": 4, "tone": "bad", "label": "#1"},
+                          {"node": 5, "tone": "muted", "label": "#5"}
+                        ],
+                        "marks": [
+                          {"node": 4, "tone": "bad"}
+                        ],
+                        "caption": "Along 1 → 3 → 4 → 5, indices 2 → 4 stay in one scan, but 4 → 1 forces the second scan."
+                      }
+                    },
+                    {
+                      "ask": "What is the exact transition from parent u to child v?",
+                      "say": "read[v] = read[u] + (edge_id(u,v) < edge_id(parent,u)). The answer is the maximum reading on any root-to-node path, not the sum across branches."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Build an undirected adjacency list and store every edge's 1-based input index. Traverse from root 1 with read[1] = 1 and previousEdge[1] = 0. For each parent u and child v, keep the same reading if their edge index is later than u's incoming edge; otherwise add one because that edge was already passed in the scan. Take max(read). An iterative DFS or BFS visits each edge once, giving O(n) time and O(n) memory.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Root the undirected tree at 1", "tone": "accent"},
+                        {"text": "Carry the incoming edge index", "tone": "neutral"},
+                        {"text": "Next index is smaller?", "tone": "warn"},
+                        {"text": "Add one reading only then", "tone": "good", "via": "yes"}
+                      ],
+                      "caption": "A new reading occurs exactly at a backward jump in edge order."
+                    }
+                  }
+                }
               }
             ]
           },
@@ -489,7 +699,53 @@
                 "role": "failed retention upsolve",
                 "why": "Yesterday's mixed attempt chose the wrong technique, ran 71 minutes and ended by opening the old AC. Re-derive from lcm(a,b) and test n = 12 before submitting.",
                 "sealed": true,
-                "reveal": "For a + b = n, minimising lcm(a,b) is achieved by taking a as the largest proper divisor of n. Find the smallest divisor d > 1 up to sqrt(n); then a = n // d and b = n - a. If none exists, n is prime and the pair is 1, n-1. The old wrong rewrite is exposed by n = 12."
+                "reveal": "For a + b = n, minimising lcm(a,b) is achieved by taking a as the largest proper divisor of n. Find the smallest divisor d > 1 up to sqrt(n); then a = n // d and b = n - a. If none exists, n is prime and the pair is 1, n-1. The old wrong rewrite is exposed by n = 12.",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "In lcm(a, b) = a·b / gcd(a, b), which part do you want to make large?",
+                      "say": "A large shared divisor reduces the LCM. Try choosing one summand that divides both itself and the other summand."
+                    },
+                    {
+                      "ask": "For n = 12, which split makes one number divide the other?",
+                      "say": "The split 6 + 6 has LCM 6, smaller than every other split. This points toward the largest proper divisor of n.",
+                      "figure": {
+                        "kind": "grid",
+                        "columns": ["pair", "lcm"],
+                        "rows": [
+                          ["1+11", 11],
+                          ["2+10", 10],
+                          ["3+9", 9],
+                          ["4+8", 8],
+                          ["5+7", 35],
+                          ["6+6", 6]
+                        ],
+                        "marks": [
+                          {"at": [5, 0], "tone": "good"},
+                          {"at": [5, 1], "tone": "good"}
+                        ],
+                        "caption": "For 12, the largest proper divisor gives the minimum LCM."
+                      }
+                    },
+                    {
+                      "ask": "How do you find the largest proper divisor without scanning downward from n?",
+                      "say": "Find the smallest divisor d > 1. Then n/d is the largest proper divisor. If no divisor exists up to sqrt(n), n is prime and the answer is 1 and n-1."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Find the smallest divisor d of n greater than 1. If it exists, set a = n/d and b = n-a; because b = (d-1)a, a divides b and their LCM is b. This uses the largest possible proper divisor a and minimizes the LCM. If n is prime, only gcd 1 is possible, so output 1 and n-1. Trial division to sqrt(n) costs O(sqrt(n)) per test case.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Find smallest divisor d > 1", "tone": "accent"},
+                        {"text": "Set a = n / d", "tone": "neutral"},
+                        {"text": "Set b = n - a", "tone": "neutral"},
+                        {"text": "Now a divides b", "tone": "good"}
+                      ],
+                      "caption": "Smallest divisor d produces the largest proper divisor a."
+                    }
+                  }
+                }
               },
               {
                 "key": "1201-C",
@@ -507,7 +763,52 @@
                 "role": "cold re-solve",
                 "why": "Cold re-solve, rep 1 of 2, six days overdue after a WA before AC. Write the monotone predicate, whether the answer is first-false or last-true, and both boundary meanings before coding.",
                 "sealed": true,
-                "reveal": "Sort a. A candidate x is feasible when sum(max(0, x-a[i]) for i from n//2 to n-1) <= k; lower-half values cannot affect the median. Feasibility is true then false as x rises. Keep lo = a[n//2] feasible and hi = lo+k+1 infeasible, binary-search the last feasible x, and print lo. O(n log n + n log k)."
+                "reveal": "Sort a. A candidate x is feasible when sum(max(0, x-a[i]) for i from n//2 to n-1) <= k; lower-half values cannot affect the median. Feasibility is true then false as x rises. Keep lo = a[n//2] feasible and hi = lo+k+1 infeasible, binary-search the last feasible x, and print lo. O(n log n + n log k).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "After sorting, which elements can influence the median when values may only increase?",
+                      "say": "Only the median and elements to its right matter. Raising anything in the lower half cannot push the middle value upward.",
+                      "figure": {
+                        "kind": "array",
+                        "cells": [1, 2, 4, 5, 9],
+                        "indexed": true,
+                        "marks": [
+                          {"at": [2, 4], "tone": "accent", "label": "relevant half"}
+                        ],
+                        "pointers": [
+                          {"at": 2, "label": "median", "tone": "good"}
+                        ],
+                        "caption": "Only indices from n//2 onward need increments."
+                      }
+                    },
+                    {
+                      "ask": "For a candidate median x, how much budget is required?",
+                      "say": "For every i from n//2 onward, pay max(0, x-a[i]). Their sum must be at most k."
+                    },
+                    {
+                      "ask": "Why can that feasibility test be binary-searched, and which boundary should be returned?",
+                      "say": "If x is affordable, every smaller value is affordable; if x is too expensive, every larger value is too. Search for the last feasible x."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Sort the array. Define feasible(x) as the cost of raising every element from index n//2 onward that is below x; x works when that cost is at most k. Feasibility changes once from true to false, so binary-search the last true value between the current median and current median+k. Sorting is O(n log n), and the direct check gives O(n log k) more work.",
+                    "figure": {
+                      "kind": "line",
+                      "from": 4,
+                      "to": 10,
+                      "ticks": [4, 7, 8, 10],
+                      "spans": [
+                        {"from": 4, "to": 7, "tone": "good", "label": "feasible"},
+                        {"from": 8, "to": 10, "tone": "bad", "label": "too costly"}
+                      ],
+                      "points": [
+                        {"at": 7, "label": "last true", "tone": "accent"}
+                      ],
+                      "caption": "For [1,2,4,5,9] with k=5, target 7 costs 5; target 8 costs 7."
+                    }
+                  }
+                }
               }
             ]
           }

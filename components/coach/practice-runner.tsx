@@ -33,7 +33,10 @@ import { cn, formatClock, formatDuration } from "@/lib/utils";
 import { useNow } from "@/lib/use-now";
 import { usePhaseAlerts, type Alarm } from "@/lib/use-phase-alerts";
 import { Card, CardTitle, SectionLabel } from "@/components/ui/card";
-import { HintPanel } from "@/components/coach/hint-panel";
+import {
+  HintPanel,
+  PreparedHintReview,
+} from "@/components/coach/hint-panel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PhaseRing, Progress } from "@/components/ui/progress";
@@ -729,16 +732,16 @@ function ProblemRow({
         </div>
       )}
 
-      {problem.reveal && settled && (
+      {(problem.hints?.ladder?.length || problem.reveal) && settled && (
         <div className="mt-2">
           {revealed ? (
-            <p className="rounded-xl border border-line bg-elevated px-3 py-2 text-[12.5px] text-ink">
-              {problem.reveal}
-            </p>
+            <PreparedHintReview problem={problem} />
           ) : (
             <Button size="sm" variant="ghost" onClick={() => setRevealed(true)}>
               <Eye />
-              Reveal the intended idea
+              {problem.hints?.ladder?.length
+                ? "Reveal prepared hints and idea"
+                : "Reveal the intended idea"}
             </Button>
           )}
         </div>

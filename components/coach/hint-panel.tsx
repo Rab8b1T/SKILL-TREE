@@ -162,6 +162,61 @@ export function HintPanel({
   );
 }
 
+/**
+ * The complete prepared path after an attempt is settled.
+ *
+ * A verdict clears `activeKey`, so the phase-gated panel above is no longer
+ * mounted. Keeping the review here prevents a solved or failed row from falling
+ * back to the old one-line `reveal` field and losing every authored question
+ * and diagram precisely when the user asks to inspect the intended idea.
+ */
+export function PreparedHintReview({ problem }: { problem: CoachProblem }) {
+  const hints = problem.hints;
+
+  if (!hints?.ladder?.length) {
+    return problem.reveal ? (
+      <p className="rounded-xl border border-line bg-elevated px-3 py-2 text-[12.5px] leading-relaxed text-ink">
+        {problem.reveal}
+      </p>
+    ) : null;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-warning/30 bg-elevated">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Lightbulb className="size-4 text-warning" />
+          <CardTitle>Prepared hint path</CardTitle>
+        </div>
+        <Badge variant="warning">{hints.ladder.length} hints</Badge>
+      </div>
+
+      <div className="space-y-4 p-4">
+        {hints.ladder.map((hint, i) => (
+          <Rung
+            key={i}
+            index={i}
+            hint={hint}
+            last={i === hints.ladder.length - 1}
+          />
+        ))}
+
+        {hints.solution && (
+          <div className="border-t border-line pt-4">
+            <SectionLabel>The intended idea</SectionLabel>
+            <p className="mt-1.5 whitespace-pre-line text-[13.5px] leading-relaxed text-ink">
+              {hints.solution.say}
+            </p>
+            {hints.solution.figure && (
+              <FigureView spec={hints.solution.figure} />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Rung({
   index,
   hint,
