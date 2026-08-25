@@ -1,13 +1,13 @@
 {
-  "updatedAt": "2026-08-24T11:35:00+05:30",
+  "updatedAt": "2026-08-25T08:00:23+05:30",
   "handle": "rab8bit",
   "mentor": {
     "rating": 1132,
     "rank": "Newbie",
     "goalRating": 1600,
     "goalDate": "2026-10-31",
-    "headline": "Today is a completion test: three debts get their third and final slot.",
-    "detail": "Day 26 closed 0/6. The arena records 71 minutes on 1372B, a wrong technique call, and none of the other five problems started; the mixed-set discrimination rate is now 3 wrong calls in 5 attempts. 1520E was dropped after three scheduled sessions without an attempt because a fourth silent carry is forbidden. The remaining debts — 1366B, 1676G and 1830A — have each appeared twice, so today ends each one with a verdict or an explicit drop. No new volume is added. The two oldest useful retention reps and the failed 1372B re-solve fill the rest of the four-hour block.",
+    "headline": "Debt is clear; today turns last night's construction proof into three outputs.",
+    "detail": "Day 27 closed 5/7: both sealed openers and all three third-and-final debt problems landed, so open tracker debt is now zero. The two mixed technique calls were correct, moving the discrimination record to 3 wrong calls in 7 attempts. One stale arena upsolve, 1144A, is cleared before new volume. The focused gradient then uses three constructive problems at 1300–1400, while 1201C is the oldest in-band cold re-solve. The final 20 minutes carry all three drills from the day-27 guide without turning guide reading into morning practice.",
     "weaknesses": [
       {
         "id": "contest-speed-ab",
@@ -762,6 +762,471 @@
                 "capMinutes": 30,
                 "role": "cold re-solve",
                 "why": "Cold re-solve, rep 1 of 2, six days overdue after a WA before AC. Write the monotone predicate, whether the answer is first-false or last-true, and both boundary meanings before coding.",
+                "sealed": true,
+                "reveal": "Sort a. A candidate x is feasible when sum(max(0, x-a[i]) for i from n//2 to n-1) <= k; lower-half values cannot affect the median. Feasibility is true then false as x rises. Keep lo = a[n//2] feasible and hi = lo+k+1 infeasible, binary-search the last feasible x, and print lo. O(n log n + n log k).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "After sorting, which elements can influence the median when values may only increase?",
+                      "say": "Only the median and elements to its right matter. Raising anything in the lower half cannot push the middle value upward.",
+                      "figure": {
+                        "kind": "array",
+                        "cells": [1, 2, 4, 5, 9],
+                        "indexed": true,
+                        "marks": [
+                          {"at": [2, 4], "tone": "accent", "label": "relevant half"}
+                        ],
+                        "pointers": [
+                          {"at": 2, "label": "median", "tone": "good"}
+                        ],
+                        "caption": "Only indices from n//2 onward need increments."
+                      }
+                    },
+                    {
+                      "ask": "For a candidate median x, how much budget is required?",
+                      "say": "For every i from n//2 onward, pay max(0, x-a[i]). Their sum must be at most k."
+                    },
+                    {
+                      "ask": "Why can that feasibility test be binary-searched, and which boundary should be returned?",
+                      "say": "If x is affordable, every smaller value is affordable; if x is too expensive, every larger value is too. Search for the last feasible x."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Sort the array. Define feasible(x) as the cost of raising every element from index n//2 onward that is below x; x works when that cost is at most k. Feasibility changes once from true to false, so binary-search the last true value between the current median and current median+k. Sorting is O(n log n), and the direct check gives O(n log k) more work.",
+                    "figure": {
+                      "kind": "line",
+                      "from": 4,
+                      "to": 10,
+                      "ticks": [4, 7, 8, 10],
+                      "spans": [
+                        {"from": 4, "to": 7, "tone": "good", "label": "feasible"},
+                        {"from": 8, "to": 10, "tone": "bad", "label": "too costly"}
+                      ],
+                      "points": [
+                        {"at": 7, "label": "last true", "tone": "accent"}
+                      ],
+                      "caption": "For [1,2,4,5,9] with k=5, target 7 costs 5; target 8 costs 7."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "day": 28,
+      "date": "2026-08-25",
+      "focus": "Constructive algorithms — state the property first, then output a transformation that preserves it",
+      "concept": "DAY 28 OF 180. Live rating is 1132, still Newbie, with 293 rated solves out of 297 total and 6 rated rounds. Day 20 wanted 1200, so the account is 68 points behind; day 40 wants 1300 on 6 September, which needs +168 in 12 days. The current practice band is the growth floor 1232–1432, so new core work is 1300–1400. || YESTERDAY CLOSED 5/7. Both mixed technique calls were right, and 1366B, 1676G and 1830A all received verdicts on their third and final scheduling. That clears the tracker debt. The remaining two planned retention tasks were not started. The corrected mixed-set record is 3 wrong technique calls in 7 attempts: 43%, still high enough that the sealed opener remains mandatory. || ARENA DEBT FIRST. 1144A is an 800-rated stale upsolve from a rapid session 148 days ago. It is below the growth floor, but real debt is allowed to be; it gets one 15-minute slot and then leaves the queue. || TODAY'S ONE IDEA. A construction is a proof that prints. Before code, write: the property every output must satisfy, the exact transformation or repeated block, and why the transformation preserves the property while staying inside the output bounds. 1335D uses one global digit replacement, 1348B builds a period-k block and repeats it, and 1837D decomposes a balanced string into sign-consistent zero-return pieces. These are three forms of the same habit: derive the output shape before generating values. || MIXED OPENER. 977C and 1399C are covered topics at 1200, sealed, and capped at 15 minutes each. Write one line naming the technique and why before code. The first tests an exact sorted boundary; the second tests whether you distinguish all pairs from a disjoint matching. || LAST NIGHT'S GUIDE, ALL THREE DRILLS. The tracker says day-27's guide is unread, so do not spend the morning reading it. During the final 20 minutes, close every note and attempt: reimplement Gray code with its invariant, draw the 3-bit middle and outer seams, and mark the centre repair on a 4×4 board. If recall is absent, record that honestly rather than opening the guide inside practice time. || VERIFICATION GATE. Hand every final practice file to the coach before submitting. Samples, targeted edges and differential checks are coach work outside these four hours. Submit accepted candidates as PyPy 3-64. || SEPARATE RATED ROUND. Codeforces Round (Div. 2) is Saturday 29 August at 20:05 IST for 120 minutes. It is not part of this morning block; confirm whether you are playing because rounds are the only thing that moves rating.",
+      "watchFor": "For every construction, stop before syntax and write three lines: `required property = ...`, `construction = ...`, and `preservation proof = ...`. A list of output values without the third line is still a guess. Obey every cap. The seven problem caps total 200 minutes; use 20 minutes for the three guide drills and the remaining 20 for transitions, verification handoffs and the final log.",
+      "practice": {
+        "title": "Morning — 4h. Sealed speed pair, stale upsolve, then a 1300–1400 construction gradient.",
+        "blocks": [
+          {
+            "id": "mixed",
+            "label": "Mixed opener — tags withheld, technique named first",
+            "minutes": 30,
+            "note": "Two overdue cold re-solves from different covered patterns, 15 minutes each and hard caps. Blank files, no notes and no old code. Before typing, write ONE LINE naming the technique and the statement condition that licenses it.",
+            "problems": [
+              {
+                "key": "977-C",
+                "contestId": 977,
+                "index": "C",
+                "name": "Less or Equal",
+                "rating": 1200,
+                "tags": [
+                  "binary search",
+                  "sortings"
+                ],
+                "capMinutes": 15,
+                "role": "mixed",
+                "why": "Cold re-solve, rep 1 of 2, five days overdue after three wrong submissions. State the exact count that x must produce and the duplicate boundary that can invalidate the obvious candidate.",
+                "sealed": true,
+                "reveal": "Sort a. If k = 0, choose a[0] - 1 only when it is at least 1. If k > 0, the only useful candidate is x = a[k-1]; it is valid when k = n or a[k] > x. Equality at the boundary would make more than k elements <= x. O(n log n).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "After sorting, which element fixes the smallest possible x when k is positive?",
+                      "say": "Exactly k values must be <= x, so x cannot be below the k-th smallest value. Try x = a[k-1]."
+                    },
+                    {
+                      "ask": "What duplicate makes x = a[k-1] invalid?",
+                      "say": "If k < n and a[k] equals a[k-1], choosing that value includes at least k+1 elements. No number between equal integers can repair the count.",
+                      "figure": {
+                        "kind": "array",
+                        "cells": [1, 2, 2, 5],
+                        "indexed": true,
+                        "marks": [
+                          {"at": [0, 2], "tone": "bad", "label": "three values <= 2"}
+                        ],
+                        "pointers": [
+                          {"at": 1, "label": "k-th"},
+                          {"at": 2, "label": "same boundary", "tone": "bad"}
+                        ],
+                        "caption": "For k = 2, the duplicate 2 forces the count to jump from one to three."
+                      }
+                    },
+                    {
+                      "ask": "What changes when k = 0?",
+                      "say": "You need a positive x smaller than every array value. Use a[0]-1 if a[0] > 1; otherwise no legal x exists."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Sort the array. For k = 0, print a[0]-1 if it is at least 1, otherwise -1. For k > 0, let x = a[k-1]. Print x if k = n or the next value a[k] is strictly larger; otherwise print -1. Those conditions are exactly what makes the count of values <= x equal k.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Sort a", "tone": "accent"},
+                        {"text": "k = 0?", "tone": "neutral"},
+                        {"text": "Try a[0] - 1", "tone": "warn", "via": "yes"},
+                        {"text": "Try x = a[k-1]", "tone": "neutral", "via": "no"},
+                        {"text": "Reject if a[k] = x", "tone": "bad"},
+                        {"text": "Otherwise print x", "tone": "good"}
+                      ],
+                      "caption": "The whole problem is one exact boundary after sorting."
+                    }
+                  }
+                }
+              },
+              {
+                "key": "1399-C",
+                "contestId": 1399,
+                "index": "C",
+                "name": "Boats Competition",
+                "rating": 1200,
+                "tags": [
+                  "brute force",
+                  "greedy",
+                  "two pointers"
+                ],
+                "capMinutes": 15,
+                "role": "mixed",
+                "why": "Cold re-solve, rep 1 of 2, one day overdue after counting all matching pairs instead of a disjoint matching. Name what one boat consumes before counting anything.",
+                "sealed": true,
+                "reveal": "Sort the weights. For every possible team weight s from 2 to 2n, run two pointers. If a[l]+a[r]=s, form one boat and move both pointers; otherwise move l up when the sum is too small and r down when it is too large. Take the maximum. n <= 50, so O(n^2) is intended.",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "What must be fixed before you can compare possible pairings?",
+                      "say": "Every boat in one competition must have the same total weight s. Enumerate s; weights lie in [1,n], so s lies in [2,2n]."
+                    },
+                    {
+                      "ask": "Why is counting every index pair with sum s wrong?",
+                      "say": "Each child may enter only one boat. Four equal weights create six index pairs but only two disjoint boats.",
+                      "figure": {
+                        "kind": "grid",
+                        "columns": ["weights", "all index pairs", "usable boats"],
+                        "rows": [
+                          ["1,1,1,1", 6, 2]
+                        ],
+                        "marks": [
+                          {"at": [0, 1], "tone": "bad"},
+                          {"at": [0, 2], "tone": "good"}
+                        ],
+                        "caption": "Pair count and disjoint matching size are different quantities."
+                      }
+                    },
+                    {
+                      "ask": "For a fixed s on a sorted array, which pointer moves?",
+                      "say": "If the sum is too small, increase the left pointer; if too large, decrease the right. On equality, consume both endpoints and add one boat."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Sort the weights. For each target sum s from 2 through 2n, use l=0 and r=n-1. A sum below s needs a larger left value; a sum above s needs a smaller right value; equality forms one boat and consumes both children. Record the largest count over all s. This is O(n^2), safe for n <= 50.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Choose target s", "tone": "accent"},
+                        {"text": "Compare a[l] + a[r] with s", "tone": "neutral"},
+                        {"text": "Move l right", "tone": "warn", "via": "too small"},
+                        {"text": "Move r left", "tone": "warn", "via": "too large"},
+                        {"text": "Count boat; move both", "tone": "good", "via": "equal"},
+                        {"text": "Maximise over every s", "tone": "accent"}
+                      ],
+                      "caption": "The pointers construct a disjoint matching, not a count of overlapping pairs."
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "upsolve",
+            "label": "Arena upsolve debt — clear the stale queue first",
+            "minutes": 15,
+            "note": "This is below the growth floor because it is real debt, not new core volume. It has sat in the arena queue for 148 days. One hard 15-minute slot, one fresh submission, then the queue item closes.",
+            "problems": [
+              {
+                "key": "1144-A",
+                "contestId": 1144,
+                "index": "A",
+                "name": "Diverse Strings",
+                "rating": 800,
+                "tags": [
+                  "implementation",
+                  "sortings"
+                ],
+                "capMinutes": 15,
+                "role": "upsolve",
+                "why": "Stale rapid-session upsolve with zero recorded attempts. Do not build frequency machinery until you have stated what the sorted string must look like.",
+                "sealed": true,
+                "reveal": "Sort the characters. The string is diverse exactly when every adjacent pair differs by one in character code. A gap means a missing letter; difference zero means a duplicate. A one-character string is valid. O(|s| log |s|).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "What order makes both duplicates and missing letters visible locally?",
+                      "say": "Sort the characters so that equal letters and gaps become adjacent."
+                    },
+                    {
+                      "ask": "What must the difference between every adjacent sorted pair be?",
+                      "say": "Exactly one. Difference zero is a duplicate; a larger difference skips a required letter.",
+                      "figure": {
+                        "kind": "array",
+                        "cells": ["a", "b", "d"],
+                        "indexed": false,
+                        "marks": [
+                          {"at": [0, 1], "tone": "good", "label": "+1"},
+                          {"at": [1, 2], "tone": "bad", "label": "+2"}
+                        ],
+                        "caption": "The gap from b to d proves that c is missing."
+                      }
+                    },
+                    {
+                      "ask": "Does a one-character string need a special rejection?",
+                      "say": "No. It has no duplicate and no letter between its minimum and maximum to miss, so the adjacent check passes vacuously."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Sort each string. Check every adjacent pair; print No if ord(s[i])-ord(s[i-1]) is not exactly 1, otherwise print Yes. The same test rejects duplicates and gaps, and length one is accepted automatically.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Sort characters", "tone": "accent"},
+                        {"text": "Scan adjacent pairs", "tone": "neutral"},
+                        {"text": "Difference exactly 1?", "tone": "warn"},
+                        {"text": "No", "tone": "bad", "via": "no"},
+                        {"text": "Yes after full scan", "tone": "good", "via": "yes"}
+                      ],
+                      "caption": "One local condition captures distinctness and consecutiveness."
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "core",
+            "label": "Focused core — three ways to prove a construction",
+            "minutes": 125,
+            "note": "Tags are shown because this is the blocked acquisition half. Before each file, write the required property, the construction, and the preservation proof. Output validity matters more than matching any sample output.",
+            "problems": [
+              {
+                "key": "1335-D",
+                "contestId": 1335,
+                "index": "D",
+                "name": "Anti-Sudoku",
+                "rating": 1300,
+                "tags": [
+                  "constructive algorithms",
+                  "implementation"
+                ],
+                "capMinutes": 30,
+                "role": "core",
+                "why": "Floor problem: replace a global search with one uniform transformation. Prove both the nine-change limit and the duplicate created in every row, column and block before writing the loop.",
+                "sealed": false,
+                "reveal": "Choose two different digits, for example 1 and 2, and replace every 1 by 2. A valid Sudoku contains digit 1 exactly once in each row, so exactly nine cells change. Every row, column and 3x3 block already contained one 2; after the replacement it contains another, making all three unit types invalid. O(81) per case.",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "Can one identical rule be applied to all 81 cells without locating special positions?",
+                      "say": "Pick one source digit and replace every occurrence with a different target digit."
+                    },
+                    {
+                      "ask": "Why does replacing every occurrence still respect the limit of nine changes?",
+                      "say": "In a correct 9x9 Sudoku, each digit appears once per row, hence exactly nine times in the whole grid.",
+                      "figure": {
+                        "kind": "grid",
+                        "columns": ["unit", "source digit before", "target digit before", "after source→target"],
+                        "rows": [
+                          ["row", 1, 1, "target appears twice"],
+                          ["column", 1, 1, "target appears twice"],
+                          ["3x3 block", 1, 1, "target appears twice"]
+                        ],
+                        "marks": [
+                          {"at": [0, 3], "tone": "good"},
+                          {"at": [1, 3], "tone": "good"},
+                          {"at": [2, 3], "tone": "good"}
+                        ],
+                        "caption": "Correct Sudoku units contain every digit once, so one global replacement breaks every unit."
+                      }
+                    },
+                    {
+                      "ask": "Why does the same replacement break rows, columns and blocks simultaneously?",
+                      "say": "Every unit already has one target digit. Its source digit becomes a second target digit, creating the required duplicate in that unit."
+                    }
+                  ],
+                  "solution": {
+                    "say": "For each input row, replace every '1' with '2' and print it. Exactly nine 1s exist in a valid Sudoku, so the change limit is met. Every row, column and 3x3 block originally contains one 1 and one 2; afterward it contains two 2s, so the grid is anti-Sudoku.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Choose source 1 and target 2", "tone": "accent"},
+                        {"text": "Replace all nine 1s", "tone": "neutral"},
+                        {"text": "Each unit keeps its old 2", "tone": "warn"},
+                        {"text": "Each unit gains another 2", "tone": "good"},
+                        {"text": "All rows, columns and blocks now repeat", "tone": "good"}
+                      ],
+                      "caption": "One proved global transformation replaces any search over cell choices."
+                    }
+                  }
+                }
+              },
+              {
+                "key": "1348-B",
+                "contestId": 1348,
+                "index": "B",
+                "name": "Phoenix and Beauty",
+                "rating": 1400,
+                "tags": [
+                  "constructive algorithms",
+                  "data structures",
+                  "greedy",
+                  "sortings"
+                ],
+                "capMinutes": 45,
+                "role": "core",
+                "why": "Core construction: derive period k from equal adjacent window sums, then build one valid block and repeat it. The proof determines both the impossible case and the output.",
+                "sealed": false,
+                "reveal": "Equal sums of adjacent length-k windows imply b[i] = b[i+k], so the output must be k-periodic. If a has more than k distinct values, output -1. Otherwise make a block containing every distinct input value, pad it to length k with any legal value, and repeat the block n times. Pick a[i] from block i to preserve a as a subsequence. Length n*k <= 10000.",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "What equation comes from subtracting two adjacent length-k window sums?",
+                      "say": "All shared terms cancel, leaving b[i] = b[i+k]. A beautiful array is periodic with period k."
+                    },
+                    {
+                      "ask": "What does period k imply about the number of distinct input values that can survive as a subsequence?",
+                      "say": "Every value used by the output must occupy one of k positions in the repeated block. More than k distinct input values makes the construction impossible.",
+                      "figure": {
+                        "kind": "array",
+                        "cells": ["x", "y", "z", "x", "y", "z", "x", "y", "z"],
+                        "indexed": true,
+                        "marks": [
+                          {"at": [0, 2], "tone": "accent", "label": "one block"},
+                          {"at": [3, 5], "tone": "good", "label": "same block"}
+                        ],
+                        "caption": "For k = 3, every length-3 window has the same multiset because the sequence repeats every three positions."
+                      }
+                    },
+                    {
+                      "ask": "How can repeating one block preserve the original order of a?",
+                      "say": "Put every distinct a-value in the block, pad to length k, and repeat it n times. Choose a[i] from the i-th copy, so a appears as a subsequence."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Collect the distinct values of a. If there are more than k, print -1. Otherwise pad those values with any legal value until they form a block of length k, then print that same block n times. The output is k-periodic, so all length-k sums match, and choosing a[i] from copy i proves the original array is a subsequence.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Collect distinct values", "tone": "accent"},
+                        {"text": "More than k?", "tone": "neutral"},
+                        {"text": "Print -1", "tone": "bad", "via": "yes"},
+                        {"text": "Pad to one k-block", "tone": "warn", "via": "no"},
+                        {"text": "Repeat the block n times", "tone": "good"},
+                        {"text": "Pick a[i] from copy i", "tone": "good"}
+                      ],
+                      "caption": "The periodicity proof directly produces the construction."
+                    }
+                  }
+                }
+              },
+              {
+                "key": "1837-D",
+                "contestId": 1837,
+                "index": "D",
+                "name": "Bracket Coloring",
+                "rating": 1400,
+                "tags": [
+                  "constructive algorithms",
+                  "greedy"
+                ],
+                "capMinutes": 50,
+                "role": "stretch",
+                "why": "Stretch construction: turn a global coloring request into zero-return components whose prefix balances never change sign. Prove impossibility, the one-color case and the two-color bridge separately.",
+                "sealed": false,
+                "reveal": "Compute prefix balance with '(' = +1 and ')' = -1. If the final balance is not zero, print -1. If every prefix is nonnegative or every prefix is nonpositive, one color works. Otherwise split at every return to balance zero; each minimal segment stays strictly on one side of zero internally, so color segments beginning '(' with 1 and those beginning ')' with 2. Each color concatenates regular or reversed-regular segments. O(n).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "Which necessary condition is shared by every regular and reversed-regular bracket sequence?",
+                      "say": "It has the same number of opening and closing brackets. If the total balance is not zero, no coloring can work."
+                    },
+                    {
+                      "ask": "When can the entire string use one color?",
+                      "say": "If all prefix balances are nonnegative, it is regular; if all are nonpositive, reversing every bracket orientation makes it regular. Either case is already beautiful.",
+                      "figure": {
+                        "kind": "line",
+                        "from": -2,
+                        "to": 2,
+                        "ticks": [-2, -1, 0, 1, 2],
+                        "spans": [
+                          {"from": 0, "to": 2, "tone": "good", "label": "regular prefixes"},
+                          {"from": -2, "to": 0, "tone": "accent", "label": "reversed-regular prefixes"}
+                        ],
+                        "points": [
+                          {"at": 0, "label": "component boundary", "tone": "warn"}
+                        ],
+                        "caption": "A minimal zero-return component stays entirely above or entirely below zero."
+                      }
+                    },
+                    {
+                      "ask": "If prefix balance visits both signs, where can the string be cut safely?",
+                      "say": "Cut whenever balance returns to zero. Each minimal component starts with '(' and stays positive, or starts with ')' and stays negative; color those two types separately."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Build prefix balances. Reject when the final balance is nonzero. If the minimum prefix is zero or the maximum prefix is zero, print one color for every position. Otherwise scan minimal segments ending whenever balance returns to zero; give a segment color 1 when it starts with '(' and color 2 when it starts with ')'. Same-colored segments concatenate into a regular or reversed-regular sequence, so two colors are valid and one was already ruled out.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {"text": "Compute prefix balance", "tone": "accent"},
+                        {"text": "Final balance zero?", "tone": "neutral"},
+                        {"text": "Print -1", "tone": "bad", "via": "no"},
+                        {"text": "All prefixes one sign?", "tone": "neutral", "via": "yes"},
+                        {"text": "Use one color", "tone": "good", "via": "yes"},
+                        {"text": "Split at every return to zero", "tone": "warn", "via": "no"},
+                        {"text": "Color by component sign", "tone": "good"}
+                      ],
+                      "caption": "Impossibility, one color and two colors follow from the same prefix-balance invariant."
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "retention",
+            "label": "Oldest in-band cold re-solve — boundary invariant written first",
+            "minutes": 30,
+            "note": "Blank file, no old code or notes. This was left unfinished yesterday and is seven days overdue. Write the monotone predicate, both boundary meanings and which boundary is returned before implementation.",
+            "problems": [
+              {
+                "key": "1201-C",
+                "contestId": 1201,
+                "index": "C",
+                "name": "Maximum Median",
+                "rating": 1400,
+                "tags": [
+                  "binary search",
+                  "greedy",
+                  "math",
+                  "sortings"
+                ],
+                "capMinutes": 30,
+                "role": "cold re-solve",
+                "why": "Cold re-solve, rep 1 of 2, seven days overdue after a WA before AC. Yesterday's slot was not started, so this begins from a blank file again.",
                 "sealed": true,
                 "reveal": "Sort a. A candidate x is feasible when sum(max(0, x-a[i]) for i from n//2 to n-1) <= k; lower-half values cannot affect the median. Feasibility is true then false as x rises. Keep lo = a[n//2] feasible and hi = lo+k+1 infeasible, binary-search the last feasible x, and print lo. O(n log n + n log k).",
                 "hints": {
