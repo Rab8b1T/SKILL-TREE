@@ -6,12 +6,19 @@ import {
   useQueryClient,
   type UseQueryResult,
 } from "@tanstack/react-query";
-import type { ArenaDataDoc, CoachPlan, RunDoc } from "./coach";
+import type { ArenaDataDoc, RunDoc } from "./coach";
+import type { ContestEvaluation } from "./contest-eval";
+import { parseCoachPlan } from "./coach-plan";
 import type {
   CategoryDetail,
   CategoryIndex,
   CfProfile,
+  ContestActiveDoc,
   ContestDataDoc,
+  ContestDivision,
+  ContestProgramDoc,
+  ContestRoundDoc,
+  ContestRoundsPage,
   LadderDetail,
   LadderIndex,
   PracticeDataDoc,
@@ -202,6 +209,162 @@ export const useContestData = (handle?: string | null) =>
 export const useSaveContestData = (handle?: string | null) =>
   useStoreMutation<ContestDataDoc>("contest", handle);
 
+/* ---------------- durable contest system ---------------- */
+
+export function useContestActive(handle?: string | null) {
+  return useQuery({
+    queryKey: ["contest-system", "active", handle],
+    queryFn: () => request<ContestActiveDoc>("/api/contest/active"),
+    enabled: !!handle,
+    placeholderData: {
+      contest: null,
+      version: 0,
+      savedAt: null,
+    } satisfies ContestActiveDoc,
+    staleTime: 10_000,
+  });
+}
+
+export function useStartContest(handle?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      division: Exclude<ContestDivision, "custom">;
+      slots: number;
+      minutes: number;
+    }) =>
+      request<ContestActiveDoc>("/api/contest/start", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: (data) => {
+      qc.setQueryData(["contest-system", "active", handle], data);
+    },
+  });
+}
+
+export function useSaveContestActive(handle?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ContestActiveDoc) =>
+      request<ContestActiveDoc>("/api/contest/active", {
+        method: "PATCH",
+        body: JSON.stringify({
+          version: body.version,
+          contest: body.contest,
+        }),
+      }),
+    onSuccess: (data) => {
+      qc.setQueryData(["contest-system", "active", handle], data);
+    },
+  });
+}
+
+export function useArchiveContest(handle?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { version: number; roundId: string }) =>
+      request<{ round: ContestRoundDoc; program: ContestProgramDoc }>(
+        "/api/contest/archive",
+        {
+          method: "POST",
+          body: JSON.stringify(body),
+        },
+      ),
+    onSuccess: (data) => {
+      qc.setQueryData(["contest-system", "active", handle], {
+        contest: null,
+        version: 0,
+        savedAt: null,
+      } satisfies ContestActiveDoc);
+      qc.setQueryData(["contest-system", "program", handle], data.program);
+      qc.invalidateQueries({ queryKey: ["contest-system", "rounds", handle] });
+      qc.invalidateQueries({ queryKey: ["contest-system", "evaluation", handle] });
+      qc.invalidateQueries({ queryKey: ["store", "upsolve", handle] });
+    },
+  });
+}
+
+export function useArchiveCoachContest(handle?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { day: number; run: RunDoc }) =>
+      request<{ round: ContestRoundDoc; program: ContestProgramDoc }>(
+        "/api/contest/coach",
+        {
+          method: "POST",
+          body: JSON.stringify(body),
+        },
+      ),
+    onSuccess: (data) => {
+      qc.setQueryData(["contest-system", "program", handle], data.program);
+      qc.invalidateQueries({ queryKey: ["contest-system", "rounds", handle] });
+      qc.invalidateQueries({ queryKey: ["contest-system", "evaluation", handle] });
+      qc.invalidateQueries({ queryKey: ["store", "arena", handle] });
+      qc.invalidateQueries({ queryKey: ["store", "upsolve", handle] });
+    },
+  });
+}
+
+export function useContestRounds(
+  handle?: string | null,
+  section: "standard" | "first-time-trials" = "standard",
+  cursor?: string | null,
+  limit = 20,
+) {
+  const qs = new URLSearchParams({ section, limit: String(limit) });
+  if (cursor) qs.set("cursor", cursor);
+  return useQuery({
+    queryKey: ["contest-system", "rounds", handle, section, cursor, limit],
+    queryFn: () =>
+      request<ContestRoundsPage>(`/api/contest/rounds?${qs.toString()}`),
+    enabled: !!handle,
+    placeholderData: { rounds: [], nextCursor: null, total: 0 },
+    staleTime: 30_000,
+  });
+}
+
+export function useContestRound(handle?: string | null, roundId?: string | null) {
+  return useQuery({
+    queryKey: ["contest-system", "round", handle, roundId],
+    queryFn: () =>
+      request<ContestRoundDoc>(
+        `/api/contest/rounds/${encodeURIComponent(roundId!)}`,
+      ),
+    enabled: !!handle && !!roundId,
+  });
+}
+
+export function useContestProgram(handle?: string | null) {
+  return useQuery({
+    queryKey: ["contest-system", "program", handle],
+    queryFn: () => request<ContestProgramDoc>("/api/contest/program"),
+    enabled: !!handle,
+    placeholderData: {
+      targetRounds: 200,
+      completedRounds: 0,
+      createdAt: null,
+      updatedAt: null,
+    } satisfies ContestProgramDoc,
+    staleTime: 30_000,
+  });
+}
+
+export function useContestEvaluation(
+  handle?: string | null,
+  timezone = "UTC",
+) {
+  return useQuery({
+    queryKey: ["contest-system", "evaluation", handle, timezone],
+    queryFn: () =>
+      request<ContestEvaluation>(
+        `/api/contest/evaluation?timezone=${encodeURIComponent(timezone)}`,
+      ),
+    enabled: !!handle,
+    staleTime: 30_000,
+  });
+}
+
 export const usePracticeData = (handle?: string | null) =>
   useStore<PracticeDataDoc>("practice", handle, { entries: [] });
 export const useSavePracticeData = (handle?: string | null) =>
@@ -232,7 +395,9 @@ export function useCoachPlan() {
   return useQuery({
     queryKey: ["coach", "plan"],
     queryFn: () =>
-      request<CoachPlan>("/data/coach/plan.json", { cache: "no-store" }),
+      request<unknown>("/data/coach/plan.json", { cache: "no-store" }).then(
+        parseCoachPlan,
+      ),
     staleTime: 0,
     refetchOnWindowFocus: true,
     retry: 1,

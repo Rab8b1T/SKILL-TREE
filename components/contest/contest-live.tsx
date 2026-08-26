@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   Flag,
@@ -12,9 +12,14 @@ import {
 import { toast } from "sonner";
 import {
   elapsedSeconds,
+  finishContest,
   isExpired,
+  liveProblemPoints,
+  pauseContest,
   remainingSeconds,
+  resumeContest,
   scoreboard,
+  submissionActiveSeconds,
 } from "@/lib/contest";
 import { problemUrl } from "@/lib/cf";
 import { cn, formatClock } from "@/lib/utils";
@@ -27,12 +32,10 @@ import { ProblemRow } from "@/components/problem-row";
 
 export function ContestLive({
   contest,
-  handle,
   onChange,
   onFinish,
 }: {
   contest: VirtualContest;
-  handle: string;
   onChange: (next: VirtualContest) => void;
   onFinish: (next: VirtualContest) => void;
 }) {
@@ -45,6 +48,7 @@ export function ContestLive({
 
   const finishedRef = useRef(false);
   const syncingRef = useRef(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   /** Reconciles local state with real Codeforces verdicts. */
   const sync = useCallback(
@@ -55,14 +59,19 @@ export function ContestLive({
         const keys = contest.problems.map((p) => `${p.contestId}-${p.index}`);
         const since = Math.floor(contest.startedAt / 1000);
         const res = await fetch(
-          `/api/cf/verdicts?handle=${encodeURIComponent(handle)}&since=${since}&keys=${keys.join(",")}`,
+          `/api/cf/verdicts?since=${since}&mode=${board.mode}&keys=${keys.join(",")}`,
         );
         const body = await res.json();
         if (!res.ok) throw new Error(body?.error ?? "Verdict check failed");
 
         const results = body.results as Record<
           string,
-          { solved: boolean; wrongAttempts: number; solvedAtSeconds?: number }
+          {
+            solved: boolean;
+            wrongAttempts: number;
+            solvedAtSeconds?: number;
+            solvedAtTimeSeconds?: number;
+          }
         >;
 
         let changed = false;
@@ -77,7 +86,11 @@ export function ContestLive({
                 ? ("attempted" as const)
                 : prev.state;
           const wrong = Math.max(prev.wrongAttempts, r.wrongAttempts);
-          const solvedAt = prev.solvedAtSeconds ?? r.solvedAtSeconds;
+          const solvedAt =
+            prev.solvedAtSeconds ??
+            (r.solvedAtTimeSeconds
+              ? submissionActiveSeconds(contest, r.solvedAtTimeSeconds)
+              : r.solvedAtSeconds);
           if (
             nextState !== prev.state ||
             wrong !== prev.wrongAttempts ||
@@ -90,27 +103,36 @@ export function ContestLive({
               );
               toast.success(`${problem ? slotOf(problem) : key} accepted`);
             }
-            states[key] = { key, state: nextState, wrongAttempts: wrong, solvedAtSeconds: solvedAt };
+            states[key] = {
+              key,
+              state: nextState,
+              wrongAttempts: wrong,
+              solvedAtSeconds: solvedAt,
+              verdictSource: r.solved ? "codeforces" : prev.verdictSource,
+            };
           }
         }
+        setSyncError(null);
         if (changed) onChange({ ...contest, states });
         else if (!quiet) toast.info("No new verdicts");
       } catch (err) {
-        if (!quiet) toast.error((err as Error).message);
+        const message = (err as Error).message;
+        setSyncError(message);
+        if (!quiet) toast.error(message);
       } finally {
         syncingRef.current = false;
       }
     },
-    [contest, handle, onChange],
+    [board.mode, contest, onChange],
   );
 
   // Poll while the clock runs. 45s stays well inside the Codeforces rate limit
   // and matches how quickly their own scoreboard updates.
   useEffect(() => {
     if (paused || contest.finishedAt) return;
-    const id = setInterval(() => void sync(true), 45_000);
+    const id = setInterval(() => void sync(true), urgent ? 15_000 : 45_000);
     return () => clearInterval(id);
-  }, [paused, contest.finishedAt, sync]);
+  }, [paused, contest.finishedAt, sync, urgent]);
 
   // Auto-finish exactly once when the window closes.
   useEffect(() => {
@@ -118,7 +140,7 @@ export function ContestLive({
     if (isExpired(contest, now)) {
       finishedRef.current = true;
       toast.info("Time — contest closed");
-      onFinish({ ...contest, finishedAt: Date.now() });
+      onFinish(finishContest(contest, "expired"));
     }
   }, [now, contest, onFinish]);
 
@@ -133,6 +155,7 @@ export function ContestLive({
           ...prev,
           state: solved ? "unsolved" : "solved",
           solvedAtSeconds: solved ? undefined : elapsed,
+          verdictSource: solved ? undefined : "manual",
         },
       },
     });
@@ -186,13 +209,22 @@ export function ContestLive({
               <span className="text-base text-faint">/{board.total}</span>
             </p>
           </div>
-          <div className="text-right">
-            <SectionLabel>Penalty</SectionLabel>
-            <p className="mt-1 font-mono text-2xl font-semibold leading-none tabular-nums text-warning">
-              {board.penaltyMinutes}
-              <span className="text-base text-faint">m</span>
-            </p>
-          </div>
+          {board.mode === "icpc" ? (
+            <div className="text-right">
+              <SectionLabel>Penalty</SectionLabel>
+              <p className="mt-1 font-mono text-2xl font-semibold leading-none tabular-nums text-warning">
+                {board.penaltyMinutes}
+                <span className="text-base text-faint">m</span>
+              </p>
+            </div>
+          ) : (
+            <div className="text-right">
+              <SectionLabel>Points</SectionLabel>
+              <p className="mt-1 font-mono text-2xl font-semibold leading-none tabular-nums text-accent">
+                {board.points}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -203,15 +235,7 @@ export function ContestLive({
           <Button
             variant="secondary"
             onClick={() =>
-              onChange(
-                paused
-                  ? {
-                      ...contest,
-                      pausedMs: contest.pausedMs + (Date.now() - contest.pausedAt!),
-                      pausedAt: null,
-                    }
-                  : { ...contest, pausedAt: Date.now() },
-              )
+              onChange(paused ? resumeContest(contest) : pauseContest(contest))
             }
           >
             {paused ? <Play /> : <Pause />}
@@ -219,7 +243,7 @@ export function ContestLive({
           </Button>
           <Button
             variant="danger"
-            onClick={() => onFinish({ ...contest, finishedAt: Date.now() })}
+            onClick={() => onFinish(finishContest(contest, "manual"))}
           >
             <Flag />
             Finish
@@ -233,10 +257,16 @@ export function ContestLive({
           <div>
             <CardTitle>Problems</CardTitle>
             <p className="mt-0.5 text-[13px] text-muted">
-              Submit on Codeforces; verdicts sync every 45 seconds.
+              {syncError
+                ? `Verdict sync delayed: ${syncError}. Your contest state remains saved.`
+                : `Submit on Codeforces; verdicts sync every ${urgent ? 15 : 45} seconds.`}
             </p>
           </div>
-          <Badge variant="accent">{board.points} pts</Badge>
+          <Badge variant="accent">
+            {board.mode === "cf"
+              ? `${board.points} pts`
+              : `${board.solved}/${board.total} · ${board.penaltyMinutes}m`}
+          </Badge>
         </div>
 
         <div className="p-2">
@@ -246,6 +276,15 @@ export function ContestLive({
               const state = contest.states[key];
               const solved = state?.state === "solved";
               const wrong = state?.wrongAttempts ?? 0;
+              const livePoints =
+                board.mode === "cf"
+                  ? liveProblemPoints(
+                      contest,
+                      p.points,
+                      state?.solvedAtSeconds ?? elapsed,
+                      wrong,
+                    )
+                  : null;
               return (
                 <ProblemRow
                   key={key}
@@ -259,10 +298,19 @@ export function ContestLive({
                   done={solved}
                   meta={
                     <span className="flex items-center gap-2">
-                      <span>{p.points} pts</span>
+                      <span>
+                        {board.mode === "cf"
+                          ? `${livePoints} / ${p.points} pts`
+                          : solved
+                            ? "accepted"
+                            : "ICPC"}
+                      </span>
                       {wrong > 0 && (
                         <span className="text-negative">
-                          {wrong} wrong &middot; +{wrong * 10}m
+                          {wrong} wrong &middot;{" "}
+                          {board.mode === "cf"
+                            ? `−${wrong * 50} pts`
+                            : `+${wrong * 10}m`}
                         </span>
                       )}
                       {solved && state?.solvedAtSeconds !== undefined && (

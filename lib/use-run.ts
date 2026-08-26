@@ -60,7 +60,7 @@ export interface RunController {
   openHint: (key: string) => void;
   openSolution: (key: string) => void;
   setNote: (key: string, note: string) => void;
-  finish: (review?: string) => void;
+  finish: (review?: string) => RunDoc | null;
   reopen: () => void;
 }
 
@@ -104,6 +104,7 @@ export function useRun(
   const save = useSaveArenaData(handle);
 
   const [run, setRun] = useState<RunDoc | null>(null);
+  const runRef = useRef<RunDoc | null>(null);
   const hydrated = useRef<string | null>(null);
   const savedAtRef = useRef<string | null>(null);
   const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -126,7 +127,9 @@ export function useRun(
     if (hydrated.current === id) return;
     hydrated.current = id;
     savedAtRef.current = query.data?.savedAt ?? null;
-    setRun(query.data?.runs?.[id] ?? null);
+    const stored = query.data?.runs?.[id] ?? null;
+    runRef.current = stored;
+    setRun(stored);
   }, [id, loaded, query.data]);
 
   // Only ever writes the one run it changed. The server sets it on its own
@@ -156,6 +159,7 @@ export function useRun(
       setRun((prev) => {
         if (!prev) return prev;
         const next = fn(prev);
+        runRef.current = next;
         persist(next);
         return next;
       });
@@ -166,6 +170,7 @@ export function useRun(
   const begin = useCallback(() => {
     if (!day) return;
     const fresh = emptyRun(kind, day);
+    runRef.current = fresh;
     setRun(fresh);
     persist(fresh);
   }, [day, kind, persist]);
@@ -266,17 +271,21 @@ export function useRun(
 
   const finish = useCallback(
     (review?: string) => {
-      update((prev) => {
-        const now = Date.now();
-        return {
-          ...stopClock(prev, now),
-          restingKey: null,
-          finishedAt: now,
-          ...(review ? { review } : {}),
-        };
-      });
+      const previous = runRef.current;
+      if (!previous) return null;
+      const now = previous.finishedAt ?? Date.now();
+      const next = {
+        ...stopClock(previous, now),
+        restingKey: null,
+        finishedAt: previous.finishedAt ?? now,
+        ...(review ? { review } : {}),
+      };
+      runRef.current = next;
+      setRun(next);
+      persist(next);
+      return next;
     },
-    [update],
+    [persist],
   );
 
   const reopen = useCallback(() => {

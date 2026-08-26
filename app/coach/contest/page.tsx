@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, CalendarDays } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays } from "lucide-react";
 import { useCoachPlan, useSession } from "@/lib/queries";
 import { useRun } from "@/lib/use-run";
 import { dayFor } from "@/lib/coach";
@@ -25,6 +25,24 @@ export default function CoachContestPage() {
       <PageShell width="narrow">
         <PageHeader title="Contest" />
         <HandlePrompt />
+      </PageShell>
+    );
+  }
+
+  if (plan.isError) {
+    return (
+      <PageShell width="narrow">
+        <PageHeader title="Contest" />
+        <EmptyState
+          icon={AlertTriangle}
+          title="Coach plan could not be loaded"
+          description={(plan.error as Error).message}
+          action={
+            <Button variant="secondary" onClick={() => void plan.refetch()}>
+              Retry plan
+            </Button>
+          }
+        />
       </PageShell>
     );
   }

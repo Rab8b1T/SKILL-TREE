@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
-import { errorResponse, json, requireAuth } from "@/lib/auth";
-import { getUserStatus } from "@/lib/cf-server";
+import { errorResponse, json, sessionHandle } from "@/lib/auth";
+import { getUserStatusSince } from "@/lib/cf-server";
 import { problemKey } from "@/lib/cf";
+import { countsAsWrongSubmission } from "@/lib/contest";
 import { HttpError } from "@/lib/mongo";
 
 /**
@@ -13,22 +14,33 @@ import { HttpError } from "@/lib/mongo";
  */
 export async function GET(req: NextRequest) {
   try {
-    requireAuth(req);
+    const { handle } = await sessionHandle(req);
+    if (!handle) throw new HttpError(400, "Set a Codeforces handle first");
     const sp = req.nextUrl.searchParams;
-    const handle = sp.get("handle")?.trim();
     const since = Number(sp.get("since") ?? 0);
     const keys = (sp.get("keys") ?? "").split(",").filter(Boolean);
+    const mode = sp.get("mode") === "icpc" ? "icpc" : "cf";
 
-    if (!handle) throw new HttpError(400, "handle is required");
+    if (!Number.isFinite(since) || since <= 0) {
+      throw new HttpError(400, "A valid contest start time is required");
+    }
+    if (keys.length > 20 || keys.some((key) => !/^\d+-[A-Za-z]\d*$/.test(key))) {
+      throw new HttpError(400, "Invalid problem keys");
+    }
     if (!keys.length) return json({ results: {} });
 
     const wanted = new Set(keys);
     // Recent submissions only; a running contest can't have thousands.
-    const subs = await getUserStatus(handle, 200);
+    const subs = await getUserStatusSince(handle, since);
 
     const results: Record<
       string,
-      { solved: boolean; wrongAttempts: number; solvedAtSeconds?: number }
+      {
+        solved: boolean;
+        wrongAttempts: number;
+        solvedAtSeconds?: number;
+        solvedAtTimeSeconds?: number;
+      }
     > = {};
     for (const key of keys) results[key] = { solved: false, wrongAttempts: 0 };
 
@@ -45,9 +57,11 @@ export async function GET(req: NextRequest) {
       if (sub.verdict === "OK") {
         entry.solved = true;
         entry.solvedAtSeconds = sub.creationTimeSeconds - since;
-      } else if (sub.verdict && sub.verdict !== "TESTING") {
-        // Compile errors carry no penalty on Codeforces either.
-        if (sub.verdict !== "COMPILATION_ERROR") entry.wrongAttempts += 1;
+        entry.solvedAtTimeSeconds = sub.creationTimeSeconds;
+      } else if (
+        countsAsWrongSubmission(mode, sub.verdict, sub.passedTestCount)
+      ) {
+        entry.wrongAttempts += 1;
       }
     }
 

@@ -40,7 +40,7 @@ export function ProblemRow({
         className,
       )}
     >
-      <RatingChip rating={rating} className="shrink-0" />
+      {!sealed && <RatingChip rating={rating} className="shrink-0" />}
 
       <div className="min-w-0 grow">
         <a
@@ -63,7 +63,7 @@ export function ProblemRow({
 
         {sealed ? (
           <p className="mt-1 text-[11px] italic text-faint">
-            Name the technique before you code.
+            Rating and tags unlock when the round ends.
           </p>
         ) : tags?.length ? (
           <div className="mt-1 flex flex-wrap items-center gap-1">

@@ -18,8 +18,10 @@
 /* ------------------------------------------------------------------ plan --- */
 
 import type { Figure } from "./figure";
+import { codeforcesProblemPoints } from "./contest";
 
-export type CoachRole = "speed" | "core" | "upsolve" | "retention" | "contest";
+/** Published plans use descriptive labels as well as the standard categories. */
+export type CoachRole = string;
 
 /**
  * One rung of a hint ladder.
@@ -513,14 +515,7 @@ export function alertsFor(capMinutes: number): PhaseAlert[] {
 
 /* --------------------------------------------------------------- scoring --- */
 
-/**
- * Codeforces' own decay: a problem loses value linearly across the round, down
- * to 30% of its maximum, and every rejected attempt costs a flat 50.
- *
- * The floor applies to the *time* decay only — wrong-submission penalties are
- * subtracted afterwards and can push a problem below 30%, which is exactly why
- * a spray of guesses is more expensive than one careful late submission.
- */
+/** Shared compatibility exports for the coach contest UI. */
 export const DECAY_FLOOR = 0.3;
 export const WRONG_SUBMISSION_PENALTY = 50;
 
@@ -530,10 +525,12 @@ export function decayedPoints(
   durationSeconds: number,
   wrongAttempts = 0,
 ): number {
-  const share = Math.min(1, Math.max(0, elapsedSeconds / durationSeconds));
-  const decayed = maxPoints - maxPoints * (1 - DECAY_FLOOR) * share;
-  const floored = Math.max(maxPoints * DECAY_FLOOR, decayed);
-  return Math.max(0, Math.round(floored - wrongAttempts * WRONG_SUBMISSION_PENALTY));
+  return codeforcesProblemPoints(
+    maxPoints,
+    elapsedSeconds,
+    durationSeconds,
+    wrongAttempts,
+  );
 }
 
 export interface ContestBoard {

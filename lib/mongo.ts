@@ -29,7 +29,7 @@ function requireEnv(name: string): string {
 
 // Reused across hot reloads in dev and warm invocations on Vercel, so we don't
 // open a new pool per request.
-function appClient(): Promise<MongoClient> {
+export function getAppClient(): Promise<MongoClient> {
   if (!global._stAppClient) {
     global._stAppClient = connect(requireEnv("MONGODB_URI"));
   }
@@ -49,7 +49,7 @@ function userClient(): Promise<MongoClient> {
  * Mongo already, so these collections need no extra indexes.
  */
 export async function getAppDb(): Promise<Db> {
-  return (await appClient()).db(APP_DB);
+  return (await getAppClient()).db(APP_DB);
 }
 
 export async function getUsersDb(): Promise<Db> {

@@ -20,6 +20,16 @@ export interface CfProfile {
 /* ---------------- Virtual contest ---------------- */
 
 export type ContestDivision = "div1" | "div2" | "div3" | "div4" | "custom";
+export type ContestScoringMode = "cf" | "icpc";
+export type ContestFormatVariant = "standard" | "customized" | "legacy";
+export type ContestSource = "virtual" | "coach" | "legacy";
+export type ContestSection = "standard" | "first-time-trials";
+export type ContestFinishReason = "manual" | "expired" | "coach";
+
+export interface ContestPauseSegment {
+  from: number;
+  to: number | null;
+}
 
 export interface ContestProblemRef {
   contestId: number;
@@ -51,12 +61,17 @@ export interface ContestProblemState {
   /** Wrong attempts before the accept; each costs a penalty. */
   wrongAttempts: number;
   solvedAtSeconds?: number;
+  /** Manual verdicts remain available as an outage fallback, but are auditable. */
+  verdictSource?: "codeforces" | "manual";
 }
 
 export interface VirtualContest {
   id: string;
   name: string;
   division: ContestDivision;
+  scoringMode?: ContestScoringMode;
+  formatVariant?: ContestFormatVariant;
+  cfHandleAtStart?: string;
   durationSeconds: number;
   problems: ContestProblemRef[];
   createdAt: number;
@@ -65,7 +80,10 @@ export interface VirtualContest {
   /** Accumulated paused milliseconds, subtracted from elapsed. */
   pausedMs: number;
   pausedAt: number | null;
+  /** Complete pause history, used to map CF submission time onto active time. */
+  pauseSegments?: ContestPauseSegment[];
   finishedAt: number | null;
+  finishReason?: ContestFinishReason;
   states: Record<string, ContestProblemState>;
 }
 
@@ -82,21 +100,40 @@ export interface ContestResultProblem {
   rating: number;
   tags: string[];
   solved: boolean;
+  attempted?: boolean;
+  state?: ProblemState;
   wrongAttempts: number;
   /** Seconds into the round when accepted; absent when never solved. */
   solvedAtSeconds?: number;
+  verdictSource?: "codeforces" | "manual";
 }
 
 export interface ContestResult {
   id: string;
   name: string;
   division: ContestDivision;
+  scoringMode?: ContestScoringMode;
+  formatVariant?: ContestFormatVariant;
+  source?: ContestSource;
+  section?: ContestSection;
+  programSequence?: number | null;
+  coachDay?: number;
+  cfHandleAtStart?: string;
+  startedAt?: number;
   finishedAt: number;
+  archivedAt?: number;
   durationSeconds: number;
+  effectiveElapsedSeconds?: number;
+  pausedMsTotal?: number;
+  finishReason?: ContestFinishReason;
   solved: number;
   total: number;
   points: number;
+  maxPoints?: number;
   penaltyMinutes: number;
+  wrongAttempts?: number;
+  upsolveKeys?: string[];
+  schemaVersion?: number;
   /** Absent on rounds archived before per-problem detail was recorded. */
   problems?: ContestResultProblem[];
 }
@@ -105,6 +142,32 @@ export interface ContestDataDoc {
   active: VirtualContest | null;
   history: ContestResult[];
   updatedAt?: string;
+}
+
+/** Hot mutable state. One document exists per authenticated account. */
+export interface ContestActiveDoc {
+  contest: VirtualContest | null;
+  version: number;
+  savedAt: string | null;
+}
+
+/** Immutable archived row returned by the contest APIs. */
+export interface ContestRoundDoc extends ContestResult {
+  roundId: string;
+  ownerId?: string;
+}
+
+export interface ContestProgramDoc {
+  targetRounds: number;
+  completedRounds: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface ContestRoundsPage {
+  rounds: ContestRoundDoc[];
+  nextCursor: string | null;
+  total: number;
 }
 
 /* ---------------- Practice / picker ---------------- */
@@ -190,6 +253,9 @@ export interface UpsolveEntry {
   tags: string[];
   /** Where it came from: a rated round, a virtual, or plain practice. */
   source: "contest" | "virtual" | "practice";
+  originRoundId?: string;
+  originFinishedAt?: number;
+  slot?: string;
   addedAt: number;
   attempts: number;
   status: "open" | "done" | "dropped";

@@ -31,7 +31,7 @@ const ms = (v) => {
   const t = Date.parse(v);
   return Number.isNaN(t) ? null : t;
 };
-const keyOf = (contestId, index) => `${contestId}/${index}`;
+const keyOf = (contestId, index) => `${contestId}-${index}`;
 
 /** "https://codeforces.com/problemset/problem/1144/A" -> { contestId, index } */
 function fromUrl(url) {

@@ -23,6 +23,7 @@ import {
 import type { RunController } from "@/lib/use-run";
 import { cn, formatClock, formatDuration, pluralize } from "@/lib/utils";
 import { useNow } from "@/lib/use-now";
+import { useArchiveCoachContest } from "@/lib/queries";
 import { Card, CardTitle, SectionLabel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,23 +43,67 @@ export function ContestRunner({
   const contest = day.contest;
   const run = ctl.run;
   const now = useNow(1000);
+  const archive = useArchiveCoachContest(handle);
+  const archivedRef = useRef<string | null>(null);
+  const duration = (contest?.minutes ?? 0) * 60;
+  const t = now ?? run?.startedAt ?? 0;
+  // A contest clock is wall clock. Idle time is part of the round, unlike
+  // practice, so this deliberately ignores the engaged-time machinery.
+  const elapsed = run
+    ? Math.min(
+        duration,
+        Math.floor(((run.finishedAt ?? t) - run.startedAt) / 1000),
+      )
+    : 0;
+  const remaining = duration - elapsed;
+  const over = Boolean(run && contest && remaining <= 0);
+  const done = Boolean(run?.finishedAt) || over;
+  const board = contest ? contestBoard(contest, run ?? undefined, elapsed) : null;
+  const urgent = !done && remaining <= 600;
+
+  const archiveRun = useCallback(
+    async (finished: RunDoc, quiet = false) => {
+      try {
+        await archive.mutateAsync({ day: day.day, run: finished });
+        if (!quiet) {
+          toast.success("Contest saved, counted and sent to analysis");
+        }
+      } catch (error) {
+        if (!quiet) toast.error((error as Error).message);
+      }
+    },
+    [archive, day.day],
+  );
+
+  const finishAndArchive = useCallback(
+    async (review?: string) => {
+      const finished = ctl.finish(review);
+      if (finished) await archiveRun(finished);
+    },
+    [archiveRun, ctl],
+  );
+
+  useEffect(() => {
+    if (!run || !contest) return;
+    if (over && !run.finishedAt) {
+      const finished = ctl.finish();
+      if (finished) {
+        archivedRef.current = `${finished.id}-${finished.finishedAt}`;
+        void archiveRun(finished, true);
+      }
+      return;
+    }
+    if (run.finishedAt) {
+      const key = `${run.id}-${run.finishedAt}`;
+      if (archivedRef.current === key) return;
+      archivedRef.current = key;
+      void archiveRun(run, true);
+    }
+  }, [archiveRun, contest, ctl, over, run]);
 
   if (!contest) return null;
   if (!run) return <StartCard contest={contest} onStart={ctl.begin} />;
-
-  const duration = contest.minutes * 60;
-  const t = now ?? run.startedAt;
-  // A contest clock is wall clock. Idle time is part of the round, unlike
-  // practice, so this deliberately ignores the engaged-time machinery.
-  const elapsed = Math.min(
-    duration,
-    Math.floor(((run.finishedAt ?? t) - run.startedAt) / 1000),
-  );
-  const remaining = duration - elapsed;
-  const over = remaining <= 0;
-  const done = run.finishedAt != null || over;
-  const board = contestBoard(contest, run, elapsed);
-  const urgent = !done && remaining <= 600;
+  if (!board) return null;
 
   return (
     <div className="space-y-4">
@@ -69,7 +114,7 @@ export function ContestRunner({
         urgent={urgent}
         done={done}
         board={board}
-        onFinish={() => ctl.finish()}
+        onFinish={() => void finishAndArchive()}
       />
 
       <VerdictSync
@@ -111,7 +156,15 @@ export function ContestRunner({
 
       <HintShelf contest={contest} run={run} done={done} ctl={ctl} />
 
-      {done && <PostMortem contest={contest} run={run} board={board} ctl={ctl} />}
+      {done && (
+        <PostMortem
+          contest={contest}
+          run={run}
+          board={board}
+          saving={archive.isPending}
+          onSave={finishAndArchive}
+        />
+      )}
     </div>
   );
 }
@@ -503,12 +556,14 @@ function PostMortem({
   contest,
   run,
   board,
-  ctl,
+  saving,
+  onSave,
 }: {
   contest: CoachContest;
   run: RunDoc;
   board: ReturnType<typeof contestBoard>;
-  ctl: RunController;
+  saving: boolean;
+  onSave: (review?: string) => Promise<void>;
 }) {
   const [review, setReview] = useState(run.review ?? "");
 
@@ -542,13 +597,11 @@ function PostMortem({
         />
         <Button
           variant="accent"
-          onClick={() => {
-            ctl.finish(review.trim() || undefined);
-            toast.success("Saved — the coach reads this in the morning");
-          }}
+          disabled={saving}
+          onClick={() => void onSave(review.trim() || undefined)}
         >
           <Check />
-          Save the post-mortem
+          {saving ? "Saving…" : "Save the post-mortem"}
         </Button>
       </div>
     </Card>

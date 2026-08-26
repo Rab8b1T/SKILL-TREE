@@ -26,6 +26,8 @@ interface Entry {
 
 declare global {
   var _stCfCache: Map<string, Entry> | undefined;
+  var _stCfQueue: Promise<void> | undefined;
+  var _stCfLastRequestAt: number | undefined;
 }
 
 /*
@@ -36,6 +38,45 @@ declare global {
  * invocations, which is where the repeat calls actually come from.
  */
 const cache = (global._stCfCache ??= new Map<string, Entry>());
+
+const CF_MIN_INTERVAL_MS = 2_100;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Codeforces rate limits by source IP. Serialising cold-cache requests keeps
+ * concurrent serverless work from turning a healthy API into a burst of 403s.
+ */
+async function scheduledFetch(url: string): Promise<Response> {
+  const previous = global._stCfQueue ?? Promise.resolve();
+  let release!: () => void;
+  global._stCfQueue = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await previous;
+  try {
+    let response!: Response;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const wait = Math.max(
+        0,
+        CF_MIN_INTERVAL_MS - (Date.now() - (global._stCfLastRequestAt ?? 0)),
+      );
+      if (wait) await sleep(wait);
+      global._stCfLastRequestAt = Date.now();
+      response = await fetch(url, {
+        cache: "no-store",
+        headers: { "User-Agent": "skill-tree/2.0" },
+      });
+      if (response.status !== 403 || attempt === 2) return response;
+      await sleep(2_500 * 2 ** attempt);
+    }
+    return response;
+  } finally {
+    release();
+  }
+}
 
 async function cfFetch<T>(
   path: string,
@@ -55,10 +96,7 @@ async function cfFetch<T>(
   const inflight = (async (): Promise<T> => {
     let res: Response;
     try {
-      res = await fetch(url, {
-        cache: "no-store",
-        headers: { "User-Agent": "skill-tree/2.0" },
-      });
+      res = await scheduledFetch(url);
     } catch {
       throw new HttpError(504, "Codeforces did not respond");
     }
@@ -111,11 +149,39 @@ export function getUserRating(handle: string) {
 }
 
 export function getUserStatus(handle: string, count?: number) {
+  return getUserStatusPage(handle, 1, count);
+}
+
+export function getUserStatusPage(handle: string, from = 1, count?: number) {
   return cfFetch<CfSubmission[]>(
     "user.status",
-    { handle, from: "1", count: count ? String(count) : undefined },
+    {
+      handle,
+      from: String(Math.max(1, from)),
+      count: count ? String(count) : undefined,
+    },
     120,
   );
+}
+
+/** Fetches enough pages to cover a running contest, newest submissions first. */
+export async function getUserStatusSince(
+  handle: string,
+  sinceSeconds: number,
+  pageSize = 200,
+): Promise<CfSubmission[]> {
+  const rows: CfSubmission[] = [];
+  for (let from = 1; from <= 5_000; from += pageSize) {
+    const page = await getUserStatusPage(handle, from, pageSize);
+    rows.push(...page.filter((row) => row.creationTimeSeconds >= sinceSeconds));
+    if (
+      page.length < pageSize ||
+      page.some((row) => row.creationTimeSeconds < sinceSeconds)
+    ) {
+      break;
+    }
+  }
+  return rows;
 }
 
 export function getProblemset(tags?: string[]) {

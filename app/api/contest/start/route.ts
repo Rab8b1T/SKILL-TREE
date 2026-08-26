@@ -2,13 +2,10 @@ import { NextRequest } from "next/server";
 import { errorResponse, json, sessionHandle } from "@/lib/auth";
 import { DIVISIONS } from "@/lib/contest";
 import { assembleVirtualContest } from "@/lib/contest-server";
+import { createContestActive } from "@/lib/contest-store";
 import { HttpError } from "@/lib/mongo";
 import type { ContestDivision } from "@/lib/types";
 
-/**
- * Compatibility assembler. New clients use `/api/contest/start`, which also
- * persists the active round atomically.
- */
 export async function POST(req: NextRequest) {
   try {
     const { auth, handle } = await sessionHandle(req);
@@ -29,14 +26,8 @@ export async function POST(req: NextRequest) {
       slots: body?.slots,
       minutes: body?.minutes,
     });
-    return json({
-      division: contest.division,
-      name: contest.name,
-      durationSeconds: contest.durationSeconds,
-      scoringMode: contest.scoringMode,
-      problems: contest.problems,
-    });
+    return json(await createContestActive(auth.userId, handle, contest), 201);
   } catch (error) {
-    return errorResponse(error, "Could not assemble a contest");
+    return errorResponse(error, "Could not start the contest");
   }
 }

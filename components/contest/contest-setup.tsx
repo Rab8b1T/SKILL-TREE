@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { Loader2, Play } from "lucide-react";
 import { toast } from "sonner";
-import { DIVISIONS, pointsForIndex } from "@/lib/contest";
+import { DIVISIONS } from "@/lib/contest";
 import { ratingColor } from "@/lib/cf";
 import { cn } from "@/lib/utils";
-import type { ContestDivision, ContestProblemRef, VirtualContest } from "@/lib/types";
+import type { ContestDivision } from "@/lib/types";
 import { Card, CardHeader, CardTitle, SectionLabel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
@@ -15,12 +15,14 @@ type Division = Exclude<ContestDivision, "custom">;
 const ORDER: Division[] = ["div4", "div3", "div2", "div1"];
 
 export function ContestSetup({
-  handle,
   onStart,
   starting,
 }: {
-  handle: string;
-  onStart: (contest: VirtualContest) => void;
+  onStart: (options: {
+    division: Division;
+    slots: number;
+    minutes: number;
+  }) => Promise<void>;
   starting?: boolean;
 }) {
   const [division, setDivision] = useState<Division>("div3");
@@ -35,32 +37,10 @@ export function ContestSetup({
   async function build() {
     setBuilding(true);
     try {
-      const res = await fetch("/api/cf/contest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ division, handle, slots: slotCount }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body?.error ?? "Could not assemble a contest");
-
-      const problems = body.problems as ContestProblemRef[];
-      onStart({
-        id: `${division}-${Date.now().toString(36)}`,
-        name: body.name,
+      await onStart({
         division,
-        durationSeconds: duration * 60,
-        problems,
-        createdAt: Date.now(),
-        startedAt: Date.now(),
-        pausedMs: 0,
-        pausedAt: null,
-        finishedAt: null,
-        states: Object.fromEntries(
-          problems.map((p) => [
-            `${p.contestId}-${p.index}`,
-            { key: `${p.contestId}-${p.index}`, state: "unsolved" as const, wrongAttempts: 0 },
-          ]),
-        ),
+        slots: slotCount,
+        minutes: duration,
       });
     } catch (err) {
       toast.error((err as Error).message);
@@ -91,6 +71,8 @@ export function ContestSetup({
             return (
               <button
                 key={d}
+                type="button"
+                aria-pressed={active}
                 onClick={() => {
                   setDivision(d);
                   setSlots(null);
@@ -144,7 +126,9 @@ export function ContestSetup({
           <div>
             <CardTitle>{config.name}</CardTitle>
             <p className="mt-0.5 text-[13px] text-muted">
-              Adjust before the clock starts.
+              {config.scoringMode === "cf"
+                ? "Standard Codeforces point decay."
+                : "Extended ICPC: solves, then penalty."}
             </p>
           </div>
         </CardHeader>
@@ -189,12 +173,19 @@ export function ContestSetup({
                     {s.rating[0]}&ndash;{s.rating[1]}
                   </span>
                   <span className="font-mono text-[11px] tabular-nums text-faint">
-                    {pointsForIndex(s.index)} pts
+                    {config.scoringMode === "cf" ? `${s.points} pts` : "ICPC"}
                   </span>
                 </li>
               ))}
             </ul>
           </div>
+
+          {(slotCount !== config.slots.length || duration !== config.minutes) && (
+            <p className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-[11px] leading-relaxed text-muted">
+              This round still counts, but analytics label it as a custom format
+              so it is not compared silently with the standard division shape.
+            </p>
+          )}
 
           <p className="rounded-lg bg-sunken px-3 py-2 text-[11px] leading-relaxed text-muted">
             Verdicts come from your real Codeforces submissions during the
