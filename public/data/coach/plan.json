@@ -1,13 +1,13 @@
 {
-  "updatedAt": "2026-08-25T09:24:00+05:30",
+  "updatedAt": "2026-08-27T08:20:00+05:30",
   "handle": "rab8bit",
   "mentor": {
-    "rating": 1132,
+    "rating": 1139,
     "rank": "Newbie",
     "goalRating": 1600,
     "goalDate": "2026-10-31",
-    "headline": "Two hours only: the sealed pair, then two proved constructions.",
-    "detail": "Day 27 closed 5/7 and cleared all tracker debt. Today's available time is two hours, so the plan follows the two-hour shape exactly: two sealed mixed problems, two in-band constructive problems, and a 15-minute close. The stale 1144A arena upsolve, 1837D, 1201C and the three day-27 guide drills are deferred rather than squeezed into a session they cannot fit.",
+    "headline": "Bitmasks, the blind spot with zero solves at 1300+, on the last day of phase 0.",
+    "detail": "Day 28 closed 4/4 with no wrong submissions, which clears all tracker debt, but all four problems ran past their cap and day 29 never ran. Today is a full four hours aimed at the one topic that has 3 lifetime solves and 0 at 1300+, and it is also the topic of last night's guide. Twelve minutes on the drill file first, then a sealed pair, then three bitmask problems that split the topic into its two halves: enumerate every mask when n is tiny, count each bit column when n is not. Round 1118 on Saturday is confirmed.",
     "weaknesses": [
       {
         "id": "contest-speed-ab",
@@ -401,14 +401,34 @@
                       "say": "Find the first price strictly greater than m. Using the first price greater than or equal to m would wrongly exclude equal prices.",
                       "figure": {
                         "kind": "array",
-                        "cells": [2, 3, 5, 5, 8],
+                        "cells": [
+                          2,
+                          3,
+                          5,
+                          5,
+                          8
+                        ],
                         "indexed": true,
                         "marks": [
-                          {"at": [0, 3], "tone": "good", "label": "price <= 5"},
-                          {"at": 4, "tone": "muted"}
+                          {
+                            "at": [
+                              0,
+                              3
+                            ],
+                            "tone": "good",
+                            "label": "price <= 5"
+                          },
+                          {
+                            "at": 4,
+                            "tone": "muted"
+                          }
                         ],
                         "pointers": [
-                          {"at": 4, "label": "first > 5", "tone": "accent"}
+                          {
+                            "at": 4,
+                            "label": "first > 5",
+                            "tone": "accent"
+                          }
                         ],
                         "caption": "Equal prices stay affordable, so the boundary goes after both 5s."
                       }
@@ -423,9 +443,20 @@
                     "figure": {
                       "kind": "flow",
                       "steps": [
-                        {"text": "Sort all shop prices once", "tone": "accent"},
-                        {"text": "Find the first price > m", "tone": "warn", "via": "each query"},
-                        {"text": "Return its zero-based index", "tone": "good", "via": "count"}
+                        {
+                          "text": "Sort all shop prices once",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Find the first price > m",
+                          "tone": "warn",
+                          "via": "each query"
+                        },
+                        {
+                          "text": "Return its zero-based index",
+                          "tone": "good",
+                          "via": "count"
+                        }
                       ],
                       "caption": "Preprocess once, then answer each independent budget with one upper-bound search."
                     }
@@ -460,14 +491,36 @@
                       "figure": {
                         "kind": "array",
                         "label": "prefix",
-                        "cells": [0, 4, 2, 4, -1, 0],
+                        "cells": [
+                          0,
+                          4,
+                          2,
+                          4,
+                          -1,
+                          0
+                        ],
                         "indexed": true,
                         "marks": [
-                          {"at": [1, 3], "tone": "good", "label": "same balance = 4"}
+                          {
+                            "at": [
+                              1,
+                              3
+                            ],
+                            "tone": "good",
+                            "label": "same balance = 4"
+                          }
                         ],
                         "pointers": [
-                          {"at": 1, "label": "before", "tone": "accent"},
-                          {"at": 3, "label": "after", "tone": "accent"}
+                          {
+                            "at": 1,
+                            "label": "before",
+                            "tone": "accent"
+                          },
+                          {
+                            "at": 3,
+                            "label": "after",
+                            "tone": "accent"
+                          }
                         ],
                         "caption": "The equal 4s enclose a zero-sum transformed segment."
                       }
@@ -482,10 +535,24 @@
                     "figure": {
                       "kind": "flow",
                       "steps": [
-                        {"text": "Alternate +value and -value", "tone": "accent"},
-                        {"text": "Update the prefix balance", "tone": "neutral"},
-                        {"text": "Seen before? Answer YES", "tone": "good", "via": "repeat"},
-                        {"text": "Otherwise store and continue", "tone": "warn", "via": "new"}
+                        {
+                          "text": "Alternate +value and -value",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Update the prefix balance",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Seen before? Answer YES",
+                          "tone": "good",
+                          "via": "repeat"
+                        },
+                        {
+                          "text": "Otherwise store and continue",
+                          "tone": "warn",
+                          "via": "new"
+                        }
                       ],
                       "caption": "Repeated prefix state is the whole invariant; no subarray enumeration is needed."
                     }
@@ -528,13 +595,33 @@
                         "kind": "line",
                         "from": 1,
                         "to": 10,
-                        "ticks": [1, 4, 6, 9, 10],
+                        "ticks": [
+                          1,
+                          4,
+                          6,
+                          9,
+                          10
+                        ],
                         "spans": [
-                          {"from": 4, "to": 6, "tone": "accent", "label": "reachable"},
-                          {"from": 6, "to": 9, "tone": "warn", "label": "operation"}
+                          {
+                            "from": 4,
+                            "to": 6,
+                            "tone": "accent",
+                            "label": "reachable"
+                          },
+                          {
+                            "from": 6,
+                            "to": 9,
+                            "tone": "warn",
+                            "label": "operation"
+                          }
                         ],
                         "points": [
-                          {"at": 6, "label": "intersection", "tone": "good"}
+                          {
+                            "at": 6,
+                            "label": "intersection",
+                            "tone": "good"
+                          }
                         ],
                         "caption": "Sharing position 6 is enough to connect the whole union [4, 9]."
                       }
@@ -549,10 +636,24 @@
                     "figure": {
                       "kind": "flow",
                       "steps": [
-                        {"text": "Start with [lo, hi] = [x, x]", "tone": "accent"},
-                        {"text": "Is [l, r] disjoint?", "tone": "neutral"},
-                        {"text": "Keep the current interval", "tone": "muted", "via": "yes"},
-                        {"text": "Otherwise widen to the union", "tone": "good", "via": "no"}
+                        {
+                          "text": "Start with [lo, hi] = [x, x]",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Is [l, r] disjoint?",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Keep the current interval",
+                          "tone": "muted",
+                          "via": "yes"
+                        },
+                        {
+                          "text": "Otherwise widen to the union",
+                          "tone": "good",
+                          "via": "no"
+                        }
                       ],
                       "caption": "The story reduces to one interval and one intersection test."
                     }
@@ -586,11 +687,33 @@
                       "say": "The statement gives parent[v] < v. Therefore processing vertices n, n-1, ..., 2 is already a child-before-parent order.",
                       "figure": {
                         "kind": "tree",
-                        "parent": [null, 0, 0, 1, 2, 2, 4],
-                        "labels": ["W", "B", "B", "W", "W", "B", "W"],
+                        "parent": [
+                          null,
+                          0,
+                          0,
+                          1,
+                          2,
+                          2,
+                          4
+                        ],
+                        "labels": [
+                          "W",
+                          "B",
+                          "B",
+                          "W",
+                          "W",
+                          "B",
+                          "W"
+                        ],
                         "marks": [
-                          {"node": 1, "tone": "good"},
-                          {"node": 2, "tone": "good"}
+                          {
+                            "node": 1,
+                            "tone": "good"
+                          },
+                          {
+                            "node": 2,
+                            "tone": "good"
+                          }
                         ],
                         "caption": "Green nodes are the sample's balanced subtrees; each node contributes only +1 or -1."
                       }
@@ -605,10 +728,22 @@
                     "figure": {
                       "kind": "flow",
                       "steps": [
-                        {"text": "W = +1, B = -1", "tone": "accent"},
-                        {"text": "Process v from n down to 2", "tone": "neutral"},
-                        {"text": "Count balance[v] == 0", "tone": "good"},
-                        {"text": "Add balance[v] to parent[v]", "tone": "warn"}
+                        {
+                          "text": "W = +1, B = -1",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Process v from n down to 2",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Count balance[v] == 0",
+                          "tone": "good"
+                        },
+                        {
+                          "text": "Add balance[v] to parent[v]",
+                          "tone": "warn"
+                        }
                       ],
                       "caption": "Descending labels are already the postorder this input format needs."
                     }
@@ -642,16 +777,46 @@
                       "say": "Store the reading number that reached it and the input index of the edge that reached it. The endpoints' written order does not define parent and child.",
                       "figure": {
                         "kind": "tree",
-                        "parent": [null, 0, 0, 2, 3, 0],
+                        "parent": [
+                          null,
+                          0,
+                          0,
+                          2,
+                          3,
+                          0
+                        ],
                         "edgeMarks": [
-                          {"node": 1, "tone": "muted", "label": "#3"},
-                          {"node": 2, "tone": "accent", "label": "#2"},
-                          {"node": 3, "tone": "accent", "label": "#4"},
-                          {"node": 4, "tone": "bad", "label": "#1"},
-                          {"node": 5, "tone": "muted", "label": "#5"}
+                          {
+                            "node": 1,
+                            "tone": "muted",
+                            "label": "#3"
+                          },
+                          {
+                            "node": 2,
+                            "tone": "accent",
+                            "label": "#2"
+                          },
+                          {
+                            "node": 3,
+                            "tone": "accent",
+                            "label": "#4"
+                          },
+                          {
+                            "node": 4,
+                            "tone": "bad",
+                            "label": "#1"
+                          },
+                          {
+                            "node": 5,
+                            "tone": "muted",
+                            "label": "#5"
+                          }
                         ],
                         "marks": [
-                          {"node": 4, "tone": "bad"}
+                          {
+                            "node": 4,
+                            "tone": "bad"
+                          }
                         ],
                         "caption": "Along 1 → 3 → 4 → 5, indices 2 → 4 stay in one scan, but 4 → 1 forces the second scan."
                       }
@@ -666,10 +831,23 @@
                     "figure": {
                       "kind": "flow",
                       "steps": [
-                        {"text": "Root the undirected tree at 1", "tone": "accent"},
-                        {"text": "Carry the incoming edge index", "tone": "neutral"},
-                        {"text": "Next index is smaller?", "tone": "warn"},
-                        {"text": "Add one reading only then", "tone": "good", "via": "yes"}
+                        {
+                          "text": "Root the undirected tree at 1",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Carry the incoming edge index",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Next index is smaller?",
+                          "tone": "warn"
+                        },
+                        {
+                          "text": "Add one reading only then",
+                          "tone": "good",
+                          "via": "yes"
+                        }
                       ],
                       "caption": "A new reading occurs exactly at a backward jump in edge order."
                     }
@@ -711,18 +889,51 @@
                       "say": "The split 6 + 6 has LCM 6, smaller than every other split. This points toward the largest proper divisor of n.",
                       "figure": {
                         "kind": "grid",
-                        "columns": ["pair", "lcm"],
+                        "columns": [
+                          "pair",
+                          "lcm"
+                        ],
                         "rows": [
-                          ["1+11", 11],
-                          ["2+10", 10],
-                          ["3+9", 9],
-                          ["4+8", 8],
-                          ["5+7", 35],
-                          ["6+6", 6]
+                          [
+                            "1+11",
+                            11
+                          ],
+                          [
+                            "2+10",
+                            10
+                          ],
+                          [
+                            "3+9",
+                            9
+                          ],
+                          [
+                            "4+8",
+                            8
+                          ],
+                          [
+                            "5+7",
+                            35
+                          ],
+                          [
+                            "6+6",
+                            6
+                          ]
                         ],
                         "marks": [
-                          {"at": [5, 0], "tone": "good"},
-                          {"at": [5, 1], "tone": "good"}
+                          {
+                            "at": [
+                              5,
+                              0
+                            ],
+                            "tone": "good"
+                          },
+                          {
+                            "at": [
+                              5,
+                              1
+                            ],
+                            "tone": "good"
+                          }
                         ],
                         "caption": "For 12, the largest proper divisor gives the minimum LCM."
                       }
@@ -737,10 +948,22 @@
                     "figure": {
                       "kind": "flow",
                       "steps": [
-                        {"text": "Find smallest divisor d > 1", "tone": "accent"},
-                        {"text": "Set a = n / d", "tone": "neutral"},
-                        {"text": "Set b = n - a", "tone": "neutral"},
-                        {"text": "Now a divides b", "tone": "good"}
+                        {
+                          "text": "Find smallest divisor d > 1",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Set a = n / d",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Set b = n - a",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Now a divides b",
+                          "tone": "good"
+                        }
                       ],
                       "caption": "Smallest divisor d produces the largest proper divisor a."
                     }
@@ -771,13 +994,30 @@
                       "say": "Only the median and elements to its right matter. Raising anything in the lower half cannot push the middle value upward.",
                       "figure": {
                         "kind": "array",
-                        "cells": [1, 2, 4, 5, 9],
+                        "cells": [
+                          1,
+                          2,
+                          4,
+                          5,
+                          9
+                        ],
                         "indexed": true,
                         "marks": [
-                          {"at": [2, 4], "tone": "accent", "label": "relevant half"}
+                          {
+                            "at": [
+                              2,
+                              4
+                            ],
+                            "tone": "accent",
+                            "label": "relevant half"
+                          }
                         ],
                         "pointers": [
-                          {"at": 2, "label": "median", "tone": "good"}
+                          {
+                            "at": 2,
+                            "label": "median",
+                            "tone": "good"
+                          }
                         ],
                         "caption": "Only indices from n//2 onward need increments."
                       }
@@ -797,13 +1037,32 @@
                       "kind": "line",
                       "from": 4,
                       "to": 10,
-                      "ticks": [4, 7, 8, 10],
+                      "ticks": [
+                        4,
+                        7,
+                        8,
+                        10
+                      ],
                       "spans": [
-                        {"from": 4, "to": 7, "tone": "good", "label": "feasible"},
-                        {"from": 8, "to": 10, "tone": "bad", "label": "too costly"}
+                        {
+                          "from": 4,
+                          "to": 7,
+                          "tone": "good",
+                          "label": "feasible"
+                        },
+                        {
+                          "from": 8,
+                          "to": 10,
+                          "tone": "bad",
+                          "label": "too costly"
+                        }
                       ],
                       "points": [
-                        {"at": 7, "label": "last true", "tone": "accent"}
+                        {
+                          "at": 7,
+                          "label": "last true",
+                          "tone": "accent"
+                        }
                       ],
                       "caption": "For [1,2,4,5,9] with k=5, target 7 costs 5; target 8 costs 7."
                     }
@@ -856,14 +1115,33 @@
                       "say": "If k < n and a[k] equals a[k-1], choosing that value includes at least k+1 elements. No number between equal integers can repair the count.",
                       "figure": {
                         "kind": "array",
-                        "cells": [1, 2, 2, 5],
+                        "cells": [
+                          1,
+                          2,
+                          2,
+                          5
+                        ],
                         "indexed": true,
                         "marks": [
-                          {"at": [0, 2], "tone": "bad", "label": "three values <= 2"}
+                          {
+                            "at": [
+                              0,
+                              2
+                            ],
+                            "tone": "bad",
+                            "label": "three values <= 2"
+                          }
                         ],
                         "pointers": [
-                          {"at": 1, "label": "k-th"},
-                          {"at": 2, "label": "same boundary", "tone": "bad"}
+                          {
+                            "at": 1,
+                            "label": "k-th"
+                          },
+                          {
+                            "at": 2,
+                            "label": "same boundary",
+                            "tone": "bad"
+                          }
                         ],
                         "caption": "For k = 2, the duplicate 2 forces the count to jump from one to three."
                       }
@@ -878,12 +1156,32 @@
                     "figure": {
                       "kind": "flow",
                       "steps": [
-                        {"text": "Sort a", "tone": "accent"},
-                        {"text": "k = 0?", "tone": "neutral"},
-                        {"text": "Try a[0] - 1", "tone": "warn", "via": "yes"},
-                        {"text": "Try x = a[k-1]", "tone": "neutral", "via": "no"},
-                        {"text": "Reject if a[k] = x", "tone": "bad"},
-                        {"text": "Otherwise print x", "tone": "good"}
+                        {
+                          "text": "Sort a",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "k = 0?",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Try a[0] - 1",
+                          "tone": "warn",
+                          "via": "yes"
+                        },
+                        {
+                          "text": "Try x = a[k-1]",
+                          "tone": "neutral",
+                          "via": "no"
+                        },
+                        {
+                          "text": "Reject if a[k] = x",
+                          "tone": "bad"
+                        },
+                        {
+                          "text": "Otherwise print x",
+                          "tone": "good"
+                        }
                       ],
                       "caption": "The whole problem is one exact boundary after sorting."
                     }
@@ -917,13 +1215,33 @@
                       "say": "Each child may enter only one boat. Four equal weights create six index pairs but only two disjoint boats.",
                       "figure": {
                         "kind": "grid",
-                        "columns": ["weights", "all index pairs", "usable boats"],
+                        "columns": [
+                          "weights",
+                          "all index pairs",
+                          "usable boats"
+                        ],
                         "rows": [
-                          ["1,1,1,1", 6, 2]
+                          [
+                            "1,1,1,1",
+                            6,
+                            2
+                          ]
                         ],
                         "marks": [
-                          {"at": [0, 1], "tone": "bad"},
-                          {"at": [0, 2], "tone": "good"}
+                          {
+                            "at": [
+                              0,
+                              1
+                            ],
+                            "tone": "bad"
+                          },
+                          {
+                            "at": [
+                              0,
+                              2
+                            ],
+                            "tone": "good"
+                          }
                         ],
                         "caption": "Pair count and disjoint matching size are different quantities."
                       }
@@ -938,12 +1256,33 @@
                     "figure": {
                       "kind": "flow",
                       "steps": [
-                        {"text": "Choose target s", "tone": "accent"},
-                        {"text": "Compare a[l] + a[r] with s", "tone": "neutral"},
-                        {"text": "Move l right", "tone": "warn", "via": "too small"},
-                        {"text": "Move r left", "tone": "warn", "via": "too large"},
-                        {"text": "Count boat; move both", "tone": "good", "via": "equal"},
-                        {"text": "Maximise over every s", "tone": "accent"}
+                        {
+                          "text": "Choose target s",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Compare a[l] + a[r] with s",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Move l right",
+                          "tone": "warn",
+                          "via": "too small"
+                        },
+                        {
+                          "text": "Move r left",
+                          "tone": "warn",
+                          "via": "too large"
+                        },
+                        {
+                          "text": "Count boat; move both",
+                          "tone": "good",
+                          "via": "equal"
+                        },
+                        {
+                          "text": "Maximise over every s",
+                          "tone": "accent"
+                        }
                       ],
                       "caption": "The pointers construct a disjoint matching, not a count of overlapping pairs."
                     }
@@ -984,16 +1323,54 @@
                       "say": "In a correct 9x9 Sudoku, each digit appears once per row, hence exactly nine times in the whole grid.",
                       "figure": {
                         "kind": "grid",
-                        "columns": ["unit", "source digit before", "target digit before", "after source→target"],
+                        "columns": [
+                          "unit",
+                          "source digit before",
+                          "target digit before",
+                          "after source→target"
+                        ],
                         "rows": [
-                          ["row", 1, 1, "target appears twice"],
-                          ["column", 1, 1, "target appears twice"],
-                          ["3x3 block", 1, 1, "target appears twice"]
+                          [
+                            "row",
+                            1,
+                            1,
+                            "target appears twice"
+                          ],
+                          [
+                            "column",
+                            1,
+                            1,
+                            "target appears twice"
+                          ],
+                          [
+                            "3x3 block",
+                            1,
+                            1,
+                            "target appears twice"
+                          ]
                         ],
                         "marks": [
-                          {"at": [0, 3], "tone": "good"},
-                          {"at": [1, 3], "tone": "good"},
-                          {"at": [2, 3], "tone": "good"}
+                          {
+                            "at": [
+                              0,
+                              3
+                            ],
+                            "tone": "good"
+                          },
+                          {
+                            "at": [
+                              1,
+                              3
+                            ],
+                            "tone": "good"
+                          },
+                          {
+                            "at": [
+                              2,
+                              3
+                            ],
+                            "tone": "good"
+                          }
                         ],
                         "caption": "Correct Sudoku units contain every digit once, so one global replacement breaks every unit."
                       }
@@ -1008,11 +1385,26 @@
                     "figure": {
                       "kind": "flow",
                       "steps": [
-                        {"text": "Choose source 1 and target 2", "tone": "accent"},
-                        {"text": "Replace all nine 1s", "tone": "neutral"},
-                        {"text": "Each unit keeps its old 2", "tone": "warn"},
-                        {"text": "Each unit gains another 2", "tone": "good"},
-                        {"text": "All rows, columns and blocks now repeat", "tone": "good"}
+                        {
+                          "text": "Choose source 1 and target 2",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Replace all nine 1s",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Each unit keeps its old 2",
+                          "tone": "warn"
+                        },
+                        {
+                          "text": "Each unit gains another 2",
+                          "tone": "good"
+                        },
+                        {
+                          "text": "All rows, columns and blocks now repeat",
+                          "tone": "good"
+                        }
                       ],
                       "caption": "One proved global transformation replaces any search over cell choices."
                     }
@@ -1047,11 +1439,35 @@
                       "say": "Every value used by the output must occupy one of k positions in the repeated block. More than k distinct input values makes the construction impossible.",
                       "figure": {
                         "kind": "array",
-                        "cells": ["x", "y", "z", "x", "y", "z", "x", "y", "z"],
+                        "cells": [
+                          "x",
+                          "y",
+                          "z",
+                          "x",
+                          "y",
+                          "z",
+                          "x",
+                          "y",
+                          "z"
+                        ],
                         "indexed": true,
                         "marks": [
-                          {"at": [0, 2], "tone": "accent", "label": "one block"},
-                          {"at": [3, 5], "tone": "good", "label": "same block"}
+                          {
+                            "at": [
+                              0,
+                              2
+                            ],
+                            "tone": "accent",
+                            "label": "one block"
+                          },
+                          {
+                            "at": [
+                              3,
+                              5
+                            ],
+                            "tone": "good",
+                            "label": "same block"
+                          }
                         ],
                         "caption": "For k = 3, every length-3 window has the same multiset because the sequence repeats every three positions."
                       }
@@ -1066,14 +1482,673 @@
                     "figure": {
                       "kind": "flow",
                       "steps": [
-                        {"text": "Collect distinct values", "tone": "accent"},
-                        {"text": "More than k?", "tone": "neutral"},
-                        {"text": "Print -1", "tone": "bad", "via": "yes"},
-                        {"text": "Pad to one k-block", "tone": "warn", "via": "no"},
-                        {"text": "Repeat the block n times", "tone": "good"},
-                        {"text": "Pick a[i] from copy i", "tone": "good"}
+                        {
+                          "text": "Collect distinct values",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "More than k?",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Print -1",
+                          "tone": "bad",
+                          "via": "yes"
+                        },
+                        {
+                          "text": "Pad to one k-block",
+                          "tone": "warn",
+                          "via": "no"
+                        },
+                        {
+                          "text": "Repeat the block n times",
+                          "tone": "good"
+                        },
+                        {
+                          "text": "Pick a[i] from copy i",
+                          "tone": "good"
+                        }
                       ],
                       "caption": "The periodicity proof directly produces the construction."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "day": 30,
+      "date": "2026-08-27",
+      "focus": "Bitmasks - decide what bit i means, then either enumerate every mask or count every bit column",
+      "concept": "DAY 30 OF 180, and the last day of phase 0. Live rating is 1139, Newbie, with 299 rated solves and 6 rated rounds. Day 20 wanted 1200, so the account is 61 behind. Day 40 wants 1300 on 6 September, ten days away, which needs +161. The growth floor is 1239-1439, so core work today is 1300-1400. || DAY 28 CLOSED 4/4 WITH ZERO WRONG SUBMISSIONS. The verification gate is working and that is worth saying plainly. What it also shows: every one of the four ran past its cap - 18/15, 33/15, 44/30, 40/35 - so a 95-minute set cost 135 minutes. contest-speed-ab is severity 5 with six citations and it is the single thing standing between you and a C on Saturday. || DAY 29 NEVER RAN and has no entry at all. session-decay is severity 5 with eight citations, and the pattern is not that you stop working - it is that the day after a heavy day disappears. || THE MIXED-SET NUMBER GOT WORSE, HONESTLY. The Boats Competition technique line was wrong: it counted index pairs summing to s instead of a disjoint matching, which is a different quantity. The record is now 4 wrong calls in 8 attempts - 50%. That is the number this whole practice order exists to move, and it only moves if the line gets written before the code. || TODAY'S ONE IDEA, and it is the guide you read last night. A mask is not a trick; it is the characteristic vector of a set. Bit i is 1 exactly when object i belongs. Two consequences split today's three problems: when n is tiny you enumerate every mask as a candidate subset, and when n is large you stop looking at numbers and count each BIT COLUMN independently down all n of them. Before each problem write one sentence - 'bit i means ___'. Without it, short bitwise code is only compressed confusion. || WHY BITMASKS TODAY. It is a blind spot: 3 solves lifetime and ZERO at 1300+, alongside shortest paths and strings. Bit Manipulation sits at mastery 1 and has never been drilled. It is also CPH chapter 10, which you read last night, and a guide whose drills never reach a morning is decoration. || TWELVE MINUTES FIRST, BEFORE ANY PROBLEM: 27AUG26/bitdrill.py. Three stubs, guide closed, then run the file. It asserts your submask enumeration yields exactly 2^popcount masks with no duplicates and no stray bits, checks the five set translations, and prints the 2^n bound table you need for Preparing Olympiad. This is the day-24 toolkit pattern: a prerequisite, not homework beside it. || MIXED OPENER. Two overdue cold re-solves from different covered patterns, sealed, 15 minutes each and the caps are hard. Blank files, no old code. 1324D is rep 2 of 2, the last rep on its ladder. || RETENTION. 1201C is nine days overdue and was scheduled on day 27 without a start. binary-search-invariant-unwritten is severity 5 with five citations: write the predicate, which side of it is true, and what both boundaries mean, before any code. || VERIFICATION GATE. Hand every final file to me before submitting. Samples, an edge battery and a differential oracle where feasible are my work, outside your four hours. Submit as PyPy 3-64. || SATURDAY IS CONFIRMED. Codeforces Round 1118 (Div. 2), 29 August, 20:05 IST, 120 minutes. All six of your rounds have paid positive and the last three returned +136, +101 and +112. Target A inside 10 minutes and B inside 30 - that, not a new algorithm, is what buys you C.",
+      "watchFor": "FIRST, 12 MINUTES ON 27AUG26/bitdrill.py, before any problem - fill the three stubs from memory and run it until it prints ok. || Then, for every problem today, the first line in the file is a comment finishing 'bit i means ___'. If you cannot finish that sentence, you have not started. || The trap that decides the day: two of the three core problems have n far too large to enumerate masks, and reaching for enumeration anyway is the mistake bitmask beginners actually make. Before writing a loop, compute the count of things it visits and compare it against the constraint. The drill file prints that table for you. || Caps are hard and they were all missed on day 28. Six problem caps total 190 minutes; 12 for the drill, about 18 for transitions and verification handoffs, 20 to close.",
+      "practice": {
+        "title": "Morning - 4h. Drill file, sealed pair, then the bitmask blind spot three ways.",
+        "blocks": [
+          {
+            "id": "mixed",
+            "label": "Mixed opener - tags withheld, technique named first",
+            "minutes": 30,
+            "note": "Two overdue cold re-solves from different covered patterns, 15 minutes each and the caps are hard. Blank files, no notes and no old code. Before typing, write ONE LINE naming the technique and the statement condition that licenses it. The record is 4 wrong in 8; a wrong line written down is worth more than a right one left unwritten.",
+            "problems": [
+              {
+                "key": "1539-C",
+                "contestId": 1539,
+                "index": "C",
+                "name": "Stable Groups",
+                "rating": 1200,
+                "tags": [
+                  "greedy",
+                  "sortings"
+                ],
+                "capMinutes": 15,
+                "role": "mixed",
+                "why": "Cold re-solve, rep 1 of 2, seven days overdue after wrong submissions. Before any code, write down what a single inserted student actually buys you, and in what units you are spending k.",
+                "sealed": true,
+                "reveal": "Sort a. Every adjacent difference g > x is a break. Bridging one costs ceil(g/x) - 1 inserted students, because the gap must be split into at least ceil(g/x) pieces of length <= x. Start with groups = 1 + (number of breaks), collect each break's cost, sort the costs ascending and spend k on the cheapest first, decrementing groups per bridge afforded. Greedy is correct because every bridge removes exactly one group regardless of price, so buy the cheap ones. O(n log n).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "With the levels sorted, what is the only thing that can create a new group?",
+                      "say": "An adjacent difference greater than x. Nothing else about the array matters, so reduce it to the list of gaps."
+                    },
+                    {
+                      "ask": "For one gap g > x, how many inserted students are needed to make it legal?",
+                      "say": "The gap must be cut into pieces each at most x, so you need at least ceil(g / x) pieces, which takes ceil(g / x) - 1 insertions.",
+                      "figure": {
+                        "kind": "line",
+                        "from": 0,
+                        "to": 12,
+                        "ticks": [
+                          0,
+                          4,
+                          8,
+                          12
+                        ],
+                        "spans": [
+                          {
+                            "from": 0,
+                            "to": 12,
+                            "tone": "bad",
+                            "label": "gap 12, x = 4"
+                          }
+                        ],
+                        "points": [
+                          {
+                            "at": 4,
+                            "label": "insert",
+                            "tone": "good"
+                          },
+                          {
+                            "at": 8,
+                            "label": "insert",
+                            "tone": "good"
+                          }
+                        ],
+                        "caption": "Twelve over a limit of four needs three pieces, so two insertions."
+                      }
+                    },
+                    {
+                      "ask": "You cannot afford every bridge. Which do you buy?",
+                      "say": "Each bridge removes exactly one group no matter what it cost, so sort the costs and buy from cheapest upward until k runs out."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Sort the levels. Build the list of adjacent gaps greater than x; the answer starts at that count plus one. Convert each such gap g into its price ceil(g/x) - 1, sort the prices ascending, and walk them spending k while it lasts, subtracting one from the group count per price paid. Print the count. O(n log n).",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {
+                          "text": "Sort levels",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Groups = 1 + gaps over x",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Price each gap: ceil(g/x) - 1",
+                          "tone": "warn"
+                        },
+                        {
+                          "text": "Buy cheapest first while k lasts",
+                          "tone": "good"
+                        }
+                      ],
+                      "caption": "Every bridge is worth the same one group, so only its price ranks it."
+                    }
+                  }
+                }
+              },
+              {
+                "key": "1324-D",
+                "contestId": 1324,
+                "index": "D",
+                "name": "Pair of Topics",
+                "rating": 1400,
+                "tags": [
+                  "binary search",
+                  "data structures",
+                  "sortings",
+                  "two pointers"
+                ],
+                "capMinutes": 15,
+                "role": "mixed",
+                "why": "Cold re-solve, rep 2 of 2 and three days overdue - this is the final rep on its ladder, so it should be fast. The condition as written mixes both indices on both sides. Before coding, rearrange it algebraically until each index appears on only one side, and say out loud what the resulting per-index quantity means.",
+                "sealed": true,
+                "reveal": "The condition a_i + a_j > b_i + b_j rearranges to (a_i - b_i) + (a_j - b_j) > 0. Build c_i = a_i - b_i, which collapses two arrays into one and makes the pair condition depend on nothing else. Sort c, then for each j count the i < j with c_i > -c_j using bisect_right, or run two pointers from both ends. Order does not matter because the condition is symmetric. O(n log n), and the sums need no special care in Python.",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "Both i and j appear on both sides of the inequality. Can you separate them?",
+                      "say": "Move the b terms across: a_i - b_i + a_j - b_j > 0. Each index now touches only its own term."
+                    },
+                    {
+                      "ask": "What single array does that leave, and what does one entry mean?",
+                      "say": "c_i = a_i - b_i, how much topic i favours the teacher over the students. A pair is good exactly when the two c values sum above zero.",
+                      "figure": {
+                        "kind": "array",
+                        "label": "c sorted",
+                        "cells": [
+                          -5,
+                          -2,
+                          -1,
+                          3,
+                          6
+                        ],
+                        "indexed": true,
+                        "marks": [
+                          {
+                            "at": [
+                              3,
+                              4
+                            ],
+                            "tone": "good",
+                            "label": "partners for c = -2"
+                          }
+                        ],
+                        "pointers": [
+                          {
+                            "at": 1,
+                            "label": "c = -2",
+                            "tone": "accent"
+                          }
+                        ],
+                        "caption": "For c = -2 the valid partners are everything strictly above 2."
+                      }
+                    },
+                    {
+                      "ask": "After sorting c, how do you count partners for one entry without a second loop?",
+                      "say": "Partners of c_j are the entries strictly greater than -c_j, so bisect_right(c, -c_j) gives the first such index and n minus it is the count. Halve the total, or only count j > i, so each pair is counted once."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Set c_i = a_i - b_i and sort it. For each index j, the partners are the entries strictly greater than -c_j, found with bisect_right(c, -c_j). Summing n - that index over all j counts every valid pair twice and counts c_j with itself whenever 2*c_j > 0, so subtract those self-hits and halve. Two pointers from both ends is the same count in O(n) after the sort. O(n log n) overall.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {
+                          "text": "c[i] = a[i] - b[i]",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Condition becomes c[i] + c[j] > 0",
+                          "tone": "good"
+                        },
+                        {
+                          "text": "Sort c once",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Count entries above -c[j]",
+                          "tone": "warn"
+                        },
+                        {
+                          "text": "Remove self-hits, halve",
+                          "tone": "bad"
+                        }
+                      ],
+                      "caption": "One subtraction turns a two-array pair condition into a one-array counting problem."
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "core",
+            "label": "Core - the bitmask blind spot, priced then proved then enumerated",
+            "minutes": 130,
+            "note": "Do 27AUG26/bitdrill.py first - twelve minutes, guide closed, run it until it prints ok. Tags are shown because this is the blocked acquisition half. The three are deliberately ordered: the first two have n far too large to enumerate masks and are solved by counting bit columns, the third has n <= 15 and the mask literally is the answer. Notice which is which before you code, not after.",
+            "problems": [
+              {
+                "key": "1669-H",
+                "contestId": 1669,
+                "index": "H",
+                "name": "Maximal AND",
+                "rating": 1300,
+                "tags": [
+                  "bitmasks",
+                  "greedy",
+                  "math"
+                ],
+                "capMinutes": 35,
+                "role": "core",
+                "why": "The gentlest entry into bit-column thinking, and tags are shown because this is the blocked acquisition half. Before code, answer one question in writing: what has to be true of all n numbers for a given bit to survive into the AND, and what does it cost to make that true?",
+                "sealed": false,
+                "reveal": "The AND has bit b set only if every one of the n numbers has bit b, so the cost of buying bit b is n - count[b], where count[b] is how many numbers already have it. Precompute count for bits 0 to 29 in one O(30n) pass. Then walk b from the highest bit down to 0: if k >= n - count[b], pay it and add 1 << b to the answer. Going top-down is correct because 2^b exceeds the sum of every lower bit, so a higher bit is always worth more than any combination of cheaper lower ones. O(30n) total.",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "The AND of all n numbers has bit b set under exactly what condition?",
+                      "say": "All n numbers must have bit b. A single zero in that column kills the bit, which is what makes each bit column independent."
+                    },
+                    {
+                      "ask": "So what does bit b cost in operations?",
+                      "say": "Count how many numbers already have it. The price is n minus that count, since each operation sets the bit in one more number.",
+                      "figure": {
+                        "kind": "grid",
+                        "columns": [
+                          "bit",
+                          "value",
+                          "numbers with it (n = 3)",
+                          "price = n - count"
+                        ],
+                        "rows": [
+                          [
+                            "2",
+                            4,
+                            3,
+                            0
+                          ],
+                          [
+                            "1",
+                            2,
+                            1,
+                            2
+                          ],
+                          [
+                            "0",
+                            1,
+                            1,
+                            2
+                          ]
+                        ],
+                        "marks": [
+                          {
+                            "at": [
+                              0,
+                              3
+                            ],
+                            "tone": "good"
+                          },
+                          {
+                            "at": [
+                              1,
+                              3
+                            ],
+                            "tone": "warn"
+                          },
+                          {
+                            "at": [
+                              2,
+                              3
+                            ],
+                            "tone": "bad"
+                          }
+                        ],
+                        "caption": "For a = [4, 6, 5] each bit column is priced on its own; with k = 2 you buy bit 2 free, then bit 1, and bit 0 is unaffordable."
+                      }
+                    },
+                    {
+                      "ask": "With a limited budget, in what order do you buy bits?",
+                      "say": "Highest first. 2^b is strictly greater than the sum of all bits below it, so no bundle of cheaper low bits can beat one high bit."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Count, for each bit position 0 to 29, how many of the n numbers already have it. Start the answer at 0 and iterate b from 29 down to 0. If the remaining k is at least n - count[b], subtract that from k and OR 1 << b into the answer. Print it. The greedy is safe because bit weights are strictly decreasing powers of two, so a higher bit dominates every combination below it. O(30n) time and O(30) memory.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {
+                          "text": "Count each bit column across all n",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Walk bits from 29 down to 0",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Price = n - count[b]",
+                          "tone": "warn"
+                        },
+                        {
+                          "text": "Affordable? Pay and set the bit",
+                          "tone": "good"
+                        },
+                        {
+                          "text": "Higher bit always beats all lower ones",
+                          "tone": "accent"
+                        }
+                      ],
+                      "caption": "The numbers never interact; only the columns do."
+                    }
+                  }
+                }
+              },
+              {
+                "key": "1775-B",
+                "contestId": 1775,
+                "index": "B",
+                "name": "Gardener and the Array",
+                "rating": 1300,
+                "tags": [
+                  "bitmasks",
+                  "constructive algorithms"
+                ],
+                "capMinutes": 45,
+                "role": "core",
+                "why": "Same column-counting lens, now used to prove something exists rather than to build a maximum. The input hands you set bits directly instead of numbers, which is a hint about the intended reasoning. Before code, write what the total number of set bits across the whole input is bounded by, and let that bound decide your loop.",
+                "sealed": false,
+                "reveal": "Take b to be the whole array and c to be the array with one element x removed; both are valid non-empty subsequences and they differ, so the only question is when their ORs are equal. Removing x changes the OR exactly when some bit of x appears in no other element. So the answer is YES iff there exists an element x every one of whose bits has cnt >= 2, where cnt[bit] counts how many elements contain that bit. Count cnt in one pass over all the set-bit lists, then test each element. Bit indices reach 2*10^5, so use a dict or a list sized to the max index, never a fixed 32. The total number of set bits is bounded, so the whole thing is linear in the input.",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "You need two different non-empty subsequences with the same OR. What is the simplest pair to try?",
+                      "say": "The whole array, and the whole array minus one element. They are always different and always non-empty when n >= 2, so the problem reduces to: is some element removable without changing the OR?"
+                    },
+                    {
+                      "ask": "When does removing element x leave the OR unchanged?",
+                      "say": "Exactly when every bit of x is also present in at least one other element. A bit that lives only in x would disappear from the OR.",
+                      "figure": {
+                        "kind": "grid",
+                        "columns": [
+                          "element",
+                          "its bits",
+                          "cnt of each bit",
+                          "removable?"
+                        ],
+                        "rows": [
+                          [
+                            "a1",
+                            "{0, 1}",
+                            "2, 2",
+                            "yes"
+                          ],
+                          [
+                            "a2",
+                            "{0}",
+                            "2",
+                            "yes"
+                          ],
+                          [
+                            "a3",
+                            "{1}",
+                            "2",
+                            "yes"
+                          ]
+                        ],
+                        "marks": [
+                          {
+                            "at": [
+                              0,
+                              3
+                            ],
+                            "tone": "good"
+                          },
+                          {
+                            "at": [
+                              1,
+                              3
+                            ],
+                            "tone": "good"
+                          },
+                          {
+                            "at": [
+                              2,
+                              3
+                            ],
+                            "tone": "good"
+                          }
+                        ],
+                        "caption": "Every bit is covered twice, so any single element can be dropped and the OR survives."
+                      }
+                    },
+                    {
+                      "ask": "How do you test that for every element without an n-squared comparison?",
+                      "say": "Build cnt[bit] = how many elements contain that bit, in one pass. Then element x is removable iff all its bits have cnt >= 2. Each set bit is touched twice overall."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Read each element as its list of set-bit positions. Accumulate cnt[bit] over the whole array. Then scan the elements: if some element has every one of its bits at cnt >= 2, print YES, else NO. Correctness is the pair (whole array, whole array minus that element) - both non-empty, clearly different, and equal ORs precisely because no bit was uniquely supplied. Bit indices go up to 2*10^5 so index a dict or a large list, and the sum of set-bit counts is bounded by the input size, giving linear time.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {
+                          "text": "Count how many elements own each bit",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "For each element, check all its bits",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Every bit has cnt >= 2?",
+                          "tone": "warn"
+                        },
+                        {
+                          "text": "Then drop it: OR is unchanged",
+                          "tone": "good"
+                        },
+                        {
+                          "text": "No such element anywhere -> NO",
+                          "tone": "bad"
+                        }
+                      ],
+                      "caption": "The construction is 'everything' versus 'everything but one', so only removability matters."
+                    }
+                  }
+                }
+              },
+              {
+                "key": "550-B",
+                "contestId": 550,
+                "index": "B",
+                "name": "Preparing Olympiad",
+                "rating": 1400,
+                "tags": [
+                  "bitmasks",
+                  "brute force"
+                ],
+                "capMinutes": 50,
+                "role": "core",
+                "why": "The capstone and the literal subject of last night's guide: here the mask IS the answer candidate. Do the drill file first. Before writing the loop, read n's bound off the statement, compute how many masks that is, and write the number down - that habit is the whole point of drill 3.",
+                "sealed": false,
+                "reveal": "n <= 15, so 2^n <= 32768 subsets and brute force over every mask is the intended solution. For each mask from 1 to 2^n - 1, walk its set bits to get the chosen problems' count, total difficulty, minimum and maximum. Count the mask if it has at least 2 problems, its total lies in [l, r] inclusive, and max - min >= x. Enumerating set bits inside the loop makes it O(n * 2^n) = about 500k operations, comfortable in Python. The array is small enough that sorting it first lets you read min and max off the lowest and highest set bit instead, but that optimisation is not needed.",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "What is n bounded by, and what does that permit?",
+                      "say": "n is at most 15, so there are fewer than 32768 subsets. A small explicit bound next to subset language is the signal to enumerate every candidate directly."
+                    },
+                    {
+                      "ask": "How do you represent one candidate subset?",
+                      "say": "One integer. Bit i set means problem i is included, exactly the invariant from last night. Loop mask from 1 to (1 << n) - 1 and read its set bits.",
+                      "figure": {
+                        "kind": "array",
+                        "label": "mask 0b110",
+                        "cells": [
+                          0,
+                          1,
+                          1
+                        ],
+                        "indexed": true,
+                        "marks": [
+                          {
+                            "at": [
+                              1,
+                              2
+                            ],
+                            "tone": "good",
+                            "label": "chosen"
+                          },
+                          {
+                            "at": 0,
+                            "tone": "muted"
+                          }
+                        ],
+                        "caption": "Bit i is 1 exactly when problem i is in this candidate set."
+                      }
+                    },
+                    {
+                      "ask": "What must you compute per mask, and what are the three conditions?",
+                      "say": "Count, sum, min and max of the chosen difficulties. Accept the mask when count >= 2, l <= sum <= r, and max - min >= x. All three, and the sum bound is inclusive on both ends."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Read n, l, r, x and the difficulties. For every mask from 1 to (1 << n) - 1, iterate i from 0 to n-1 and when mask has bit i, add a[i] to the running total and update the running min and max. After the inner loop, increment the answer if the chosen count is at least two, the total is between l and r inclusive, and max minus min is at least x. Print the answer. This is O(n * 2^n), roughly 500 thousand steps at n = 15.",
+                    "figure": {
+                      "kind": "flow",
+                      "steps": [
+                        {
+                          "text": "n <= 15, so 2^n <= 32768",
+                          "tone": "accent"
+                        },
+                        {
+                          "text": "Each mask is one candidate subset",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "Walk its set bits: count, sum, min, max",
+                          "tone": "neutral"
+                        },
+                        {
+                          "text": "count >= 2 and l <= sum <= r and max-min >= x",
+                          "tone": "warn"
+                        },
+                        {
+                          "text": "Count it",
+                          "tone": "good"
+                        }
+                      ],
+                      "caption": "The constraint licenses enumeration; the mask is the subset, not a trick."
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": "retention",
+            "label": "Oldest cold re-solve in the queue",
+            "minutes": 30,
+            "note": "Nine days overdue and previously scheduled without a start. Blank file and a fresh submission; an old AC is not today's verdict. Write the predicate and both boundary meanings before the loop.",
+            "problems": [
+              {
+                "key": "1201-C",
+                "contestId": 1201,
+                "index": "C",
+                "name": "Maximum Median",
+                "rating": 1400,
+                "tags": [
+                  "binary search",
+                  "greedy",
+                  "math",
+                  "sortings"
+                ],
+                "capMinutes": 30,
+                "role": "retention",
+                "why": "Cold re-solve, rep 1 of 2, nine days overdue and the oldest thing in the queue - it was on the day-27 plan and never started. Blank file, do not open the old accepted code. Before typing, write three lines: the predicate you are testing, which side of the boundary is true, and what lo and hi each mean when the loop ends. binary-search-invariant-unwritten is severity 5 with five citations and this is the rep that closes it or does not.",
+                "sealed": true,
+                "reveal": "Sort a. n is odd, so the median is a[n//2]; because operations only increase values, nothing below that index can ever raise the median, which is the observation that shrinks the problem. Define feasible(x) = sum(max(0, x - a[i]) for i in range(n//2, n)) <= k: the cost of dragging the upper half up to at least x. Feasibility is true for small x and false for large x with one switch, so binary-search the LAST true. Keep lo = a[n//2] always feasible and hi = a[n//2] + k + 1 always infeasible, and answer lo. O(n log n + n log k).",
+                "hints": {
+                  "ladder": [
+                    {
+                      "ask": "After sorting, and given values may only increase, which elements can move the median?",
+                      "say": "Only index n//2 and everything to its right. Raising anything in the lower half leaves the middle value where it was.",
+                      "figure": {
+                        "kind": "array",
+                        "cells": [
+                          1,
+                          2,
+                          4,
+                          5,
+                          9
+                        ],
+                        "indexed": true,
+                        "marks": [
+                          {
+                            "at": [
+                              2,
+                              4
+                            ],
+                            "tone": "accent",
+                            "label": "the only half that matters"
+                          },
+                          {
+                            "at": [
+                              0,
+                              1
+                            ],
+                            "tone": "muted"
+                          }
+                        ],
+                        "pointers": [
+                          {
+                            "at": 2,
+                            "label": "median",
+                            "tone": "good"
+                          }
+                        ],
+                        "caption": "Spending on indices 0 and 1 cannot change the middle element."
+                      }
+                    },
+                    {
+                      "ask": "For a candidate median x, write the exact cost.",
+                      "say": "Sum over i from n//2 to n-1 of max(0, x - a[i]). That must be at most k. This sum is the predicate; write it before you write the search."
+                    },
+                    {
+                      "ask": "Why is that predicate binary-searchable, and which boundary is the answer?",
+                      "say": "If x is affordable then every smaller x is too, and if x is unaffordable so is every larger one - one true-to-false switch. You want the last true, so keep lo feasible, hi infeasible, and return lo."
+                    }
+                  ],
+                  "solution": {
+                    "say": "Sort the array. Define feasible(x) as the cost of raising every element from index n//2 onward up to at least x, namely the sum of max(0, x - a[i]), and call x feasible when that cost is at most k. Feasibility switches from true to false exactly once as x grows, so binary-search on the value with lo = a[n//2] (always affordable, cost zero) and hi = a[n//2] + k + 1 (never affordable). While hi - lo > 1, test the midpoint and move the matching boundary. Print lo. Sorting is O(n log n) and the search adds O(n log k).",
+                    "figure": {
+                      "kind": "line",
+                      "from": 4,
+                      "to": 10,
+                      "ticks": [
+                        4,
+                        7,
+                        8,
+                        10
+                      ],
+                      "spans": [
+                        {
+                          "from": 4,
+                          "to": 7,
+                          "tone": "good",
+                          "label": "affordable"
+                        },
+                        {
+                          "from": 8,
+                          "to": 10,
+                          "tone": "bad",
+                          "label": "too costly"
+                        }
+                      ],
+                      "points": [
+                        {
+                          "at": 7,
+                          "label": "last true = answer",
+                          "tone": "accent"
+                        }
+                      ],
+                      "caption": "One switch, so the answer is a boundary, not a scan."
                     }
                   }
                 }
