@@ -15,6 +15,7 @@ import path from "node:path";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const RAW = path.join(ROOT, "scripts", "a2oj");
 const OUT = path.join(ROOT, "public", "data");
+const CF_PROBLEMSET = "https://codeforces.com/api/problemset.problems";
 
 /** Pulls contest id and index out of any Codeforces problem URL shape. */
 function parseCfLink(link) {
@@ -26,10 +27,76 @@ function parseCfLink(link) {
   return m ? { contestId: Number(m[1]), index: m[2].toUpperCase() } : {};
 }
 
-async function buildLadders() {
-  const src = JSON.parse(
-    await readFile(path.join(RAW, "ladders.raw.json"), "utf8"),
-  );
+function cfKey(contestId, index) {
+  return contestId && index ? `${contestId}-${index.toUpperCase()}` : null;
+}
+
+function platformOf(platform, link) {
+  if (platform?.trim()) return platform.trim();
+  try {
+    const host = new URL(link).hostname.toLowerCase();
+    if (host.includes("codeforces")) return "Codeforces";
+    if (host.includes("codechef")) return "CodeChef";
+    if (host.includes("spoj")) return "SPOJ";
+    if (host.includes("uva")) return "UVa";
+    if (host.includes("atcoder")) return "AtCoder";
+  } catch {
+    // The source link remains usable even if its judge cannot be inferred.
+  }
+  return "Other";
+}
+
+/**
+ * Keep generated ladder ratings useful when Codeforces changes or removes a
+ * rating. Existing generated data is the offline fallback; the live problemset
+ * refreshes it when the API is available.
+ */
+async function existingCfRatings(src) {
+  const ratings = new Map();
+  for (const ladder of src.ladders) {
+    const file = path.join(OUT, "ladders", `${ladder.slug}.json`);
+    if (!existsSync(file)) continue;
+    try {
+      const current = JSON.parse(await readFile(file, "utf8"));
+      for (const p of current.problems ?? []) {
+        const key = cfKey(p.c, p.i);
+        if (key && p.r >= 100) ratings.set(key, p.r);
+      }
+    } catch {
+      // A stale/corrupt generated file should not prevent a clean rebuild.
+    }
+  }
+  return ratings;
+}
+
+async function codeforcesRatings(fallback) {
+  try {
+    const response = await fetch(CF_PROBLEMSET, {
+      headers: { "User-Agent": "skill-tree-a2oj-builder/2.0" },
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const body = await response.json();
+    if (body.status !== "OK" || !Array.isArray(body.result?.problems)) {
+      throw new Error(body.comment || "unexpected response");
+    }
+
+    const ratings = new Map(fallback);
+    for (const p of body.result.problems) {
+      const key = cfKey(p.contestId, p.index);
+      if (key && p.rating) ratings.set(key, p.rating);
+    }
+    console.log(`Codeforces ratings refreshed (${ratings.size} keyed problems)`);
+    return ratings;
+  } catch (error) {
+    console.warn(
+      `Codeforces ratings unavailable; using source/cache (${error.message})`,
+    );
+    return fallback;
+  }
+}
+
+async function buildLadders(src, cfRatings) {
   const dir = path.join(OUT, "ladders");
   await mkdir(dir, { recursive: true });
 
@@ -38,12 +105,27 @@ async function buildLadders() {
   for (const ladder of src.ladders) {
     const problems = ladder.problems.map((p) => {
       const parsed = parseCfLink(p.link);
+      const contestId = p.cfContestId ?? parsed.contestId;
+      const index = p.cfIndex ?? parsed.index;
+      const sourceRating = Number(p.rating) || 0;
+      const sourceDifficulty = Number(p.difficulty) || 0;
+      const rating =
+        cfRatings.get(cfKey(contestId, index)) ??
+        (sourceRating >= 100 ? sourceRating : null);
+      const difficulty =
+        sourceDifficulty > 0
+          ? sourceDifficulty
+          : sourceRating > 0 && sourceRating <= 10
+            ? sourceRating
+            : null;
       return {
         n: p.name,
-        u: p.link,
-        r: p.rating || 0,
-        c: p.cfContestId ?? parsed.contestId,
-        i: p.cfIndex ?? parsed.index,
+        u: p.link.replace(/^http:/, "https:"),
+        r: rating,
+        d: difficulty,
+        p: platformOf(p.platform, p.link),
+        c: contestId,
+        i: index,
       };
     });
 
@@ -54,7 +136,9 @@ async function buildLadders() {
       .filter((p) => p.c && p.i)
       .map((p) => `${p.c}-${p.i}`);
 
-    const rated = problems.filter((p) => p.r > 0).map((p) => p.r);
+    const rated = problems.filter((p) => p.r).map((p) => p.r);
+    const difficulties = problems.filter((p) => p.d).map((p) => p.d);
+    const platforms = [...new Set(problems.map((p) => p.p))].sort();
     index.push({
       slug: ladder.slug,
       name: ladder.name,
@@ -65,6 +149,9 @@ async function buildLadders() {
       avgRating: rated.length
         ? Math.round(rated.reduce((a, b) => a + b, 0) / rated.length)
         : null,
+      minDifficulty: difficulties.length ? Math.min(...difficulties) : null,
+      maxDifficulty: difficulties.length ? Math.max(...difficulties) : null,
+      platforms,
     });
 
     await writeFile(
@@ -156,10 +243,20 @@ if (missing.length) {
   process.exit(1);
 }
 
-await rm(OUT, { recursive: true, force: true });
-await mkdir(OUT, { recursive: true });
+const ladderSource = JSON.parse(
+  await readFile(path.join(RAW, "ladders.raw.json"), "utf8"),
+);
+const cachedRatings = await existingCfRatings(ladderSource);
+const ratings = await codeforcesRatings(cachedRatings);
 
-const l = await buildLadders();
+await mkdir(OUT, { recursive: true });
+await Promise.all(
+  ["ladders", "categories"].map((name) =>
+    rm(path.join(OUT, name), { recursive: true, force: true }),
+  ),
+);
+
+const l = await buildLadders(ladderSource, ratings);
 const c = await buildCategories();
 console.log(
   `ladders    ${l.ladders} files, ${l.problems} problems, ${l.keyed} with CF keys\n` +

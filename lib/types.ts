@@ -276,7 +276,9 @@ export interface UpsolveDataDoc {
 export interface LadderProblem {
   /** name */ n: string;
   /** url */ u: string;
-  /** rating */ r: number;
+  /** current Codeforces rating, when available */ r: number | null;
+  /** A2OJ difficulty level (1-10), when supplied by the source */ d: number | null;
+  /** judge/platform */ p: string;
   /** contestId */ c?: number;
   /** index */ i?: string;
 }
@@ -289,6 +291,9 @@ export interface LadderMeta {
   minRating: number | null;
   maxRating: number | null;
   avgRating: number | null;
+  minDifficulty: number | null;
+  maxDifficulty: number | null;
+  platforms: string[];
 }
 
 export interface LadderIndex {

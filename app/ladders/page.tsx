@@ -10,11 +10,11 @@ import { useCfSolveIndex } from "@/lib/use-a2oj-status";
 import { ratingColor } from "@/lib/cf";
 import { PageHeader, PageShell, ErrorState } from "@/components/layout/page";
 import { Card, SectionLabel } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type Filter = "all" | "started" | "untouched";
+type ProgressFilter = "all" | "in-progress" | "completed" | "untouched";
 
 export default function LaddersPage() {
   const { data, isLoading, error, refetch } = useLadderIndex();
@@ -26,7 +26,9 @@ export default function LaddersPage() {
   const { data: keys } = useLadderKeys(!!handle);
 
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<ProgressFilter>("all");
+  const [groupFilter, setGroupFilter] = useState("all");
+  const [platformFilter, setPlatformFilter] = useState("all");
 
   const tallies = useMemo(() => {
     const map = new Map<string, ReturnType<typeof tallyKeys>>();
@@ -36,22 +38,47 @@ export default function LaddersPage() {
     return map;
   }, [data, keys, cf, countFor]);
 
+  const groupOptions = useMemo(
+    () => [...new Set((data?.ladders ?? []).map((ladder) => ladder.group))],
+    [data],
+  );
+  const platformOptions = useMemo(
+    () =>
+      [
+        ...new Set(
+          (data?.ladders ?? []).flatMap((ladder) => ladder.platforms ?? []),
+        ),
+      ].sort(),
+    [data],
+  );
+
   const groups = useMemo(() => {
     if (!data) return [];
     const needle = search.trim().toLowerCase();
     const map = new Map<string, typeof data.ladders>();
     for (const ladder of data.ladders) {
       if (needle && !ladder.name.toLowerCase().includes(needle)) continue;
+      if (groupFilter !== "all" && ladder.group !== groupFilter) continue;
+      if (
+        platformFilter !== "all" &&
+        !ladder.platforms?.includes(platformFilter)
+      ) {
+        continue;
+      }
       const t = tallies.get(ladder.slug);
-      const started = !!t && t.solved + t.attempted > 0;
-      if (filter === "started" && !started) continue;
-      if (filter === "untouched" && started) continue;
+      const touched = !!t && t.solved + t.attempted > 0;
+      const completed = !!t && ladder.count > 0 && t.solved === ladder.count;
+      if (filter === "in-progress" && (!touched || completed)) continue;
+      if (filter === "completed" && !completed) continue;
+      if (filter === "untouched" && touched) continue;
       const list = map.get(ladder.group) ?? [];
       list.push(ladder);
       map.set(ladder.group, list);
     }
     return [...map.entries()];
-  }, [data, search, filter, tallies]);
+  }, [data, search, filter, groupFilter, platformFilter, tallies]);
+
+  const shownCount = groups.reduce((total, [, ladders]) => total + ladders.length, 0);
 
   return (
     <PageShell>
@@ -71,25 +98,59 @@ export default function LaddersPage() {
       )}
 
       {data && (
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative grow">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search ladders"
-              className="pl-9"
+        <div className="mb-5 space-y-3">
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_180px]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search ladders"
+                className="pl-9"
+              />
+            </div>
+            <Select
+              aria-label="Filter ladders by type"
+              value={groupFilter}
+              onChange={(e) => setGroupFilter(e.target.value)}
+            >
+              <option value="all">All ladder types</option>
+              {groupOptions.map((group) => (
+                <option key={group} value={group}>
+                  {group}
+                </option>
+              ))}
+            </Select>
+            <Select
+              aria-label="Filter ladders by platform"
+              value={platformFilter}
+              onChange={(e) => setPlatformFilter(e.target.value)}
+            >
+              <option value="all">All platforms</option>
+              {platformOptions.map((platform) => (
+                <option key={platform} value={platform}>
+                  {platform}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-[11px] text-faint">
+              {shownCount} of {data.ladders.length} ladders
+            </span>
+            <Segmented
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "all", label: "All" },
+                { value: "in-progress", label: "In progress" },
+                { value: "completed", label: "Completed" },
+                { value: "untouched", label: "Untouched" },
+              ]}
+              hideLabelsOnMobile={false}
+              className="max-w-full overflow-x-auto no-scrollbar"
             />
           </div>
-          <Segmented
-            value={filter}
-            onChange={setFilter}
-            options={[
-              { value: "all", label: "All" },
-              { value: "started", label: "Started" },
-              { value: "untouched", label: "Untouched" },
-            ]}
-          />
         </div>
       )}
 
@@ -124,8 +185,11 @@ export default function LaddersPage() {
 
                       <p className="mt-1.5 font-mono text-[11px] tabular-nums text-faint">
                         {l.count} problems
-                        {l.minRating
-                          ? ` · ${l.minRating}–${l.maxRating}`
+                        {l.minRating !== null
+                          ? ` · ${l.minRating}–${l.maxRating} rating`
+                          : ""}
+                        {l.minDifficulty !== null
+                          ? ` · L${l.minDifficulty}–L${l.maxDifficulty}`
                           : ""}
                       </p>
 

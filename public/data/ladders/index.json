@@ -6,9 +6,14 @@
       "name": "Div. 2A (Updated)",
       "group": "Div (Updated)",
       "count": 100,
-      "minRating": 600,
+      "minRating": 800,
       "maxRating": 1400,
-      "avgRating": 949
+      "avgRating": 934,
+      "minDifficulty": null,
+      "maxDifficulty": null,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "div2b",
@@ -16,17 +21,27 @@
       "group": "Div (Updated)",
       "count": 100,
       "minRating": 800,
-      "maxRating": 1800,
-      "avgRating": 1296
+      "maxRating": 2000,
+      "avgRating": 1277,
+      "minDifficulty": null,
+      "maxDifficulty": null,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "div2c",
       "name": "Div. 2C (Updated)",
       "group": "Div (Updated)",
       "count": 100,
-      "minRating": 1000,
+      "minRating": 900,
       "maxRating": 2500,
-      "avgRating": 1613
+      "avgRating": 1611,
+      "minDifficulty": null,
+      "maxDifficulty": null,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "div2d",
@@ -35,7 +50,12 @@
       "count": 100,
       "minRating": 1500,
       "maxRating": 2800,
-      "avgRating": 1984
+      "avgRating": 1993,
+      "minDifficulty": null,
+      "maxDifficulty": null,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "div2e",
@@ -44,250 +64,390 @@
       "count": 100,
       "minRating": 1600,
       "maxRating": 3000,
-      "avgRating": 2324
+      "avgRating": 2282,
+      "minDifficulty": null,
+      "maxDifficulty": null,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "div2a_old",
       "name": "Div. 2A (Older)",
       "group": "Div (Older)",
       "count": 100,
-      "minRating": 1,
-      "maxRating": 8,
-      "avgRating": 2
+      "minRating": 800,
+      "maxRating": 2400,
+      "avgRating": 1038,
+      "minDifficulty": 1,
+      "maxDifficulty": 8,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "div2b_old",
       "name": "Div. 2B (Older)",
       "group": "Div (Older)",
       "count": 100,
-      "minRating": 1,
-      "maxRating": 7,
-      "avgRating": 3
+      "minRating": 800,
+      "maxRating": 2100,
+      "avgRating": 1315,
+      "minDifficulty": 1,
+      "maxDifficulty": 7,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "div2c_old",
       "name": "Div. 2C (Older)",
       "group": "Div (Older)",
       "count": 100,
-      "minRating": 1,
-      "maxRating": 7,
-      "avgRating": 4
+      "minRating": 1000,
+      "maxRating": 2100,
+      "avgRating": 1594,
+      "minDifficulty": 1,
+      "maxDifficulty": 7,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "div2d_old",
       "name": "Div. 2D (Older)",
       "group": "Div (Older)",
       "count": 100,
-      "minRating": 1,
-      "maxRating": 9,
-      "avgRating": 5
+      "minRating": 1200,
+      "maxRating": 2600,
+      "avgRating": 1896,
+      "minDifficulty": 1,
+      "maxDifficulty": 9,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "div2e_old",
       "name": "Div. 2E (Older)",
       "group": "Div (Older)",
       "count": 100,
-      "minRating": 4,
-      "maxRating": 10,
-      "avgRating": 6
+      "minRating": 1700,
+      "maxRating": 2700,
+      "avgRating": 2252,
+      "minDifficulty": 4,
+      "maxDifficulty": 10,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder11",
       "name": "Rating < 1300",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 1400,
+      "avgRating": 1016,
+      "minDifficulty": 1,
+      "maxDifficulty": 4,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder12",
       "name": "Rating 1300-1399",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 1700,
+      "avgRating": 1141,
+      "minDifficulty": 1,
+      "maxDifficulty": 4,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder13",
       "name": "Rating 1400-1499",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 1900,
+      "avgRating": 1189,
+      "minDifficulty": 1,
+      "maxDifficulty": 5,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder14",
       "name": "Rating 1500-1599",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2100,
+      "avgRating": 1425,
+      "minDifficulty": 1,
+      "maxDifficulty": 5,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder15",
       "name": "Rating 1600-1699",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2100,
+      "avgRating": 1525,
+      "minDifficulty": 1,
+      "maxDifficulty": 5,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder16",
       "name": "Rating 1700-1799",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2300,
+      "avgRating": 1774,
+      "minDifficulty": 1,
+      "maxDifficulty": 6,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder17",
       "name": "Rating 1800-1899",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2400,
+      "avgRating": 1857,
+      "minDifficulty": 1,
+      "maxDifficulty": 7,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder18",
       "name": "Rating 1900-1999",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2700,
+      "avgRating": 1847,
+      "minDifficulty": 1,
+      "maxDifficulty": 8,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder19",
       "name": "Rating 2000-2099",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2700,
+      "avgRating": 2012,
+      "minDifficulty": 1,
+      "maxDifficulty": 8,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder20",
       "name": "Rating 2100-2199",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2900,
+      "avgRating": 2007,
+      "minDifficulty": 1,
+      "maxDifficulty": 9,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder21",
       "name": "Rating >= 2200",
       "group": "Rating",
       "count": 100,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 3200,
+      "avgRating": 2306,
+      "minDifficulty": 1,
+      "maxDifficulty": 10,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder22",
       "name": "Rating < 1300 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 1900,
+      "avgRating": 1124,
+      "minDifficulty": 1,
+      "maxDifficulty": 5,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder23",
       "name": "Rating 1300-1399 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 1800,
+      "avgRating": 1184,
+      "minDifficulty": 1,
+      "maxDifficulty": 4,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder24",
       "name": "Rating 1400-1499 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2100,
+      "avgRating": 1270,
+      "minDifficulty": 1,
+      "maxDifficulty": 5,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder25",
       "name": "Rating 1500-1599 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2100,
+      "avgRating": 1347,
+      "minDifficulty": 1,
+      "maxDifficulty": 5,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder26",
       "name": "Rating 1600-1699 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2200,
+      "avgRating": 1521,
+      "minDifficulty": 1,
+      "maxDifficulty": 6,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder27",
       "name": "Rating 1700-1799 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2500,
+      "avgRating": 1629,
+      "minDifficulty": 1,
+      "maxDifficulty": 7,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder28",
       "name": "Rating 1800-1899 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2600,
+      "avgRating": 1710,
+      "minDifficulty": 1,
+      "maxDifficulty": 8,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder29",
       "name": "Rating 1900-1999 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2800,
+      "avgRating": 1797,
+      "minDifficulty": 1,
+      "maxDifficulty": 9,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder30",
       "name": "Rating 2000-2099 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2800,
+      "avgRating": 1901,
+      "minDifficulty": 1,
+      "maxDifficulty": 8,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder31",
       "name": "Rating 2100-2199 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 2900,
+      "avgRating": 1938,
+      "minDifficulty": 1,
+      "maxDifficulty": 9,
+      "platforms": [
+        "Codeforces"
+      ]
     },
     {
       "slug": "ladder32",
       "name": "Rating >= 2200 (Extra)",
       "group": "Rating (Extra)",
       "count": 200,
-      "minRating": null,
-      "maxRating": null,
-      "avgRating": null
+      "minRating": 800,
+      "maxRating": 3200,
+      "avgRating": 2089,
+      "minDifficulty": 1,
+      "maxDifficulty": 10,
+      "platforms": [
+        "Codeforces"
+      ]
     }
   ]
 }

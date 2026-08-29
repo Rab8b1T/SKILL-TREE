@@ -33,6 +33,28 @@ export default function LadderDetailPage() {
     () => problems.find((p) => statusOf(p).state !== "solved"),
     [problems, statusOf],
   );
+  const nextPosition = useMemo(
+    () => (nextUp ? problems.indexOf(nextUp) + 1 : null),
+    [problems, nextUp],
+  );
+
+  const summary = useMemo(() => {
+    if (!problems.length) return "Loading…";
+    const ratings = problems
+      .map((p) => p.r)
+      .filter((rating): rating is number => !!rating);
+    const levels = problems
+      .map((p) => p.d)
+      .filter((level): level is number => !!level);
+    const parts = [`${solvedCount} of ${problems.length} solved`];
+    if (ratings.length) {
+      parts.push(`${Math.min(...ratings)}–${Math.max(...ratings)} rating`);
+    }
+    if (levels.length) {
+      parts.push(`A2OJ L${Math.min(...levels)}–L${Math.max(...levels)}`);
+    }
+    return parts.join(" · ");
+  }, [problems, solvedCount]);
 
   return (
     <PageShell width="narrow">
@@ -45,16 +67,12 @@ export default function LadderDetailPage() {
 
       <PageHeader
         title={data?.name ?? "Ladder"}
-        description={
-          problems.length
-            ? `${solvedCount} of ${problems.length} solved`
-            : "Loading…"
-        }
+        description={summary}
         actions={
           nextUp && (
             <Button asChild variant="accent">
               <a href={nextUp.u} target="_blank" rel="noreferrer">
-                Next problem
+                Next problem{nextPosition ? ` · #${nextPosition}` : ""}
                 <ExternalLink />
               </a>
             </Button>

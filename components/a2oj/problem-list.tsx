@@ -8,14 +8,14 @@ import { cn, pluralize } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { RatingChip } from "@/components/ui/rating";
 import { Segmented } from "@/components/ui/segmented";
 
 export interface A2ojListProblem {
   n: string;
   u: string;
-  r?: number;
+  r?: number | null;
   c?: number | null;
   i?: string | null;
   /** Judge, on category sets that span more than Codeforces. */
@@ -25,12 +25,49 @@ export interface A2ojListProblem {
 }
 
 type View = "all" | "todo" | "solved" | "attempted";
+type RatingBand =
+  | "all"
+  | "unrated"
+  | "newbie"
+  | "pupil"
+  | "specialist"
+  | "expert"
+  | "candidate-master"
+  | "master"
+  | "grandmaster";
 
 const VIEWS: { value: View; label: string }[] = [
   { value: "all", label: "All" },
   { value: "todo", label: "To do" },
   { value: "solved", label: "Solved" },
   { value: "attempted", label: "Attempted" },
+];
+
+const RATING_BANDS: {
+  value: RatingBand;
+  label: string;
+  min?: number;
+  max?: number;
+}[] = [
+  { value: "all", label: "All ratings" },
+  { value: "newbie", label: "≤ 1199 · Newbie", min: 0, max: 1199 },
+  { value: "pupil", label: "1200–1399 · Pupil", min: 1200, max: 1399 },
+  {
+    value: "specialist",
+    label: "1400–1599 · Specialist",
+    min: 1400,
+    max: 1599,
+  },
+  { value: "expert", label: "1600–1899 · Expert", min: 1600, max: 1899 },
+  {
+    value: "candidate-master",
+    label: "1900–2099 · CM",
+    min: 1900,
+    max: 2099,
+  },
+  { value: "master", label: "2100–2299 · Master", min: 2100, max: 2299 },
+  { value: "grandmaster", label: "2300+ · GM", min: 2300 },
+  { value: "unrated", label: "Unrated" },
 ];
 
 const PAGE = 100;
@@ -40,6 +77,27 @@ const DOT: Record<A2ojState, string> = {
   attempted: "var(--warning)",
   unsolved: "var(--line-strong)",
 };
+
+function matchesRatingBand(rating: number | null | undefined, band: RatingBand) {
+  if (band === "all") return true;
+  if (band === "unrated") return !rating;
+  if (!rating) return false;
+  const option = RATING_BANDS.find((candidate) => candidate.value === band);
+  return (
+    !!option &&
+    rating >= (option.min ?? Number.NEGATIVE_INFINITY) &&
+    rating <= (option.max ?? Number.POSITIVE_INFINITY)
+  );
+}
+
+function shortPlatform(platform: string) {
+  const known: Record<string, string> = {
+    Codeforces: "CF",
+    CodeChef: "CC",
+    AtCoder: "AC",
+  };
+  return known[platform] ?? platform;
+}
 
 export function A2ojProblemList({
   problems,
@@ -57,11 +115,39 @@ export function A2ojProblemList({
 }) {
   const [view, setView] = useState<View>("all");
   const [search, setSearch] = useState("");
+  const [platform, setPlatform] = useState("all");
+  const [ratingBand, setRatingBand] = useState<RatingBand>("all");
+  const [difficulty, setDifficulty] = useState("all");
   const [limit, setLimit] = useState(PAGE);
 
   const rows = useMemo(
     () => problems.map((p, i) => ({ p, i, s: statusOf(p) })),
     [problems, statusOf],
+  );
+
+  const platforms = useMemo(
+    () =>
+      [...new Set(problems.map((p) => p.p).filter((p): p is string => !!p))].sort(),
+    [problems],
+  );
+  const difficulties = useMemo(
+    () =>
+      [
+        ...new Set(
+          problems.map((p) => p.d).filter((d): d is number => d !== null && d !== undefined),
+        ),
+      ].sort((a, b) => a - b),
+    [problems],
+  );
+  const hasRatings = useMemo(() => problems.some((p) => !!p.r), [problems]);
+  const ratingBands = useMemo(
+    () =>
+      RATING_BANDS.filter(
+        (option) =>
+          option.value === "all" ||
+          problems.some((p) => matchesRatingBand(p.r, option.value)),
+      ),
+    [problems],
   );
 
   const filtered = useMemo(() => {
@@ -70,16 +156,36 @@ export function A2ojProblemList({
       if (view === "todo" && s.state === "solved") return false;
       if (view === "solved" && s.state !== "solved") return false;
       if (view === "attempted" && s.state !== "attempted") return false;
-      if (needle && !p.n.toLowerCase().includes(needle)) return false;
+      if (platform !== "all" && p.p !== platform) return false;
+      if (!matchesRatingBand(p.r, ratingBand)) return false;
+      if (difficulty !== "all" && String(p.d) !== difficulty) return false;
+      const problemId = p.c && p.i ? `${p.c}${p.i}` : (p.i ?? "");
+      const haystack = `${p.n} ${problemId} ${p.p ?? ""}`.toLowerCase();
+      if (needle && !haystack.includes(needle)) return false;
       return true;
     });
-  }, [rows, view, search]);
+  }, [rows, view, search, platform, ratingBand, difficulty]);
 
   // These lists run past a thousand problems; rendering all of them at once is
   // the one thing that made the old page janky on a phone.
   const visible = filtered.slice(0, limit);
 
   const reset = () => setLimit(PAGE);
+  const hasActiveFilters =
+    !!search ||
+    view !== "all" ||
+    platform !== "all" ||
+    ratingBand !== "all" ||
+    difficulty !== "all";
+
+  const clearFilters = () => {
+    setSearch("");
+    setView("all");
+    setPlatform("all");
+    setRatingBand("all");
+    setDifficulty("all");
+    reset();
+  };
 
   return (
     <Card flush>
@@ -98,10 +204,73 @@ export function A2ojProblemList({
             />
           </div>
         )}
-        <div className="flex items-center justify-between gap-3">
-          <span className="shrink-0 text-[11px] text-faint">
-            {filtered.length.toLocaleString()} shown
-          </span>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {platforms.length > 0 && (
+            <Select
+              aria-label="Filter by platform"
+              value={platform}
+              onChange={(e) => {
+                setPlatform(e.target.value);
+                reset();
+              }}
+            >
+              <option value="all">All platforms</option>
+              {platforms.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </Select>
+          )}
+          {ratingBands.length > 1 && (
+            <Select
+              aria-label="Filter by Codeforces rating"
+              value={ratingBand}
+              onChange={(e) => {
+                setRatingBand(e.target.value as RatingBand);
+                reset();
+              }}
+            >
+              {ratingBands.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          )}
+          {difficulties.length > 0 && (
+            <Select
+              aria-label="Filter by A2OJ difficulty"
+              value={difficulty}
+              onChange={(e) => {
+                setDifficulty(e.target.value);
+                reset();
+              }}
+            >
+              <option value="all">All A2OJ levels</option>
+              {difficulties.map((level) => (
+                <option key={level} value={level}>
+                  Level {level}
+                </option>
+              ))}
+            </Select>
+          )}
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 text-[11px] text-faint">
+              {filtered.length.toLocaleString()} of {rows.length.toLocaleString()} shown
+            </span>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="cursor-pointer text-[11px] font-medium text-accent hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
           <Segmented
             value={view}
             onChange={(v) => {
@@ -109,6 +278,8 @@ export function A2ojProblemList({
               reset();
             }}
             options={VIEWS}
+            hideLabelsOnMobile={false}
+            className="max-w-full overflow-x-auto no-scrollbar"
           />
         </div>
       </div>
@@ -121,6 +292,9 @@ export function A2ojProblemList({
             position={showIndex ? i + 1 : null}
             status={s}
             onToggle={() => onToggle(p.u)}
+            showRating={hasRatings}
+            showDifficulty={difficulties.length > 0}
+            showPlatform={platforms.length > 0}
           />
         ))}
       </ul>
@@ -157,11 +331,17 @@ function ProblemRowItem({
   position,
   status: s,
   onToggle,
+  showRating,
+  showDifficulty,
+  showPlatform,
 }: {
   problem: A2ojListProblem;
   position: number | null;
   status: A2ojStatus;
   onToggle: () => void;
+  showRating: boolean;
+  showDifficulty: boolean;
+  showPlatform: boolean;
 }) {
   const solved = s.state === "solved";
   // A verdict from Codeforces is not something a checkbox should be able to
@@ -233,7 +413,7 @@ function ProblemRowItem({
           solved ? "text-faint line-through" : "text-ink",
         )}
       >
-        {p.i && p.c ? `${p.i}. ` : ""}
+        {p.i && p.c ? `${p.c}${p.i} · ` : p.i ? `${p.i} · ` : ""}
         {p.n}
       </a>
 
@@ -264,17 +444,38 @@ function ProblemRowItem({
         </span>
       )}
 
-      {p.p ? (
-        <Badge variant="outline" size="sm" className="shrink-0">
-          {p.p}
-        </Badge>
-      ) : p.r ? (
-        <RatingChip rating={p.r} showUnrated={false} />
-      ) : p.d ? (
-        <Badge variant="outline" size="sm" className="shrink-0">
-          L{p.d}
-        </Badge>
-      ) : null}
+      <div className="flex shrink-0 items-center gap-1">
+        {showRating &&
+          (p.r ? (
+            <span title={`Codeforces rating ${p.r}`}>
+              <RatingChip rating={p.r} showUnrated={false} />
+            </span>
+          ) : (
+            <Badge
+              variant="outline"
+              size="sm"
+              className="text-faint"
+              title="No current Codeforces rating"
+            >
+              Unrated
+            </Badge>
+          ))}
+        {showDifficulty && p.d ? (
+          <Badge
+            variant="outline"
+            size="sm"
+            title={`A2OJ difficulty level ${p.d}`}
+          >
+            L{p.d}
+          </Badge>
+        ) : null}
+        {showPlatform && p.p ? (
+          <Badge variant="outline" size="sm" title={`Platform: ${p.p}`}>
+            <span className="sm:hidden">{shortPlatform(p.p)}</span>
+            <span className="hidden sm:inline">{p.p}</span>
+          </Badge>
+        ) : null}
+      </div>
     </li>
   );
 }
