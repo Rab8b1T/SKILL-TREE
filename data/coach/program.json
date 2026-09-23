@@ -1,0 +1,2469 @@
+{
+  "schemaVersion": 1,
+  "programId": "expert-2026-09-23",
+  "planVersion": 2,
+  "title": "Expert in 100 days",
+  "startDate": "2026-09-23",
+  "timezone": "Asia/Kolkata",
+  "handle": "rab8bit",
+  "leetcodeHandle": "rab8it",
+  "goals": [
+    {
+      "day": 100,
+      "date": "2026-12-31",
+      "rating": 1600
+    },
+    {
+      "day": 180,
+      "date": "2027-03-21",
+      "rating": 1900
+    }
+  ],
+  "schedule": {
+    "starts": "04:30",
+    "ends": "10:30",
+    "minutes": 360,
+    "ratedContestException": true,
+    "language": "Python / PyPy",
+    "platform": "macOS"
+  },
+  "baseline": {
+    "asOf": "2026-09-23",
+    "rating": 1138,
+    "maxRating": 1138,
+    "ratedRounds": 6,
+    "uniqueAccepted": 299,
+    "interpretation": "Historical exposure, not current mastery."
+  },
+  "selectionAudit": {
+    "checkedAt": "2026-09-23",
+    "codeforces": "Fresh user.status and problemset API: none of the six selected CF problems were attempted. Statements reviewed on official Codeforces pages.",
+    "leetcode": "Public history cannot prove lifetime non-exposure; learner confirms fresh versus cold re-solve.",
+    "diagnosticBand": "900–1200; actual API ratings retained. Four familiar-basic problems after absence, not a predicted rating.",
+    "absence": "Reported approximately 22-day absence; no failures or completed sessions inferred."
+  },
+  "topics": [
+    {
+      "id": "implementation",
+      "name": "Loops, arrays and indexing",
+      "prerequisites": [],
+      "status": "unknown",
+      "diagnosticEligible": true,
+      "diagnosticBasis": "Historical taught flag and dated solved work; provisional diagnosis only, requires learner preflight."
+    },
+    {
+      "id": "basic-math",
+      "name": "Integer arithmetic",
+      "prerequisites": [
+        "implementation"
+      ],
+      "status": "unknown",
+      "diagnosticEligible": true,
+      "diagnosticBasis": "Historical taught flag and dated solved work; provisional diagnosis only, requires learner preflight."
+    },
+    {
+      "id": "sorting",
+      "name": "Sorting and ordered comparisons",
+      "prerequisites": [
+        "implementation"
+      ],
+      "status": "unknown",
+      "diagnosticEligible": true,
+      "diagnosticBasis": "Historical taught flag and dated solved work; provisional diagnosis only, requires learner preflight."
+    },
+    {
+      "id": "brute-force",
+      "name": "Bounded enumeration",
+      "prerequisites": [
+        "implementation"
+      ],
+      "status": "unknown",
+      "diagnosticEligible": true,
+      "diagnosticBasis": "Historical taught flag and dated solved work; provisional diagnosis only, requires learner preflight."
+    },
+    {
+      "id": "prefix-sums",
+      "name": "Prefix sums and fixed windows",
+      "prerequisites": [
+        "implementation",
+        "basic-math"
+      ],
+      "status": "unknown",
+      "diagnosticEligible": true,
+      "diagnosticBasis": "Historical taught flag and dated solved work; provisional diagnosis only, requires learner preflight."
+    },
+    {
+      "id": "greedy",
+      "name": "Greedy choices and proofs",
+      "prerequisites": [
+        "sorting"
+      ],
+      "status": "unknown",
+      "diagnosticEligible": true,
+      "diagnosticBasis": "Historical taught flag and dated solved work; provisional diagnosis only, requires learner preflight."
+    },
+    {
+      "id": "frequency",
+      "name": "Dictionaries, frequency and counting invariants",
+      "prerequisites": [
+        "implementation",
+        "basic-math"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "difference-array",
+      "name": "Difference arrays",
+      "prerequisites": [
+        "prefix-sums"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "two-pointers",
+      "name": "Two pointers and variable windows",
+      "prerequisites": [
+        "sorting",
+        "prefix-sums"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "binary-search",
+      "name": "Binary search and monotonic predicates",
+      "prerequisites": [
+        "sorting",
+        "basic-math"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "constructive",
+      "name": "Constructive reasoning and invariants",
+      "prerequisites": [
+        "greedy",
+        "basic-math"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "bit-basics",
+      "name": "Binary representation and bit operators",
+      "prerequisites": [
+        "basic-math"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "masks",
+      "name": "Masks as sets and small subsets",
+      "prerequisites": [
+        "bit-basics",
+        "brute-force"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "xor",
+      "name": "XOR cancellation and prefix XOR",
+      "prerequisites": [
+        "bit-basics",
+        "prefix-sums"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "number-theory",
+      "name": "GCD, factors, sieve and modular arithmetic",
+      "prerequisites": [
+        "basic-math"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "graph-model",
+      "name": "Graph representation",
+      "prerequisites": [
+        "implementation"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "bfs",
+      "name": "Queues, BFS and unweighted distances",
+      "prerequisites": [
+        "graph-model"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "dfs",
+      "name": "Iterative DFS, components and coloring",
+      "prerequisites": [
+        "graph-model"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "recursion",
+      "name": "Recursion and call stacks",
+      "prerequisites": [
+        "implementation"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "dp",
+      "name": "States, memoization and tabulation",
+      "prerequisites": [
+        "recursion",
+        "brute-force"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "knapsack",
+      "name": "Coin change and knapsack",
+      "prerequisites": [
+        "dp"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "lis",
+      "name": "Subsequence DP and LIS",
+      "prerequisites": [
+        "dp",
+        "binary-search"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "combinatorics",
+      "name": "Counting and binomial coefficients",
+      "prerequisites": [
+        "basic-math",
+        "number-theory"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "trees",
+      "name": "Rooting, traversal and subtree quantities",
+      "prerequisites": [
+        "dfs"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "tree-dp",
+      "name": "Tree diameter and postorder DP",
+      "prerequisites": [
+        "trees",
+        "dp"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "dsu",
+      "name": "Disjoint set union",
+      "prerequisites": [
+        "graph-model"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "kruskal",
+      "name": "Minimum spanning trees",
+      "prerequisites": [
+        "dsu",
+        "greedy"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "heap",
+      "name": "Priority queues and heapq",
+      "prerequisites": [
+        "implementation"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "dijkstra",
+      "name": "Dijkstra and nonnegative weights",
+      "prerequisites": [
+        "heap",
+        "bfs"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "zero-one-bfs",
+      "name": "0–1 BFS",
+      "prerequisites": [
+        "bfs"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "toposort",
+      "name": "Topological ordering",
+      "prerequisites": [
+        "graph-model",
+        "bfs"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "dag-dp",
+      "name": "DAG dynamic programming",
+      "prerequisites": [
+        "toposort",
+        "dp"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "compression",
+      "name": "Coordinate compression",
+      "prerequisites": [
+        "sorting"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "fenwick",
+      "name": "Fenwick tree",
+      "prerequisites": [
+        "prefix-sums",
+        "bit-basics"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "sweep",
+      "name": "Offline sorting and sweeps",
+      "prerequisites": [
+        "sorting",
+        "fenwick"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "monotonic-stack",
+      "name": "Stacks and monotonic stacks",
+      "prerequisites": [
+        "implementation"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "monotonic-deque",
+      "name": "Deques and window extrema",
+      "prerequisites": [
+        "two-pointers",
+        "monotonic-stack"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "strings",
+      "name": "String structure and borders",
+      "prerequisites": [
+        "frequency"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "kmp",
+      "name": "Prefix function and KMP",
+      "prerequisites": [
+        "strings"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "segment-tree",
+      "name": "Associative aggregation and segment trees",
+      "prerequisites": [
+        "fenwick",
+        "trees"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "linked-list",
+      "name": "Linked lists",
+      "prerequisites": [
+        "implementation"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "bst",
+      "name": "Binary search trees",
+      "prerequisites": [
+        "trees",
+        "binary-search"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "trie",
+      "name": "Tries",
+      "prerequisites": [
+        "strings",
+        "trees"
+      ],
+      "status": "unknown"
+    },
+    {
+      "id": "backtracking",
+      "name": "Backtracking",
+      "prerequisites": [
+        "recursion",
+        "brute-force"
+      ],
+      "status": "unknown"
+    }
+  ],
+  "curriculum": [
+    {
+      "day": 1,
+      "date": "2026-09-23",
+      "focus": "Diagnose the morning baseline and reconstruct the problem-solving routine",
+      "week": 1,
+      "phase": "Restart and calibration",
+      "band": "900–1300 diagnostic; adjust after evidence",
+      "gate": "Identify retained fundamentals and the two largest gaps; historical AC is not a fresh assessment.",
+      "leetcodeFocus": "Arrays, dictionaries, sets, sorting; intentional cold re-solves",
+      "status": "provisional"
+    },
+    {
+      "day": 2,
+      "date": "2026-09-24",
+      "focus": "Constraints, complexity, loop accuracy, indexing and Python I/O",
+      "week": 1,
+      "phase": "Restart and calibration",
+      "band": "900–1300 diagnostic; adjust after evidence",
+      "gate": "Identify retained fundamentals and the two largest gaps; historical AC is not a fresh assessment.",
+      "leetcodeFocus": "Arrays, dictionaries, sets, sorting; intentional cold re-solves",
+      "status": "provisional"
+    },
+    {
+      "day": 3,
+      "date": "2026-09-25",
+      "focus": "Frequency maps, sets and counting invariants",
+      "week": 1,
+      "phase": "Restart and calibration",
+      "band": "900–1300 diagnostic; adjust after evidence",
+      "gate": "Identify retained fundamentals and the two largest gaps; historical AC is not a fresh assessment.",
+      "leetcodeFocus": "Arrays, dictionaries, sets, sorting; intentional cold re-solves",
+      "status": "provisional"
+    },
+    {
+      "day": 4,
+      "date": "2026-09-26",
+      "focus": "Sorting, custom keys and sort-then-scan reasoning",
+      "week": 1,
+      "phase": "Restart and calibration",
+      "band": "900–1300 diagnostic; adjust after evidence",
+      "gate": "Identify retained fundamentals and the two largest gaps; historical AC is not a fresh assessment.",
+      "leetcodeFocus": "Arrays, dictionaries, sets, sorting; intentional cold re-solves",
+      "status": "provisional"
+    },
+    {
+      "day": 5,
+      "date": "2026-09-27",
+      "focus": "Bounded brute force, counterexamples and edge-case design",
+      "week": 1,
+      "phase": "Restart and calibration",
+      "band": "900–1300 diagnostic; adjust after evidence",
+      "gate": "Identify retained fundamentals and the two largest gaps; historical AC is not a fresh assessment.",
+      "leetcodeFocus": "Arrays, dictionaries, sets, sorting; intentional cold re-solves",
+      "status": "provisional"
+    },
+    {
+      "day": 6,
+      "date": "2026-09-28",
+      "focus": "Repair the weakest observed basic; no compulsory new topic",
+      "week": 1,
+      "phase": "Restart and calibration",
+      "band": "900–1300 diagnostic; adjust after evidence",
+      "gate": "Identify retained fundamentals and the two largest gaps; historical AC is not a fresh assessment.",
+      "leetcodeFocus": "Arrays, dictionaries, sets, sorting; intentional cold re-solves",
+      "status": "provisional"
+    },
+    {
+      "day": 7,
+      "date": "2026-09-29",
+      "focus": "Week 1 gate: cold recall, independent transfer and next-week calibration",
+      "week": 1,
+      "phase": "Restart and calibration",
+      "band": "900–1300 diagnostic; adjust after evidence",
+      "gate": "Identify retained fundamentals and the two largest gaps; historical AC is not a fresh assessment.",
+      "leetcodeFocus": "Arrays, dictionaries, sets, sorting; intentional cold re-solves",
+      "status": "provisional"
+    },
+    {
+      "day": 8,
+      "date": "2026-09-30",
+      "focus": "1D prefix sums and range-sum meanings",
+      "week": 2,
+      "phase": "Prefix sums and two pointers",
+      "band": "1100–1300 core, selected 1400 stretch",
+      "gate": "Define every prefix/window state; implement the main primitives without looking.",
+      "leetcodeFocus": "Prefix sums, hash maps, windows and sorted two pointers",
+      "status": "provisional"
+    },
+    {
+      "day": 9,
+      "date": "2026-10-01",
+      "focus": "Prefix-frequency counting and equal-prefix reasoning",
+      "week": 2,
+      "phase": "Prefix sums and two pointers",
+      "band": "1100–1300 core, selected 1400 stretch",
+      "gate": "Define every prefix/window state; implement the main primitives without looking.",
+      "leetcodeFocus": "Prefix sums, hash maps, windows and sorted two pointers",
+      "status": "provisional"
+    },
+    {
+      "day": 10,
+      "date": "2026-10-02",
+      "focus": "Difference arrays and reconstructing updates",
+      "week": 2,
+      "phase": "Prefix sums and two pointers",
+      "band": "1100–1300 core, selected 1400 stretch",
+      "gate": "Define every prefix/window state; implement the main primitives without looking.",
+      "leetcodeFocus": "Prefix sums, hash maps, windows and sorted two pointers",
+      "status": "provisional"
+    },
+    {
+      "day": 11,
+      "date": "2026-10-03",
+      "focus": "Opposite-end two pointers; choose directions before coding",
+      "week": 2,
+      "phase": "Prefix sums and two pointers",
+      "band": "1100–1300 core, selected 1400 stretch",
+      "gate": "Define every prefix/window state; implement the main primitives without looking.",
+      "leetcodeFocus": "Prefix sums, hash maps, windows and sorted two pointers",
+      "status": "provisional"
+    },
+    {
+      "day": 12,
+      "date": "2026-10-04",
+      "focus": "Variable sliding windows and a precise validity condition",
+      "week": 2,
+      "phase": "Prefix sums and two pointers",
+      "band": "1100–1300 core, selected 1400 stretch",
+      "gate": "Define every prefix/window state; implement the main primitives without looking.",
+      "leetcodeFocus": "Prefix sums, hash maps, windows and sorted two pointers",
+      "status": "provisional"
+    },
+    {
+      "day": 13,
+      "date": "2026-10-05",
+      "focus": "Mixed transfer: distinguish prefix sums, hashing and two pointers",
+      "week": 2,
+      "phase": "Prefix sums and two pointers",
+      "band": "1100–1300 core, selected 1400 stretch",
+      "gate": "Define every prefix/window state; implement the main primitives without looking.",
+      "leetcodeFocus": "Prefix sums, hash maps, windows and sorted two pointers",
+      "status": "provisional"
+    },
+    {
+      "day": 14,
+      "date": "2026-10-06",
+      "focus": "Week 2 gate: blank implementations and unseen mixed problems",
+      "week": 2,
+      "phase": "Prefix sums and two pointers",
+      "band": "1100–1300 core, selected 1400 stretch",
+      "gate": "Define every prefix/window state; implement the main primitives without looking.",
+      "leetcodeFocus": "Prefix sums, hash maps, windows and sorted two pointers",
+      "status": "provisional"
+    },
+    {
+      "day": 15,
+      "date": "2026-10-07",
+      "focus": "Binary search on sorted arrays; bisect boundaries",
+      "week": 3,
+      "phase": "Binary search",
+      "band": "1200–1400, only with sound boundaries",
+      "gate": "State the invariant and prove the predicate is monotonic before coding.",
+      "leetcodeFocus": "Sorted-array search and monotonic answer search",
+      "status": "provisional"
+    },
+    {
+      "day": 16,
+      "date": "2026-10-08",
+      "focus": "First-true and last-true boundary templates derived from invariants",
+      "week": 3,
+      "phase": "Binary search",
+      "band": "1200–1400, only with sound boundaries",
+      "gate": "State the invariant and prove the predicate is monotonic before coding.",
+      "leetcodeFocus": "Sorted-array search and monotonic answer search",
+      "status": "provisional"
+    },
+    {
+      "day": 17,
+      "date": "2026-10-09",
+      "focus": "Binary search on the answer",
+      "week": 3,
+      "phase": "Binary search",
+      "band": "1200–1400, only with sound boundaries",
+      "gate": "State the invariant and prove the predicate is monotonic before coding.",
+      "leetcodeFocus": "Sorted-array search and monotonic answer search",
+      "status": "provisional"
+    },
+    {
+      "day": 18,
+      "date": "2026-10-10",
+      "focus": "Feasibility checks and monotonicity proofs",
+      "week": 3,
+      "phase": "Binary search",
+      "band": "1200–1400, only with sound boundaries",
+      "gate": "State the invariant and prove the predicate is monotonic before coding.",
+      "leetcodeFocus": "Sorted-array search and monotonic answer search",
+      "status": "provisional"
+    },
+    {
+      "day": 19,
+      "date": "2026-10-11",
+      "focus": "Sorting plus binary search; composition of known tools",
+      "week": 3,
+      "phase": "Binary search",
+      "band": "1200–1400, only with sound boundaries",
+      "gate": "State the invariant and prove the predicate is monotonic before coding.",
+      "leetcodeFocus": "Sorted-array search and monotonic answer search",
+      "status": "provisional"
+    },
+    {
+      "day": 20,
+      "date": "2026-10-12",
+      "focus": "Boundary repair: empty ranges, duplicates and off-by-one errors",
+      "week": 3,
+      "phase": "Binary search",
+      "band": "1200–1400, only with sound boundaries",
+      "gate": "State the invariant and prove the predicate is monotonic before coding.",
+      "leetcodeFocus": "Sorted-array search and monotonic answer search",
+      "status": "provisional"
+    },
+    {
+      "day": 21,
+      "date": "2026-10-13",
+      "focus": "Week 3 gate: independent search and proof without a template",
+      "week": 3,
+      "phase": "Binary search",
+      "band": "1200–1400, only with sound boundaries",
+      "gate": "State the invariant and prove the predicate is monotonic before coding.",
+      "leetcodeFocus": "Sorted-array search and monotonic answer search",
+      "status": "provisional"
+    },
+    {
+      "day": 22,
+      "date": "2026-10-14",
+      "focus": "Greedy choices and exchange arguments",
+      "week": 4,
+      "phase": "Greedy and constructive reasoning",
+      "band": "1200–1400; selective 1500",
+      "gate": "Give an exchange, extremal or invariant argument; test a tempting false greedy rule.",
+      "leetcodeFocus": "Intervals, greedy choices and elementary constructions",
+      "status": "provisional"
+    },
+    {
+      "day": 23,
+      "date": "2026-10-15",
+      "focus": "Interval scheduling and sorting by the right quantity",
+      "week": 4,
+      "phase": "Greedy and constructive reasoning",
+      "band": "1200–1400; selective 1500",
+      "gate": "Give an exchange, extremal or invariant argument; test a tempting false greedy rule.",
+      "leetcodeFocus": "Intervals, greedy choices and elementary constructions",
+      "status": "provisional"
+    },
+    {
+      "day": 24,
+      "date": "2026-10-16",
+      "focus": "Extremal choices, exchange and counterexamples",
+      "week": 4,
+      "phase": "Greedy and constructive reasoning",
+      "band": "1200–1400; selective 1500",
+      "gate": "Give an exchange, extremal or invariant argument; test a tempting false greedy rule.",
+      "leetcodeFocus": "Intervals, greedy choices and elementary constructions",
+      "status": "provisional"
+    },
+    {
+      "day": 25,
+      "date": "2026-10-17",
+      "focus": "Parity and invariants in transformations",
+      "week": 4,
+      "phase": "Greedy and constructive reasoning",
+      "band": "1200–1400; selective 1500",
+      "gate": "Give an exchange, extremal or invariant argument; test a tempting false greedy rule.",
+      "leetcodeFocus": "Intervals, greedy choices and elementary constructions",
+      "status": "provisional"
+    },
+    {
+      "day": 26,
+      "date": "2026-10-18",
+      "focus": "Elementary constructive problems and MEX from first principles",
+      "week": 4,
+      "phase": "Greedy and constructive reasoning",
+      "band": "1200–1400; selective 1500",
+      "gate": "Give an exchange, extremal or invariant argument; test a tempting false greedy rule.",
+      "leetcodeFocus": "Intervals, greedy choices and elementary constructions",
+      "status": "provisional"
+    },
+    {
+      "day": 27,
+      "date": "2026-10-19",
+      "focus": "Counterexample workshop and proof repair",
+      "week": 4,
+      "phase": "Greedy and constructive reasoning",
+      "band": "1200–1400; selective 1500",
+      "gate": "Give an exchange, extremal or invariant argument; test a tempting false greedy rule.",
+      "leetcodeFocus": "Intervals, greedy choices and elementary constructions",
+      "status": "provisional"
+    },
+    {
+      "day": 28,
+      "date": "2026-10-20",
+      "focus": "Week 4 gate: independent 1200–1300 transfer and proof quality",
+      "week": 4,
+      "phase": "Greedy and constructive reasoning",
+      "band": "1200–1400; selective 1500",
+      "gate": "Give an exchange, extremal or invariant argument; test a tempting false greedy rule.",
+      "leetcodeFocus": "Intervals, greedy choices and elementary constructions",
+      "status": "provisional"
+    },
+    {
+      "day": 29,
+      "date": "2026-10-21",
+      "focus": "Binary representation from zero; AND, OR, XOR, shifts",
+      "week": 5,
+      "phase": "Bits and elementary number theory",
+      "band": "Teach primitives first; 1200–1400 applications",
+      "gate": "Explain binary representation before masks; distinguish basic bit operations from bitmask DP.",
+      "leetcodeFocus": "Bit operations and math; small warm-up problems for brand-new primitives",
+      "status": "provisional"
+    },
+    {
+      "day": 30,
+      "date": "2026-10-22",
+      "focus": "Masks as sets; checking, setting, clearing bits and small subsets",
+      "week": 5,
+      "phase": "Bits and elementary number theory",
+      "band": "Teach primitives first; 1200–1400 applications",
+      "gate": "Explain binary representation before masks; distinguish basic bit operations from bitmask DP.",
+      "leetcodeFocus": "Bit operations and math; small warm-up problems for brand-new primitives",
+      "status": "provisional"
+    },
+    {
+      "day": 31,
+      "date": "2026-10-23",
+      "focus": "XOR properties, cancellation and prefix XOR",
+      "week": 5,
+      "phase": "Bits and elementary number theory",
+      "band": "Teach primitives first; 1200–1400 applications",
+      "gate": "Explain binary representation before masks; distinguish basic bit operations from bitmask DP.",
+      "leetcodeFocus": "Bit operations and math; small warm-up problems for brand-new primitives",
+      "status": "provisional"
+    },
+    {
+      "day": 32,
+      "date": "2026-10-24",
+      "focus": "GCD, divisors, factor pairs and mathematical invariants",
+      "week": 5,
+      "phase": "Bits and elementary number theory",
+      "band": "Teach primitives first; 1200–1400 applications",
+      "gate": "Explain binary representation before masks; distinguish basic bit operations from bitmask DP.",
+      "leetcodeFocus": "Bit operations and math; small warm-up problems for brand-new primitives",
+      "status": "provisional"
+    },
+    {
+      "day": 33,
+      "date": "2026-10-25",
+      "focus": "Sieve and prime factorization with complexity bounds",
+      "week": 5,
+      "phase": "Bits and elementary number theory",
+      "band": "Teach primitives first; 1200–1400 applications",
+      "gate": "Explain binary representation before masks; distinguish basic bit operations from bitmask DP.",
+      "leetcodeFocus": "Bit operations and math; small warm-up problems for brand-new primitives",
+      "status": "provisional"
+    },
+    {
+      "day": 34,
+      "date": "2026-10-26",
+      "focus": "Modular arithmetic and binary exponentiation",
+      "week": 5,
+      "phase": "Bits and elementary number theory",
+      "band": "Teach primitives first; 1200–1400 applications",
+      "gate": "Explain binary representation before masks; distinguish basic bit operations from bitmask DP.",
+      "leetcodeFocus": "Bit operations and math; small warm-up problems for brand-new primitives",
+      "status": "provisional"
+    },
+    {
+      "day": 35,
+      "date": "2026-10-27",
+      "focus": "Week 5 gate: bit and number-theory primitives from memory",
+      "week": 5,
+      "phase": "Bits and elementary number theory",
+      "band": "Teach primitives first; 1200–1400 applications",
+      "gate": "Explain binary representation before masks; distinguish basic bit operations from bitmask DP.",
+      "leetcodeFocus": "Bit operations and math; small warm-up problems for brand-new primitives",
+      "status": "provisional"
+    },
+    {
+      "day": 36,
+      "date": "2026-10-28",
+      "focus": "Graph models and adjacency lists; what vertices and edges mean",
+      "week": 6,
+      "phase": "Graph foundations",
+      "band": "1200–1400; selected 1500",
+      "gate": "Build the representation and explain visited/queue/stack invariants before solving.",
+      "leetcodeFocus": "Graphs, queues, grids and traversal",
+      "status": "provisional"
+    },
+    {
+      "day": 37,
+      "date": "2026-10-29",
+      "focus": "BFS, queues and unweighted distances",
+      "week": 6,
+      "phase": "Graph foundations",
+      "band": "1200–1400; selected 1500",
+      "gate": "Build the representation and explain visited/queue/stack invariants before solving.",
+      "leetcodeFocus": "Graphs, queues, grids and traversal",
+      "status": "provisional"
+    },
+    {
+      "day": 38,
+      "date": "2026-10-30",
+      "focus": "Iterative DFS and visited-state discipline",
+      "week": 6,
+      "phase": "Graph foundations",
+      "band": "1200–1400; selected 1500",
+      "gate": "Build the representation and explain visited/queue/stack invariants before solving.",
+      "leetcodeFocus": "Graphs, queues, grids and traversal",
+      "status": "provisional"
+    },
+    {
+      "day": 39,
+      "date": "2026-10-31",
+      "focus": "Grid modeling and flood fill",
+      "week": 6,
+      "phase": "Graph foundations",
+      "band": "1200–1400; selected 1500",
+      "gate": "Build the representation and explain visited/queue/stack invariants before solving.",
+      "leetcodeFocus": "Graphs, queues, grids and traversal",
+      "status": "provisional"
+    },
+    {
+      "day": 40,
+      "date": "2026-11-01",
+      "focus": "Connected components and traversal-derived quantities",
+      "week": 6,
+      "phase": "Graph foundations",
+      "band": "1200–1400; selected 1500",
+      "gate": "Build the representation and explain visited/queue/stack invariants before solving.",
+      "leetcodeFocus": "Graphs, queues, grids and traversal",
+      "status": "provisional"
+    },
+    {
+      "day": 41,
+      "date": "2026-11-02",
+      "focus": "Bipartite coloring and conflict detection",
+      "week": 6,
+      "phase": "Graph foundations",
+      "band": "1200–1400; selected 1500",
+      "gate": "Build the representation and explain visited/queue/stack invariants before solving.",
+      "leetcodeFocus": "Graphs, queues, grids and traversal",
+      "status": "provisional"
+    },
+    {
+      "day": 42,
+      "date": "2026-11-03",
+      "focus": "Week 6 gate: model and traverse an unfamiliar graph independently",
+      "week": 6,
+      "phase": "Graph foundations",
+      "band": "1200–1400; selected 1500",
+      "gate": "Build the representation and explain visited/queue/stack invariants before solving.",
+      "leetcodeFocus": "Graphs, queues, grids and traversal",
+      "status": "provisional"
+    },
+    {
+      "day": 43,
+      "date": "2026-11-04",
+      "focus": "Subproblems, recursion call stacks and defining a DP state",
+      "week": 7,
+      "phase": "Dynamic programming foundations",
+      "band": "1200–1400; selective 1500",
+      "gate": "State, transition, base case and evaluation order must all be explicit.",
+      "leetcodeFocus": "Recursion, memoization, tabulation and basic DP",
+      "status": "provisional"
+    },
+    {
+      "day": 44,
+      "date": "2026-11-05",
+      "focus": "Memoization; termination, repeated states and recursion limits",
+      "week": 7,
+      "phase": "Dynamic programming foundations",
+      "band": "1200–1400; selective 1500",
+      "gate": "State, transition, base case and evaluation order must all be explicit.",
+      "leetcodeFocus": "Recursion, memoization, tabulation and basic DP",
+      "status": "provisional"
+    },
+    {
+      "day": 45,
+      "date": "2026-11-06",
+      "focus": "Bottom-up tabulation and dependency order",
+      "week": 7,
+      "phase": "Dynamic programming foundations",
+      "band": "1200–1400; selective 1500",
+      "gate": "State, transition, base case and evaluation order must all be explicit.",
+      "leetcodeFocus": "Recursion, memoization, tabulation and basic DP",
+      "status": "provisional"
+    },
+    {
+      "day": 46,
+      "date": "2026-11-07",
+      "focus": "Grid DP and path counting",
+      "week": 7,
+      "phase": "Dynamic programming foundations",
+      "band": "1200–1400; selective 1500",
+      "gate": "State, transition, base case and evaluation order must all be explicit.",
+      "leetcodeFocus": "Recursion, memoization, tabulation and basic DP",
+      "status": "provisional"
+    },
+    {
+      "day": 47,
+      "date": "2026-11-08",
+      "focus": "Coin-change DP; ordered versus unordered counts",
+      "week": 7,
+      "phase": "Dynamic programming foundations",
+      "band": "1200–1400; selective 1500",
+      "gate": "State, transition, base case and evaluation order must all be explicit.",
+      "leetcodeFocus": "Recursion, memoization, tabulation and basic DP",
+      "status": "provisional"
+    },
+    {
+      "day": 48,
+      "date": "2026-11-09",
+      "focus": "0/1 knapsack; why loop direction changes meaning",
+      "week": 7,
+      "phase": "Dynamic programming foundations",
+      "band": "1200–1400; selective 1500",
+      "gate": "State, transition, base case and evaluation order must all be explicit.",
+      "leetcodeFocus": "Recursion, memoization, tabulation and basic DP",
+      "status": "provisional"
+    },
+    {
+      "day": 49,
+      "date": "2026-11-10",
+      "focus": "Week 7 gate: derive a small DP from a brute-force recurrence",
+      "week": 7,
+      "phase": "Dynamic programming foundations",
+      "band": "1200–1400; selective 1500",
+      "gate": "State, transition, base case and evaluation order must all be explicit.",
+      "leetcodeFocus": "Recursion, memoization, tabulation and basic DP",
+      "status": "provisional"
+    },
+    {
+      "day": 50,
+      "date": "2026-11-11",
+      "focus": "Quadratic LIS with a meaning for each state",
+      "week": 8,
+      "phase": "DP transfer and counting",
+      "band": "1300–1500",
+      "gate": "Transfer recurrence design to a new statement; justify count order and modular conditions.",
+      "leetcodeFocus": "Subsequence DP and elementary counting",
+      "status": "provisional"
+    },
+    {
+      "day": 51,
+      "date": "2026-11-12",
+      "focus": "LIS plus binary search; what the tails array does and does not store",
+      "week": 8,
+      "phase": "DP transfer and counting",
+      "band": "1300–1500",
+      "gate": "Transfer recurrence design to a new statement; justify count order and modular conditions.",
+      "leetcodeFocus": "Subsequence DP and elementary counting",
+      "status": "provisional"
+    },
+    {
+      "day": 52,
+      "date": "2026-11-13",
+      "focus": "Subsequence/string DP and careful state transitions",
+      "week": 8,
+      "phase": "DP transfer and counting",
+      "band": "1300–1500",
+      "gate": "Transfer recurrence design to a new statement; justify count order and modular conditions.",
+      "leetcodeFocus": "Subsequence DP and elementary counting",
+      "status": "provisional"
+    },
+    {
+      "day": 53,
+      "date": "2026-11-14",
+      "focus": "Counting principles, double-counting and complements",
+      "week": 8,
+      "phase": "DP transfer and counting",
+      "band": "1300–1500",
+      "gate": "Transfer recurrence design to a new statement; justify count order and modular conditions.",
+      "leetcodeFocus": "Subsequence DP and elementary counting",
+      "status": "provisional"
+    },
+    {
+      "day": 54,
+      "date": "2026-11-15",
+      "focus": "Binomial coefficients and small combinatorial models",
+      "week": 8,
+      "phase": "DP transfer and counting",
+      "band": "1300–1500",
+      "gate": "Transfer recurrence design to a new statement; justify count order and modular conditions.",
+      "leetcodeFocus": "Subsequence DP and elementary counting",
+      "status": "provisional"
+    },
+    {
+      "day": 55,
+      "date": "2026-11-16",
+      "focus": "Modular inverse only under valid conditions; counting applications",
+      "week": 8,
+      "phase": "DP transfer and counting",
+      "band": "1300–1500",
+      "gate": "Transfer recurrence design to a new statement; justify count order and modular conditions.",
+      "leetcodeFocus": "Subsequence DP and elementary counting",
+      "status": "provisional"
+    },
+    {
+      "day": 56,
+      "date": "2026-11-17",
+      "focus": "Week 8 gate: independent 1300–1400 DP/counting transfer",
+      "week": 8,
+      "phase": "DP transfer and counting",
+      "band": "1300–1500",
+      "gate": "Transfer recurrence design to a new statement; justify count order and modular conditions.",
+      "leetcodeFocus": "Subsequence DP and elementary counting",
+      "status": "provisional"
+    },
+    {
+      "day": 57,
+      "date": "2026-11-18",
+      "focus": "Rooted trees and representations",
+      "week": 9,
+      "phase": "Trees and DSU",
+      "band": "1300–1500; selected 1600",
+      "gate": "Root a tree, compute subtree values, and explain the DSU invariant.",
+      "leetcodeFocus": "Binary trees and BST prerequisites inside the LC strand",
+      "status": "provisional"
+    },
+    {
+      "day": 58,
+      "date": "2026-11-19",
+      "focus": "Parent, depth, subtree size and traversal order",
+      "week": 9,
+      "phase": "Trees and DSU",
+      "band": "1300–1500; selected 1600",
+      "gate": "Root a tree, compute subtree values, and explain the DSU invariant.",
+      "leetcodeFocus": "Binary trees and BST prerequisites inside the LC strand",
+      "status": "provisional"
+    },
+    {
+      "day": 59,
+      "date": "2026-11-20",
+      "focus": "Tree diameter and why the method works",
+      "week": 9,
+      "phase": "Trees and DSU",
+      "band": "1300–1500; selected 1600",
+      "gate": "Root a tree, compute subtree values, and explain the DSU invariant.",
+      "leetcodeFocus": "Binary trees and BST prerequisites inside the LC strand",
+      "status": "provisional"
+    },
+    {
+      "day": 60,
+      "date": "2026-11-21",
+      "focus": "Simple postorder tree DP",
+      "week": 9,
+      "phase": "Trees and DSU",
+      "band": "1300–1500; selected 1600",
+      "gate": "Root a tree, compute subtree values, and explain the DSU invariant.",
+      "leetcodeFocus": "Binary trees and BST prerequisites inside the LC strand",
+      "status": "provisional"
+    },
+    {
+      "day": 61,
+      "date": "2026-11-22",
+      "focus": "DSU: representatives, path compression and union by size",
+      "week": 9,
+      "phase": "Trees and DSU",
+      "band": "1300–1500; selected 1600",
+      "gate": "Root a tree, compute subtree values, and explain the DSU invariant.",
+      "leetcodeFocus": "Binary trees and BST prerequisites inside the LC strand",
+      "status": "provisional"
+    },
+    {
+      "day": 62,
+      "date": "2026-11-23",
+      "focus": "Kruskal and DSU; why a chosen edge is safe",
+      "week": 9,
+      "phase": "Trees and DSU",
+      "band": "1300–1500; selected 1600",
+      "gate": "Root a tree, compute subtree values, and explain the DSU invariant.",
+      "leetcodeFocus": "Binary trees and BST prerequisites inside the LC strand",
+      "status": "provisional"
+    },
+    {
+      "day": 63,
+      "date": "2026-11-24",
+      "focus": "Week 9 gate: trees and DSU from blank code",
+      "week": 9,
+      "phase": "Trees and DSU",
+      "band": "1300–1500; selected 1600",
+      "gate": "Root a tree, compute subtree values, and explain the DSU invariant.",
+      "leetcodeFocus": "Binary trees and BST prerequisites inside the LC strand",
+      "status": "provisional"
+    },
+    {
+      "day": 64,
+      "date": "2026-11-25",
+      "focus": "heapq, priority queues and stale-entry handling",
+      "week": 10,
+      "phase": "Shortest paths and DAGs",
+      "band": "1300–1600",
+      "gate": "Choose BFS, 0-1 BFS or Dijkstra from edge costs; recognize DAG dependencies.",
+      "leetcodeFocus": "Priority queues and graph applications",
+      "status": "provisional"
+    },
+    {
+      "day": 65,
+      "date": "2026-11-26",
+      "focus": "Dijkstra with nonnegative weights; correctness conditions",
+      "week": 10,
+      "phase": "Shortest paths and DAGs",
+      "band": "1300–1600",
+      "gate": "Choose BFS, 0-1 BFS or Dijkstra from edge costs; recognize DAG dependencies.",
+      "leetcodeFocus": "Priority queues and graph applications",
+      "status": "provisional"
+    },
+    {
+      "day": 66,
+      "date": "2026-11-27",
+      "focus": "Multi-source BFS",
+      "week": 10,
+      "phase": "Shortest paths and DAGs",
+      "band": "1300–1600",
+      "gate": "Choose BFS, 0-1 BFS or Dijkstra from edge costs; recognize DAG dependencies.",
+      "leetcodeFocus": "Priority queues and graph applications",
+      "status": "provisional"
+    },
+    {
+      "day": 67,
+      "date": "2026-11-28",
+      "focus": "0-1 BFS and deque ordering",
+      "week": 10,
+      "phase": "Shortest paths and DAGs",
+      "band": "1300–1600",
+      "gate": "Choose BFS, 0-1 BFS or Dijkstra from edge costs; recognize DAG dependencies.",
+      "leetcodeFocus": "Priority queues and graph applications",
+      "status": "provisional"
+    },
+    {
+      "day": 68,
+      "date": "2026-11-29",
+      "focus": "Topological sorting and cycle detection",
+      "week": 10,
+      "phase": "Shortest paths and DAGs",
+      "band": "1300–1600",
+      "gate": "Choose BFS, 0-1 BFS or Dijkstra from edge costs; recognize DAG dependencies.",
+      "leetcodeFocus": "Priority queues and graph applications",
+      "status": "provisional"
+    },
+    {
+      "day": 69,
+      "date": "2026-11-30",
+      "focus": "DAG DP; connect traversal order with earlier DP lessons",
+      "week": 10,
+      "phase": "Shortest paths and DAGs",
+      "band": "1300–1600",
+      "gate": "Choose BFS, 0-1 BFS or Dijkstra from edge costs; recognize DAG dependencies.",
+      "leetcodeFocus": "Priority queues and graph applications",
+      "status": "provisional"
+    },
+    {
+      "day": 70,
+      "date": "2026-12-01",
+      "focus": "Week 10 gate: choose the right graph tool independently",
+      "week": 10,
+      "phase": "Shortest paths and DAGs",
+      "band": "1300–1600",
+      "gate": "Choose BFS, 0-1 BFS or Dijkstra from edge costs; recognize DAG dependencies.",
+      "leetcodeFocus": "Priority queues and graph applications",
+      "status": "provisional"
+    },
+    {
+      "day": 71,
+      "date": "2026-12-02",
+      "focus": "Coordinate compression and preserving order",
+      "week": 11,
+      "phase": "Range and monotonic structures",
+      "band": "1400–1600; fundamentals before optional tools",
+      "gate": "Explain maintained order/aggregate and operation costs; retrieve earlier graph and DP skills.",
+      "leetcodeFocus": "Stacks, queues, heaps and range-query patterns",
+      "status": "provisional"
+    },
+    {
+      "day": 72,
+      "date": "2026-12-03",
+      "focus": "Fenwick tree from prefix decomposition",
+      "week": 11,
+      "phase": "Range and monotonic structures",
+      "band": "1400–1600; fundamentals before optional tools",
+      "gate": "Explain maintained order/aggregate and operation costs; retrieve earlier graph and DP skills.",
+      "leetcodeFocus": "Stacks, queues, heaps and range-query patterns",
+      "status": "provisional"
+    },
+    {
+      "day": 73,
+      "date": "2026-12-04",
+      "focus": "Fenwick point updates and prefix/range queries",
+      "week": 11,
+      "phase": "Range and monotonic structures",
+      "band": "1400–1600; fundamentals before optional tools",
+      "gate": "Explain maintained order/aggregate and operation costs; retrieve earlier graph and DP skills.",
+      "leetcodeFocus": "Stacks, queues, heaps and range-query patterns",
+      "status": "provisional"
+    },
+    {
+      "day": 74,
+      "date": "2026-12-05",
+      "focus": "Offline sorting and a simple sweep",
+      "week": 11,
+      "phase": "Range and monotonic structures",
+      "band": "1400–1600; fundamentals before optional tools",
+      "gate": "Explain maintained order/aggregate and operation costs; retrieve earlier graph and DP skills.",
+      "leetcodeFocus": "Stacks, queues, heaps and range-query patterns",
+      "status": "provisional"
+    },
+    {
+      "day": 75,
+      "date": "2026-12-06",
+      "focus": "Monotonic stacks and nearest-smaller/greater structure",
+      "week": 11,
+      "phase": "Range and monotonic structures",
+      "band": "1400–1600; fundamentals before optional tools",
+      "gate": "Explain maintained order/aggregate and operation costs; retrieve earlier graph and DP skills.",
+      "leetcodeFocus": "Stacks, queues, heaps and range-query patterns",
+      "status": "provisional"
+    },
+    {
+      "day": 76,
+      "date": "2026-12-07",
+      "focus": "Monotonic deques and window extrema",
+      "week": 11,
+      "phase": "Range and monotonic structures",
+      "band": "1400–1600; fundamentals before optional tools",
+      "gate": "Explain maintained order/aggregate and operation costs; retrieve earlier graph and DP skills.",
+      "leetcodeFocus": "Stacks, queues, heaps and range-query patterns",
+      "status": "provisional"
+    },
+    {
+      "day": 77,
+      "date": "2026-12-08",
+      "focus": "Week 11 gate: range and monotonic structures plus delayed recall",
+      "week": 11,
+      "phase": "Range and monotonic structures",
+      "band": "1400–1600; fundamentals before optional tools",
+      "gate": "Explain maintained order/aggregate and operation costs; retrieve earlier graph and DP skills.",
+      "leetcodeFocus": "Stacks, queues, heaps and range-query patterns",
+      "status": "provisional"
+    },
+    {
+      "day": 78,
+      "date": "2026-12-09",
+      "focus": "String structure, frequencies, palindromes and borders",
+      "week": 12,
+      "phase": "Strings and optional range extension",
+      "band": "1400–1600; segment tree is conditional",
+      "gate": "Prove the chosen string primitive; prioritize retained fundamentals over optional coverage.",
+      "leetcodeFocus": "Strings; tries introduced explicitly before trie problems",
+      "status": "provisional"
+    },
+    {
+      "day": 79,
+      "date": "2026-12-10",
+      "focus": "Prefix function/KMP from a traced example",
+      "week": 12,
+      "phase": "Strings and optional range extension",
+      "band": "1400–1600; segment tree is conditional",
+      "gate": "Prove the chosen string primitive; prioritize retained fundamentals over optional coverage.",
+      "leetcodeFocus": "Strings; tries introduced explicitly before trie problems",
+      "status": "provisional"
+    },
+    {
+      "day": 80,
+      "date": "2026-12-11",
+      "focus": "Prefix-function transfer and independent reconstruction",
+      "week": 12,
+      "phase": "Strings and optional range extension",
+      "band": "1400–1600; segment tree is conditional",
+      "gate": "Prove the chosen string primitive; prioritize retained fundamentals over optional coverage.",
+      "leetcodeFocus": "Strings; tries introduced explicitly before trie problems",
+      "status": "provisional"
+    },
+    {
+      "day": 81,
+      "date": "2026-12-12",
+      "focus": "Range-query aggregation and associative operations",
+      "week": 12,
+      "phase": "Strings and optional range extension",
+      "band": "1400–1600; segment tree is conditional",
+      "gate": "Prove the chosen string primitive; prioritize retained fundamentals over optional coverage.",
+      "leetcodeFocus": "Strings; tries introduced explicitly before trie problems",
+      "status": "provisional"
+    },
+    {
+      "day": 82,
+      "date": "2026-12-13",
+      "focus": "Iterative segment-tree introduction if Fenwick gate passed; otherwise repair",
+      "week": 12,
+      "phase": "Strings and optional range extension",
+      "band": "1400–1600; segment tree is conditional",
+      "gate": "Prove the chosen string primitive; prioritize retained fundamentals over optional coverage.",
+      "leetcodeFocus": "Strings; tries introduced explicitly before trie problems",
+      "status": "provisional"
+    },
+    {
+      "day": 83,
+      "date": "2026-12-14",
+      "focus": "Mixed transfer and the largest remaining prerequisite gap",
+      "week": 12,
+      "phase": "Strings and optional range extension",
+      "band": "1400–1600; segment tree is conditional",
+      "gate": "Prove the chosen string primitive; prioritize retained fundamentals over optional coverage.",
+      "leetcodeFocus": "Strings; tries introduced explicitly before trie problems",
+      "status": "provisional"
+    },
+    {
+      "day": 84,
+      "date": "2026-12-15",
+      "focus": "Week 12 gate: retained 1400–1600 fundamentals; optional material may remain deferred",
+      "week": 12,
+      "phase": "Strings and optional range extension",
+      "band": "1400–1600; segment tree is conditional",
+      "gate": "Prove the chosen string primitive; prioritize retained fundamentals over optional coverage.",
+      "leetcodeFocus": "Strings; tries introduced explicitly before trie problems",
+      "status": "provisional"
+    },
+    {
+      "day": 85,
+      "date": "2026-12-16",
+      "focus": "Diagnose the morning blind benchmark and repair its largest gap",
+      "week": 13,
+      "phase": "Expert consolidation I",
+      "band": "Blind 1300–1600; selective 1700",
+      "gate": "Improve repeatable unseen performance; repair causes rather than adding algorithms.",
+      "leetcodeFocus": "Interview-specific gaps: linked lists, BSTs, tries, backtracking after teaching",
+      "status": "provisional"
+    },
+    {
+      "day": 86,
+      "date": "2026-12-17",
+      "focus": "Repair the weakest pattern from the benchmark",
+      "week": 13,
+      "phase": "Expert consolidation I",
+      "band": "Blind 1300–1600; selective 1700",
+      "gate": "Improve repeatable unseen performance; repair causes rather than adding algorithms.",
+      "leetcodeFocus": "Interview-specific gaps: linked lists, BSTs, tries, backtracking after teaching",
+      "status": "provisional"
+    },
+    {
+      "day": 87,
+      "date": "2026-12-18",
+      "focus": "Learn from the morning blind benchmark; practice a fresh transfer",
+      "week": 13,
+      "phase": "Expert consolidation I",
+      "band": "Blind 1300–1600; selective 1700",
+      "gate": "Improve repeatable unseen performance; repair causes rather than adding algorithms.",
+      "leetcodeFocus": "Interview-specific gaps: linked lists, BSTs, tries, backtracking after teaching",
+      "status": "provisional"
+    },
+    {
+      "day": 88,
+      "date": "2026-12-19",
+      "focus": "Repair the second-largest failure pattern",
+      "week": 13,
+      "phase": "Expert consolidation I",
+      "band": "Blind 1300–1600; selective 1700",
+      "gate": "Improve repeatable unseen performance; repair causes rather than adding algorithms.",
+      "leetcodeFocus": "Interview-specific gaps: linked lists, BSTs, tries, backtracking after teaching",
+      "status": "provisional"
+    },
+    {
+      "day": 89,
+      "date": "2026-12-20",
+      "focus": "Constructive proofs and implementation precision",
+      "week": 13,
+      "phase": "Expert consolidation I",
+      "band": "Blind 1300–1600; selective 1700",
+      "gate": "Improve repeatable unseen performance; repair causes rather than adding algorithms.",
+      "leetcodeFocus": "Interview-specific gaps: linked lists, BSTs, tries, backtracking after teaching",
+      "status": "provisional"
+    },
+    {
+      "day": 90,
+      "date": "2026-12-21",
+      "focus": "Delayed cold retrieval across the first ten weeks",
+      "week": 13,
+      "phase": "Expert consolidation I",
+      "band": "Blind 1300–1600; selective 1700",
+      "gate": "Improve repeatable unseen performance; repair causes rather than adding algorithms.",
+      "leetcodeFocus": "Interview-specific gaps: linked lists, BSTs, tries, backtracking after teaching",
+      "status": "provisional"
+    },
+    {
+      "day": 91,
+      "date": "2026-12-22",
+      "focus": "Week 13 gate: compare independent success, time and repeated errors",
+      "week": 13,
+      "phase": "Expert consolidation I",
+      "band": "Blind 1300–1600; selective 1700",
+      "gate": "Improve repeatable unseen performance; repair causes rather than adding algorithms.",
+      "leetcodeFocus": "Interview-specific gaps: linked lists, BSTs, tries, backtracking after teaching",
+      "status": "provisional"
+    },
+    {
+      "day": 92,
+      "date": "2026-12-23",
+      "focus": "Repair the morning benchmark's most costly failure",
+      "week": 14,
+      "phase": "Expert consolidation II",
+      "band": "Blind 1400–1700; calibrated stretch only",
+      "gate": "Multiple comparable blind performances and retained skills, with no forced late syllabus rush.",
+      "leetcodeFocus": "Mixed interview practice and explain-while-coding",
+      "status": "provisional"
+    },
+    {
+      "day": 93,
+      "date": "2026-12-24",
+      "focus": "Targeted repair and nearest reachable upsolve",
+      "week": 14,
+      "phase": "Expert consolidation II",
+      "band": "Blind 1400–1700; calibrated stretch only",
+      "gate": "Multiple comparable blind performances and retained skills, with no forced late syllabus rush.",
+      "leetcodeFocus": "Mixed interview practice and explain-while-coding",
+      "status": "provisional"
+    },
+    {
+      "day": 94,
+      "date": "2026-12-25",
+      "focus": "Review the morning benchmark and strengthen its weakest taught topic",
+      "week": 14,
+      "phase": "Expert consolidation II",
+      "band": "Blind 1400–1700; calibrated stretch only",
+      "gate": "Multiple comparable blind performances and retained skills, with no forced late syllabus rush.",
+      "leetcodeFocus": "Mixed interview practice and explain-while-coding",
+      "status": "provisional"
+    },
+    {
+      "day": 95,
+      "date": "2026-12-26",
+      "focus": "Target-band transfer without topic labels",
+      "week": 14,
+      "phase": "Expert consolidation II",
+      "band": "Blind 1400–1700; calibrated stretch only",
+      "gate": "Multiple comparable blind performances and retained skills, with no forced late syllabus rush.",
+      "leetcodeFocus": "Mixed interview practice and explain-while-coding",
+      "status": "provisional"
+    },
+    {
+      "day": 96,
+      "date": "2026-12-27",
+      "focus": "Mixed proof and implementation workshop",
+      "week": 14,
+      "phase": "Expert consolidation II",
+      "band": "Blind 1400–1700; calibrated stretch only",
+      "gate": "Multiple comparable blind performances and retained skills, with no forced late syllabus rush.",
+      "leetcodeFocus": "Mixed interview practice and explain-while-coding",
+      "status": "provisional"
+    },
+    {
+      "day": 97,
+      "date": "2026-12-28",
+      "focus": "Lower-novelty retention day; repair pending evidence",
+      "week": 14,
+      "phase": "Expert consolidation II",
+      "band": "Blind 1400–1700; calibrated stretch only",
+      "gate": "Multiple comparable blind performances and retained skills, with no forced late syllabus rush.",
+      "leetcodeFocus": "Mixed interview practice and explain-while-coding",
+      "status": "provisional"
+    },
+    {
+      "day": 98,
+      "date": "2026-12-29",
+      "focus": "Week 14 gate: readiness audit and remaining gaps",
+      "week": 14,
+      "phase": "Expert consolidation II",
+      "band": "Blind 1400–1700; calibrated stretch only",
+      "gate": "Multiple comparable blind performances and retained skills, with no forced late syllabus rush.",
+      "leetcodeFocus": "Mixed interview practice and explain-while-coding",
+      "status": "provisional"
+    },
+    {
+      "day": 99,
+      "date": "2026-12-30",
+      "focus": "Final morning benchmark analysis, reachable upsolve and retention check",
+      "week": 15,
+      "phase": "Final assessment",
+      "band": "Evidence-based final benchmark",
+      "gate": "Assess official rating separately from custom-contest readiness; design the CM continuation.",
+      "leetcodeFocus": "Two targeted questions; reuse cold questions intentionally",
+      "status": "provisional"
+    },
+    {
+      "day": 100,
+      "date": "2026-12-31",
+      "focus": "Day 100 audit: official rating, skill evidence and next 80-day priorities",
+      "week": 15,
+      "phase": "Final assessment",
+      "band": "Evidence-based final benchmark",
+      "gate": "Assess official rating separately from custom-contest readiness; design the CM continuation.",
+      "leetcodeFocus": "Two targeted questions; reuse cold questions intentionally",
+      "status": "provisional"
+    }
+  ],
+  "continuation": [
+    {
+      "days": "101–120",
+      "focus": "Repair Expert gaps, range structures and retained graph/DP foundations"
+    },
+    {
+      "days": "121–150",
+      "focus": "Conditional advanced graph/tree/DP and string tools after prerequisites"
+    },
+    {
+      "days": "151–180",
+      "focus": "1900-oriented mixed transfer, rated rounds, upsolving and retention; defer unsupported novelty"
+    }
+  ],
+  "days": [
+    {
+      "programDay": 1,
+      "date": "2026-09-23",
+      "focus": "Diagnose the morning baseline and reconstruct the problem-solving routine",
+      "preflight": {
+        "required": true,
+        "topicIds": [
+          "implementation",
+          "basic-math",
+          "sorting",
+          "brute-force",
+          "prefix-sums",
+          "greedy"
+        ],
+        "prompt": "Confirm you have previously learned these basics and have not seen these exact problems. If any prerequisite is unfamiliar, tell the coach before starting. Confirmation grants diagnostic eligibility only."
+      },
+      "contest": {
+        "title": "Return diagnostic · 120 minutes",
+        "minutes": 120,
+        "mirrors": "Previously learned basics only; no new bitmask, graph or DP prerequisite",
+        "problems": [
+          {
+            "key": "313-A",
+            "contestId": 313,
+            "index": "A",
+            "name": "Ilya and Bank Account",
+            "rating": 900,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "basic-math"
+            ],
+            "capMinutes": 20,
+            "role": "diagnostic",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "What are the only three permitted final states?"
+                },
+                {
+                  "ask": "For a negative balance, which remaining absolute value is preferable?"
+                },
+                {
+                  "ask": "Build both deletions from the absolute value; compare with the unchanged balance."
+                }
+              ],
+              "solution": {
+                "say": "Keep n when n>=0. Otherwise let x=-n and return -min(x//10,(x//100)*10+x%10). Deleting the last or penultimate digit exhausts the allowed operations; the smaller magnitude is the larger negative balance. Check -10 -> 0. O(1) arithmetic."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/313/A",
+            "slot": "A",
+            "points": 500
+          },
+          {
+            "key": "363-B",
+            "contestId": 363,
+            "index": "B",
+            "name": "Fence",
+            "rating": 1100,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "prefix-sums",
+              "basic-math"
+            ],
+            "capMinutes": 30,
+            "role": "diagnostic",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "Which quantity must be compared for every legal starting position?"
+                },
+                {
+                  "ask": "How much of the sum is shared by consecutive length-k segments?"
+                },
+                {
+                  "ask": "Maintain the current sum: subtract the outgoing height and add the incoming height."
+                }
+              ],
+              "solution": {
+                "say": "Start with sum(a[:k]), remembering starting index 0. For r from k to n-1, add a[r]-a[r-k]. If this sum is smaller, save start r-k+1. Print best_start+1. Each legal window is visited once; compare sums, not individual planks. O(n) time. For k=n the only answer is 1; ties may return any optimum."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/363/B",
+            "slot": "B",
+            "points": 1000
+          },
+          {
+            "key": "160-B",
+            "contestId": 160,
+            "index": "B",
+            "name": "Unlucky Ticket",
+            "rating": 1100,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "sorting",
+              "greedy"
+            ],
+            "capMinutes": 30,
+            "role": "diagnostic",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "Must all comparisons point in the same direction?"
+                },
+                {
+                  "ask": "Can you impose an order on both halves before pairing?"
+                },
+                {
+                  "ask": "Compare sorted halves position by position in each of the two strict directions."
+                }
+              ],
+              "solution": {
+                "say": "Sort the first and second n digits separately. Answer YES if all(a[i]<b[i]) or all(a[i]>b[i]); otherwise NO. Ordered pairing suffices: if some sorted a[k]>=b[k], the n-k larger a values cannot all obtain larger b values because at most n-k-1 b values qualify. Reverse the argument for >. O(n log n). Equality fails the strict criterion."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/160/B",
+            "slot": "C",
+            "points": 1500
+          },
+          {
+            "key": "327-A",
+            "contestId": 327,
+            "index": "A",
+            "name": "Flipping Game",
+            "rating": 1200,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "brute-force",
+              "basic-math"
+            ],
+            "capMinutes": 40,
+            "role": "diagnostic",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "How many nonempty intervals can n<=100 have?"
+                },
+                {
+                  "ask": "What does flipping a zero contribute, and what does flipping a one remove?"
+                },
+                {
+                  "ask": "For each left boundary, extend right and accumulate +1 for zero, -1 for one."
+                }
+              ],
+              "solution": {
+                "say": "Count existing ones. Enumerate every nonempty interval with two loops and accumulate gain (+1 for 0, -1 for 1). Add the maximum gain to the original count. Initialize best_gain=-n, not zero: one move is mandatory, so an all-one array yields n-1. This examines every legal move in O(n²) time and O(1) extra space; no DP prerequisite needed."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/327/A",
+            "slot": "D",
+            "points": 2000
+          }
+        ]
+      },
+      "review": {
+        "minutes": 60,
+        "prompt": "Record each attempt's four timestamps, verdict evidence and any help. Choose the closest useful miss: restate it, find the first incorrect assumption, take one hint at a time, close the explanation and reconstruct. Save one error and one next action. Stop at 60 minutes; unresolved debt replaces future novelty."
+      },
+      "core": {
+        "minutes": 120,
+        "lesson": {
+          "title": "Rebuild the solving routine: what your state means",
+          "topic": "implementation",
+          "topicIds": [
+            "implementation",
+            "basic-math",
+            "frequency"
+          ],
+          "minutes": 35,
+          "why": "A short restart lesson in loops, keyed counts and invariants. Diagnose first; if the contest reveals a more urgent prerequisite, the coach replaces unstarted core content and increments the plan version.",
+          "outcomes": [
+            "State input, output, constraints and allowed operations in your own words.",
+            "Trace a frequency dictionary and explain its meaning before and after an update.",
+            "Implement a tiny primitive from memory and distinguish a guided solution from independent work."
+          ],
+          "resources": [
+            {
+              "kind": "docs",
+              "title": "Python tutorial — dictionaries only",
+              "url": "https://docs.python.org/3/tutorial/datastructures.html#dictionaries",
+              "minutes": 6,
+              "segment": "Section 5.5, from the dictionary definition through membership and get(); stop before looping techniques.",
+              "watchFor": "Keys label stored information. Understand get(key, 0), assignment and membership; no need to read the full chapter."
+            }
+          ],
+          "steps": [
+            {
+              "title": "Read before choosing a tool",
+              "body": "Write four lines: what arrives, what must be returned, which operations are legal, and how large n can be. Try a tiny example by hand. A loop that examines all pairs takes roughly n² comparisons; at n=100 that may be fine, at n=200000 it is not."
+            },
+            {
+              "title": "An invariant is a sentence about stored state",
+              "body": "Use requests [cat, dog, cat, cat]. Just before the next request, counts[x] means how many earlier requests equal x. This is a tally sheet indexed by a name, not by position. Start empty, read the old count, then increase it.",
+              "figure": {
+                "kind": "array",
+                "cells": [
+                  "cat",
+                  "dog",
+                  "cat",
+                  "cat"
+                ],
+                "indexed": true,
+                "pointers": [
+                  {
+                    "at": 2,
+                    "label": "next",
+                    "tone": "accent"
+                  }
+                ],
+                "marks": [
+                  {
+                    "at": [
+                      0,
+                      1
+                    ],
+                    "tone": "good",
+                    "label": "already processed"
+                  }
+                ],
+                "caption": "Before index 2: cat → 1, dog → 1. The current cat has not been counted yet."
+              }
+            },
+            {
+              "title": "Trace before code",
+              "body": "The old counts printed for that sequence are 0, 0, 1, 2. After each step, the processed prefix is one element longer and its tally remains correct. Looking up a missing key gives zero. The statement about the processed prefix is your loop invariant.",
+              "code": "counts = {}\nfor item in items:\n    previous = counts.get(item, 0)\n    print(previous)\n    counts[item] = previous + 1"
+            },
+            {
+              "title": "What if we want equal pairs?",
+              "body": "Each new cat forms one pair with every earlier cat. Add its previous count to an answer before incrementing. For [cat, dog, cat, cat], the increments are 0,0,1,2, for 3 pairs. Incrementing first accidentally includes the item paired with itself.",
+              "figure": {
+                "kind": "flow",
+                "steps": [
+                  {
+                    "text": "Read key"
+                  },
+                  {
+                    "text": "Get earlier count"
+                  },
+                  {
+                    "text": "Add to answer"
+                  },
+                  {
+                    "text": "Increment count"
+                  }
+                ],
+                "caption": "The order preserves the meaning of 'earlier'."
+              }
+            },
+            {
+              "title": "From identity to a useful key",
+              "body": "Two records can match on a derived key. If a relation says value_left - position_left = value_right - position_right, store value - position. First derive the equality on paper; do not memorize a dictionary trick. Negative integer keys work too."
+            },
+            {
+              "title": "Check boundaries and explain costs",
+              "body": "Test an empty primitive input, one item, all distinct items and all equal items. Dictionary lookups are expected constant time, not a worst-case guarantee; these exercises use bounded integer or string keys. Explain one sentence of correctness before submitting. Codeforces acceptance, understanding and independent work are separate facts."
+            }
+          ],
+          "drill": {
+            "prompt": "Close the example. Write a Python function earlier_counts(items) returning how many equal items appeared before each item. Test [] -> [], ['a'] -> [0], ['a','b','a','a'] -> [0,0,1,2]. Paste your from-memory code and explain what counts stores. Then add a second function counting equal unordered pairs; the last example gives 3.",
+            "starter": "def earlier_counts(items):\n    # Reconstruct from memory.\n    pass"
+          },
+          "check": [
+            {
+              "q": "What does counts[x] mean immediately before processing the next item?",
+              "a": "The number of earlier processed items equal to x.",
+              "keywords": [
+                "earlier"
+              ]
+            },
+            {
+              "q": "For ['a','b','a','a'], what sequence of previous counts is returned?",
+              "a": "0, 0, 1, 2",
+              "keywords": [
+                "0",
+                "1",
+                "2"
+              ]
+            },
+            {
+              "q": "Why add the old count before incrementing when counting pairs?",
+              "a": "To avoid counting the current item paired with itself.",
+              "keywords": [
+                "itself"
+              ]
+            }
+          ]
+        },
+        "practice": {
+          "title": "Dictionary state and counting transfer",
+          "blocks": [
+            {
+              "id": "dictionary-state",
+              "label": "Guided transfer",
+              "minutes": 30,
+              "note": "Only after the lesson gate. A hint is allowed and remains recorded as help.",
+              "problems": [
+                {
+                  "key": "4-C",
+                  "contestId": 4,
+                  "index": "C",
+                  "name": "Registration System",
+                  "rating": 1300,
+                  "tags": [],
+                  "topicIds": [
+                    "implementation",
+                    "frequency"
+                  ],
+                  "capMinutes": 30,
+                  "role": "practice",
+                  "hints": {
+                    "ladder": [
+                      {
+                        "ask": "What information must persist between repeated requests for the same base name?"
+                      },
+                      {
+                        "ask": "Input names contain only letters. Can a generated name with digits collide with a future raw request?"
+                      },
+                      {
+                        "ask": "Store how many requests for each base name have already occurred."
+                      }
+                    ],
+                    "solution": {
+                      "say": "Maintain count[name]. If previous count is zero print OK, otherwise print name followed by that count; then increment. Letter-only input names cannot be generated digit-suffixed names. Each base has received suffixes 1..count-1, so count is the smallest free suffix. Expected O(total input/output characters), O(distinct names) entries. Use dict.get(name,0), and reset only once for the whole request stream."
+                    }
+                  },
+                  "sealed": true,
+                  "source": "https://codeforces.com/problemset/problem/4/C"
+                }
+              ]
+            },
+            {
+              "id": "counting-transfer",
+              "label": "Independent first attempt",
+              "minutes": 35,
+              "note": "Attempt independently first; hints change classification rather than count as an unaided solve.",
+              "problems": [
+                {
+                  "key": "1520-D",
+                  "contestId": 1520,
+                  "index": "D",
+                  "name": "Same Differences",
+                  "rating": 1200,
+                  "tags": [],
+                  "topicIds": [
+                    "implementation",
+                    "basic-math",
+                    "frequency"
+                  ],
+                  "capMinutes": 35,
+                  "role": "practice",
+                  "hints": {
+                    "ladder": [
+                      {
+                        "ask": "Can you put the terms involving j on one side and the terms involving i on the other?"
+                      },
+                      {
+                        "ask": "Which single key must be equal for two positions to form a pair?"
+                      },
+                      {
+                        "ask": "Scan left to right. Add the number of earlier equal keys before incrementing the current key."
+                      }
+                    ],
+                    "solution": {
+                      "say": "Rearrange a[j]-a[i]=j-i as a[j]-j=a[i]-i. For each index i, key=a[i]-i; add freq.get(key,0) to the answer and then increment freq[key]. Before processing i the map counts only previous indices, so each valid pair is counted once and no self-pair is counted. Either index convention works if consistent. Expected O(n) time and O(n) space. Python integers handle the largest pair count."
+                    }
+                  },
+                  "sealed": true,
+                  "source": "https://codeforces.com/problemset/problem/1520/D"
+                }
+              ]
+            },
+            {
+              "id": "recall-and-log",
+              "label": "Cold recall, repair and log",
+              "minutes": 20,
+              "note": "Blank-code recall or unfinished guided repair; record evidence and preserve the time cap.",
+              "problems": []
+            }
+          ]
+        }
+      },
+      "leetcode": {
+        "title": "Two focused dictionary questions",
+        "minutes": 60,
+        "problems": [
+          {
+            "slug": "contains-duplicate",
+            "title": "Contains Duplicate",
+            "difficulty": "Easy",
+            "url": "https://leetcode.com/problems/contains-duplicate/",
+            "capMinutes": 25,
+            "mirrors": "Today's dictionary state and counting lesson",
+            "topicIds": [
+              "implementation",
+              "frequency"
+            ],
+            "sealed": false,
+            "exposure": "unconfirmed; record known solution as deliberate cold re-solve",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "What must be remembered while scanning?"
+                },
+                {
+                  "ask": "Would a previous-count dictionary identify a repeat?"
+                },
+                {
+                  "ask": "Check the earlier count before incrementing."
+                }
+              ],
+              "solution": {
+                "say": "Scan numbers with a dictionary of earlier counts. If a number already has positive count, return True; otherwise increment and continue. Return False after the scan. Expected O(n) time and O(n) space. A set is a later equivalent simplification after its membership operation is taught."
+              }
+            }
+          },
+          {
+            "slug": "valid-anagram",
+            "title": "Valid Anagram",
+            "difficulty": "Easy",
+            "url": "https://leetcode.com/problems/valid-anagram/",
+            "capMinutes": 25,
+            "mirrors": "Today's dictionary state and counting lesson",
+            "topicIds": [
+              "implementation",
+              "frequency"
+            ],
+            "sealed": false,
+            "exposure": "unconfirmed; record known solution as deliberate cold re-solve",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "Does character order matter, or does each character's multiplicity matter?"
+                },
+                {
+                  "ask": "How can you summarize every character count?"
+                },
+                {
+                  "ask": "Build frequency dictionaries for both strings and compare them."
+                }
+              ],
+              "solution": {
+                "say": "Count characters separately in both strings and compare the dictionaries. Equal maps mean every character occurs the same number of times; this is exactly the rearrangement condition. Expected O(len(s)+len(t)) time and O(distinct characters) space. Distinguish count equality from merely checking which letters occur."
+              }
+            }
+          }
+        ]
+      },
+      "diagnosticBootstrap": true,
+      "diagnosticReason": "Initial return diagnostic after reported absence; previously taught basics only, with learner confirmation.",
+      "status": "setup_only"
+    },
+    {
+      "programDay": 2,
+      "date": "2026-09-24",
+      "focus": "Return diagnostic and the problem-solving routine",
+      "preflight": {
+        "required": true,
+        "topicIds": [
+          "implementation",
+          "basic-math",
+          "sorting",
+          "brute-force",
+          "prefix-sums",
+          "greedy"
+        ],
+        "prompt": "Confirm you have previously learned these basics and have not seen these exact problems. If any prerequisite is unfamiliar, tell the coach before starting. Confirmation grants diagnostic eligibility only."
+      },
+      "contest": {
+        "title": "Return diagnostic · 120 minutes",
+        "minutes": 120,
+        "mirrors": "Previously learned basics only; no new bitmask, graph or DP prerequisite",
+        "problems": [
+          {
+            "key": "313-A",
+            "contestId": 313,
+            "index": "A",
+            "name": "Ilya and Bank Account",
+            "rating": 900,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "basic-math"
+            ],
+            "capMinutes": 20,
+            "role": "diagnostic",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "What are the only three permitted final states?"
+                },
+                {
+                  "ask": "For a negative balance, which remaining absolute value is preferable?"
+                },
+                {
+                  "ask": "Build both deletions from the absolute value; compare with the unchanged balance."
+                }
+              ],
+              "solution": {
+                "say": "Keep n when n>=0. Otherwise let x=-n and return -min(x//10,(x//100)*10+x%10). Deleting the last or penultimate digit exhausts the allowed operations; the smaller magnitude is the larger negative balance. Check -10 -> 0. O(1) arithmetic."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/313/A",
+            "slot": "A",
+            "points": 500
+          },
+          {
+            "key": "363-B",
+            "contestId": 363,
+            "index": "B",
+            "name": "Fence",
+            "rating": 1100,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "prefix-sums",
+              "basic-math"
+            ],
+            "capMinutes": 30,
+            "role": "diagnostic",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "Which quantity must be compared for every legal starting position?"
+                },
+                {
+                  "ask": "How much of the sum is shared by consecutive length-k segments?"
+                },
+                {
+                  "ask": "Maintain the current sum: subtract the outgoing height and add the incoming height."
+                }
+              ],
+              "solution": {
+                "say": "Start with sum(a[:k]), remembering starting index 0. For r from k to n-1, add a[r]-a[r-k]. If this sum is smaller, save start r-k+1. Print best_start+1. Each legal window is visited once; compare sums, not individual planks. O(n) time. For k=n the only answer is 1; ties may return any optimum."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/363/B",
+            "slot": "B",
+            "points": 1000
+          },
+          {
+            "key": "160-B",
+            "contestId": 160,
+            "index": "B",
+            "name": "Unlucky Ticket",
+            "rating": 1100,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "sorting",
+              "greedy"
+            ],
+            "capMinutes": 30,
+            "role": "diagnostic",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "Must all comparisons point in the same direction?"
+                },
+                {
+                  "ask": "Can you impose an order on both halves before pairing?"
+                },
+                {
+                  "ask": "Compare sorted halves position by position in each of the two strict directions."
+                }
+              ],
+              "solution": {
+                "say": "Sort the first and second n digits separately. Answer YES if all(a[i]<b[i]) or all(a[i]>b[i]); otherwise NO. Ordered pairing suffices: if some sorted a[k]>=b[k], the n-k larger a values cannot all obtain larger b values because at most n-k-1 b values qualify. Reverse the argument for >. O(n log n). Equality fails the strict criterion."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/160/B",
+            "slot": "C",
+            "points": 1500
+          },
+          {
+            "key": "327-A",
+            "contestId": 327,
+            "index": "A",
+            "name": "Flipping Game",
+            "rating": 1200,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "brute-force",
+              "basic-math"
+            ],
+            "capMinutes": 40,
+            "role": "diagnostic",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "How many nonempty intervals can n<=100 have?"
+                },
+                {
+                  "ask": "What does flipping a zero contribute, and what does flipping a one remove?"
+                },
+                {
+                  "ask": "For each left boundary, extend right and accumulate +1 for zero, -1 for one."
+                }
+              ],
+              "solution": {
+                "say": "Count existing ones. Enumerate every nonempty interval with two loops and accumulate gain (+1 for 0, -1 for 1). Add the maximum gain to the original count. Initialize best_gain=-n, not zero: one move is mandatory, so an all-one array yields n-1. This examines every legal move in O(n²) time and O(1) extra space; no DP prerequisite needed."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/327/A",
+            "slot": "D",
+            "points": 2000
+          }
+        ]
+      },
+      "review": {
+        "minutes": 60,
+        "prompt": "Record each attempt's four timestamps, verdict evidence and any help. Choose the closest useful miss: restate it, find the first incorrect assumption, take one hint at a time, close the explanation and reconstruct. Save one error and one next action. Stop at 60 minutes; unresolved debt replaces future novelty."
+      },
+      "core": {
+        "minutes": 120,
+        "lesson": {
+          "title": "Rebuild the solving routine: what your state means",
+          "topic": "implementation",
+          "topicIds": [
+            "implementation",
+            "basic-math",
+            "frequency"
+          ],
+          "minutes": 35,
+          "why": "A short restart lesson in loops, keyed counts and invariants. Diagnose first; if the contest reveals a more urgent prerequisite, the coach replaces unstarted core content and increments the plan version.",
+          "outcomes": [
+            "State input, output, constraints and allowed operations in your own words.",
+            "Trace a frequency dictionary and explain its meaning before and after an update.",
+            "Implement a tiny primitive from memory and distinguish a guided solution from independent work."
+          ],
+          "resources": [
+            {
+              "kind": "docs",
+              "title": "Python tutorial — dictionaries only",
+              "url": "https://docs.python.org/3/tutorial/datastructures.html#dictionaries",
+              "minutes": 6,
+              "segment": "Section 5.5, from the dictionary definition through membership and get(); stop before looping techniques.",
+              "watchFor": "Keys label stored information. Understand get(key, 0), assignment and membership; no need to read the full chapter."
+            }
+          ],
+          "steps": [
+            {
+              "title": "Read before choosing a tool",
+              "body": "Write four lines: what arrives, what must be returned, which operations are legal, and how large n can be. Try a tiny example by hand. A loop that examines all pairs takes roughly n² comparisons; at n=100 that may be fine, at n=200000 it is not."
+            },
+            {
+              "title": "An invariant is a sentence about stored state",
+              "body": "Use requests [cat, dog, cat, cat]. Just before the next request, counts[x] means how many earlier requests equal x. This is a tally sheet indexed by a name, not by position. Start empty, read the old count, then increase it.",
+              "figure": {
+                "kind": "array",
+                "cells": [
+                  "cat",
+                  "dog",
+                  "cat",
+                  "cat"
+                ],
+                "indexed": true,
+                "pointers": [
+                  {
+                    "at": 2,
+                    "label": "next",
+                    "tone": "accent"
+                  }
+                ],
+                "marks": [
+                  {
+                    "at": [
+                      0,
+                      1
+                    ],
+                    "tone": "good",
+                    "label": "already processed"
+                  }
+                ],
+                "caption": "Before index 2: cat → 1, dog → 1. The current cat has not been counted yet."
+              }
+            },
+            {
+              "title": "Trace before code",
+              "body": "The old counts printed for that sequence are 0, 0, 1, 2. After each step, the processed prefix is one element longer and its tally remains correct. Looking up a missing key gives zero. The statement about the processed prefix is your loop invariant.",
+              "code": "counts = {}\nfor item in items:\n    previous = counts.get(item, 0)\n    print(previous)\n    counts[item] = previous + 1"
+            },
+            {
+              "title": "What if we want equal pairs?",
+              "body": "Each new cat forms one pair with every earlier cat. Add its previous count to an answer before incrementing. For [cat, dog, cat, cat], the increments are 0,0,1,2, for 3 pairs. Incrementing first accidentally includes the item paired with itself.",
+              "figure": {
+                "kind": "flow",
+                "steps": [
+                  {
+                    "text": "Read key"
+                  },
+                  {
+                    "text": "Get earlier count"
+                  },
+                  {
+                    "text": "Add to answer"
+                  },
+                  {
+                    "text": "Increment count"
+                  }
+                ],
+                "caption": "The order preserves the meaning of 'earlier'."
+              }
+            },
+            {
+              "title": "From identity to a useful key",
+              "body": "Two records can match on a derived key. If a relation says value_left - position_left = value_right - position_right, store value - position. First derive the equality on paper; do not memorize a dictionary trick. Negative integer keys work too."
+            },
+            {
+              "title": "Check boundaries and explain costs",
+              "body": "Test an empty primitive input, one item, all distinct items and all equal items. Dictionary lookups are expected constant time, not a worst-case guarantee; these exercises use bounded integer or string keys. Explain one sentence of correctness before submitting. Codeforces acceptance, understanding and independent work are separate facts."
+            }
+          ],
+          "drill": {
+            "prompt": "Close the example. Write a Python function earlier_counts(items) returning how many equal items appeared before each item. Test [] -> [], ['a'] -> [0], ['a','b','a','a'] -> [0,0,1,2]. Paste your from-memory code and explain what counts stores. Then add a second function counting equal unordered pairs; the last example gives 3.",
+            "starter": "def earlier_counts(items):\n    # Reconstruct from memory.\n    pass"
+          },
+          "check": [
+            {
+              "q": "What does counts[x] mean immediately before processing the next item?",
+              "a": "The number of earlier processed items equal to x.",
+              "keywords": [
+                "earlier"
+              ]
+            },
+            {
+              "q": "For ['a','b','a','a'], what sequence of previous counts is returned?",
+              "a": "0, 0, 1, 2",
+              "keywords": [
+                "0",
+                "1",
+                "2"
+              ]
+            },
+            {
+              "q": "Why add the old count before incrementing when counting pairs?",
+              "a": "To avoid counting the current item paired with itself.",
+              "keywords": [
+                "itself"
+              ]
+            }
+          ]
+        },
+        "practice": {
+          "title": "Dictionary state and counting transfer",
+          "blocks": [
+            {
+              "id": "dictionary-state",
+              "label": "Guided transfer",
+              "minutes": 30,
+              "note": "Only after the lesson gate. A hint is allowed and remains recorded as help.",
+              "problems": [
+                {
+                  "key": "4-C",
+                  "contestId": 4,
+                  "index": "C",
+                  "name": "Registration System",
+                  "rating": 1300,
+                  "tags": [],
+                  "topicIds": [
+                    "implementation",
+                    "frequency"
+                  ],
+                  "capMinutes": 30,
+                  "role": "practice",
+                  "hints": {
+                    "ladder": [
+                      {
+                        "ask": "What information must persist between repeated requests for the same base name?"
+                      },
+                      {
+                        "ask": "Input names contain only letters. Can a generated name with digits collide with a future raw request?"
+                      },
+                      {
+                        "ask": "Store how many requests for each base name have already occurred."
+                      }
+                    ],
+                    "solution": {
+                      "say": "Maintain count[name]. If previous count is zero print OK, otherwise print name followed by that count; then increment. Letter-only input names cannot be generated digit-suffixed names. Each base has received suffixes 1..count-1, so count is the smallest free suffix. Expected O(total input/output characters), O(distinct names) entries. Use dict.get(name,0), and reset only once for the whole request stream."
+                    }
+                  },
+                  "sealed": true,
+                  "source": "https://codeforces.com/problemset/problem/4/C"
+                }
+              ]
+            },
+            {
+              "id": "counting-transfer",
+              "label": "Independent first attempt",
+              "minutes": 35,
+              "note": "Attempt independently first; hints change classification rather than count as an unaided solve.",
+              "problems": [
+                {
+                  "key": "1520-D",
+                  "contestId": 1520,
+                  "index": "D",
+                  "name": "Same Differences",
+                  "rating": 1200,
+                  "tags": [],
+                  "topicIds": [
+                    "implementation",
+                    "basic-math",
+                    "frequency"
+                  ],
+                  "capMinutes": 35,
+                  "role": "practice",
+                  "hints": {
+                    "ladder": [
+                      {
+                        "ask": "Can you put the terms involving j on one side and the terms involving i on the other?"
+                      },
+                      {
+                        "ask": "Which single key must be equal for two positions to form a pair?"
+                      },
+                      {
+                        "ask": "Scan left to right. Add the number of earlier equal keys before incrementing the current key."
+                      }
+                    ],
+                    "solution": {
+                      "say": "Rearrange a[j]-a[i]=j-i as a[j]-j=a[i]-i. For each index i, key=a[i]-i; add freq.get(key,0) to the answer and then increment freq[key]. Before processing i the map counts only previous indices, so each valid pair is counted once and no self-pair is counted. Either index convention works if consistent. Expected O(n) time and O(n) space. Python integers handle the largest pair count."
+                    }
+                  },
+                  "sealed": true,
+                  "source": "https://codeforces.com/problemset/problem/1520/D"
+                }
+              ]
+            },
+            {
+              "id": "recall-and-log",
+              "label": "Cold recall, repair and log",
+              "minutes": 20,
+              "note": "Blank-code recall or unfinished guided repair; record evidence and preserve the time cap.",
+              "problems": []
+            }
+          ]
+        }
+      },
+      "leetcode": {
+        "title": "Two focused dictionary questions",
+        "minutes": 60,
+        "problems": [
+          {
+            "slug": "contains-duplicate",
+            "title": "Contains Duplicate",
+            "difficulty": "Easy",
+            "url": "https://leetcode.com/problems/contains-duplicate/",
+            "capMinutes": 25,
+            "mirrors": "Today's dictionary state and counting lesson",
+            "topicIds": [
+              "implementation",
+              "frequency"
+            ],
+            "sealed": false,
+            "exposure": "unconfirmed; record known solution as deliberate cold re-solve",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "What must be remembered while scanning?"
+                },
+                {
+                  "ask": "Would a previous-count dictionary identify a repeat?"
+                },
+                {
+                  "ask": "Check the earlier count before incrementing."
+                }
+              ],
+              "solution": {
+                "say": "Scan numbers with a dictionary of earlier counts. If a number already has positive count, return True; otherwise increment and continue. Return False after the scan. Expected O(n) time and O(n) space. A set is a later equivalent simplification after its membership operation is taught."
+              }
+            }
+          },
+          {
+            "slug": "valid-anagram",
+            "title": "Valid Anagram",
+            "difficulty": "Easy",
+            "url": "https://leetcode.com/problems/valid-anagram/",
+            "capMinutes": 25,
+            "mirrors": "Today's dictionary state and counting lesson",
+            "topicIds": [
+              "implementation",
+              "frequency"
+            ],
+            "sealed": false,
+            "exposure": "unconfirmed; record known solution as deliberate cold re-solve",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "Does character order matter, or does each character's multiplicity matter?"
+                },
+                {
+                  "ask": "How can you summarize every character count?"
+                },
+                {
+                  "ask": "Build frequency dictionaries for both strings and compare them."
+                }
+              ],
+              "solution": {
+                "say": "Count characters separately in both strings and compare the dictionaries. Equal maps mean every character occurs the same number of times; this is exactly the rearrangement condition. Expected O(len(s)+len(t)) time and O(distinct characters) space. Distinguish count equality from merely checking which letters occur."
+              }
+            }
+          }
+        ]
+      },
+      "diagnosticBootstrap": true,
+      "diagnosticReason": "Day 1 morning passed during the approved rebuild; no training session ran. First-session diagnostic only."
+    }
+  ],
+  "contentHash": "36a260f27aba6ada49a1b1d5624298fc060e7ed574bbc6b639e070f578a6b017"
+}

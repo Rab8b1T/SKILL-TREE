@@ -19,6 +19,94 @@ const contestProblem = problem.extend({
   points: z.number().int().nonnegative(),
 });
 
+const hint = z
+  .object({
+    ask: z.string().min(1),
+    say: z.string().optional(),
+  })
+  .passthrough();
+
+const problemHints = z
+  .object({
+    ladder: z.array(hint).min(1),
+    solution: z
+      .object({
+        say: z.string().min(1),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+const lessonResource = z
+  .object({
+    kind: z.enum(["video", "article", "docs", "book"]),
+    title: z.string().min(1),
+    url: z.string().min(1),
+    minutes: z.number().positive(),
+    watchFor: z.string().min(1),
+    segment: z.string().optional(),
+  })
+  .passthrough();
+
+const lessonStep = z
+  .object({
+    title: z.string().min(1),
+    body: z.string().min(1),
+    code: z.string().optional(),
+  })
+  .passthrough();
+
+const lesson = z
+  .object({
+    title: z.string().min(1),
+    topic: z.string().min(1),
+    minutes: z.number().positive(),
+    why: z.string().min(1),
+    outcomes: z.array(z.string().min(1)),
+    resources: z.array(lessonResource),
+    steps: z.array(lessonStep).min(1),
+    drill: z
+      .object({
+        prompt: z.string().min(1),
+        starter: z.string().optional(),
+      })
+      .passthrough(),
+    check: z
+      .array(
+        z
+          .object({
+            q: z.string().min(1),
+            a: z.string().min(1),
+          })
+          .passthrough(),
+      )
+      .min(1),
+  })
+  .passthrough();
+
+const leetcodeProblem = z
+  .object({
+    slug: z.string().min(1),
+    title: z.string().min(1),
+    difficulty: z.enum(["Easy", "Medium", "Hard"]),
+    url: z.string().min(1),
+    capMinutes: z.number().positive(),
+    mirrors: z.string().min(1),
+    sealed: z.boolean().optional(),
+    reveal: z.string().optional(),
+    hints: problemHints.optional(),
+  })
+  .passthrough();
+
+const leetcode = z
+  .object({
+    title: z.string().min(1),
+    minutes: z.number().positive(),
+    problems: z.array(leetcodeProblem).min(1),
+  })
+  .passthrough();
+
 const planSchema = z.object({
   updatedAt: z.string().min(1),
   handle: z.string().min(1),
@@ -86,6 +174,8 @@ const planSchema = z.object({
             problems: z.array(contestProblem).min(2),
           })
           .optional(),
+        lesson: lesson.optional(),
+        leetcode: leetcode.optional(),
       })
       .passthrough(),
   ),

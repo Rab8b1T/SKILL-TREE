@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // The Mongo driver is server-only; keep it out of any client bundle graph.
   serverExternalPackages: ["mongodb"],
+  outputFileTracingIncludes: {
+    "/api/program/**": ["./data/coach/**/*.json"],
+    "/api/program": ["./data/coach/**/*.json"],
+  },
   async headers() {
     return [
       {

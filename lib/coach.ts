@@ -104,6 +104,60 @@ export interface CoachContest {
   problems: CoachContestProblem[];
 }
 
+/** Pinpointed external material. Never a whole playlist or a bare homepage. */
+export interface LessonResource {
+  kind: "video" | "article" | "docs" | "book";
+  title: string;
+  url: string;
+  minutes: number;
+  /** Exactly what to take from it. */
+  watchFor: string;
+  /** The span that matters, e.g. "4:10-17:35" or "pp. 96-98". */
+  segment?: string;
+}
+
+export interface LessonStep {
+  title: string;
+  body: string;
+  figure?: Figure;
+  /** Runnable Python. */
+  code?: string;
+}
+
+export interface CoachLesson {
+  title: string;
+  topic: string;
+  minutes: number;
+  /** Why this topic, now. */
+  why: string;
+  /** What must be true by the end of the hour. */
+  outcomes: string[];
+  resources: LessonResource[];
+  steps: LessonStep[];
+  /** Written from memory with the lesson closed. */
+  drill: { prompt: string; starter?: string };
+  check: { q: string; a: string }[];
+}
+
+export interface CoachLeetCodeProblem {
+  slug: string;
+  title: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  url: string;
+  capMinutes: number;
+  /** Which Codeforces topic this mirrors, and why it is here. */
+  mirrors: string;
+  sealed?: boolean;
+  reveal?: string;
+  hints?: ProblemHints;
+}
+
+export interface CoachLeetCode {
+  title: string;
+  minutes: number;
+  problems: CoachLeetCodeProblem[];
+}
+
 /** The mentor panel — the CM tracker's read, carried into the app. */
 export interface CoachMentor {
   rating: number;
@@ -130,6 +184,8 @@ export interface CoachDay {
   watchFor?: string;
   practice?: CoachPractice;
   contest?: CoachContest;
+  lesson?: CoachLesson;
+  leetcode?: CoachLeetCode;
 }
 
 export interface CoachPlan {

@@ -35,6 +35,7 @@ import { HandlePrompt } from "@/components/handle-prompt";
 import { ContestSetup } from "@/components/contest/contest-setup";
 import { ContestLive } from "@/components/contest/contest-live";
 import { ContestHistoryRow } from "@/components/contest/history-row";
+import { TodayProgram } from "@/components/program/today";
 
 export default function ContestPage() {
   const { data: session } = useSession();
@@ -101,6 +102,7 @@ export default function ContestPage() {
               : "Codeforces point scoring"
           } · paused time is excluded`}
         />
+        <TodayProgram />
         <ContestLive
           contest={active}
           onChange={ctl.update}
@@ -157,16 +159,18 @@ export default function ContestPage() {
         }
       />
 
+      <TodayProgram />
+
       <Card className="mb-4">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <SectionLabel>200-contest program</SectionLabel>
+            <SectionLabel>Previous 200-contest program</SectionLabel>
             <p className="mt-1 font-mono text-3xl font-semibold tabular-nums text-ink">
               {progress.completedRounds}
               <span className="text-lg text-faint">/{progress.targetRounds}</span>
             </p>
             <p className="mt-1 text-[12px] text-muted">
-              Every generated or coach contest counts. Multiple rounds per day are valid.
+              This counter keeps saved legacy and generated rounds. Your new morning program records its results in Coach.
             </p>
           </div>
           <Badge variant={progress.completedRounds >= progress.targetRounds ? "positive" : "accent"}>
