@@ -112,6 +112,7 @@ export type ProgramRun={
   sessionId:string;programId:string;programDay:number;date:string;actualDate:string;planVersion:number;contentHash:string;revision:number;startedAt:number;
   snapshot:ProgramDay;topics:Topic[];blocks:Record<BlockId,{startedAt:number;endsAt:number}>;attempts:Record<string,Attempt>;
   lessonEvidence?:LessonEvidence;review?:{rootCause:string;note:string;upsolveKey:string;submittedAt:number};
+  contestCompletion?:{finishedAt:number;scheduledEndsAt:number};
   events:{id:string;type:string;at:number;block?:BlockId;key?:string}[];processed:string[];
   verification:{cfCheckedAt?:number;lcCheckedAt?:number;cfError?:string;lcError?:string};
 };
@@ -149,6 +150,7 @@ export function problemFor(d:ProgramDay,block:BlockId,key:string) {
 const causes=["prerequisite","observation","proof","implementation","complexity","reading","time","clean"];
 export const actionSchema=z.discriminatedUnion("type",[
   z.object({type:z.literal("start"),confirmedPrerequisites:z.literal(true)}),
+  z.object({type:z.literal("finish-contest")}),
   z.object({type:z.literal("attempt"),block:z.enum(["contest","review","core","leetcode"]),key:z.string(),technique:z.string().max(1000)}),
   z.object({type:z.literal("report"),block:z.enum(["contest","review","core","leetcode"]),key:z.string(),reported:z.enum(["incomplete","solved","aided"]),note:z.string().max(10000)}),
   z.object({type:z.literal("hint"),block:z.enum(["review","core","leetcode"]),key:z.string(),solution:z.boolean().optional()}),
@@ -161,7 +163,18 @@ export function applyAction(original:ProgramRun,action:ProgramAction,eventId:str
   if(original.processed.includes(eventId))return original;
   const run=structuredClone(original),block=blockAt(run,now);
   if(action.type==="start")return original;
-  if(action.type==="lesson") {
+  if(action.type==="finish-contest") {
+    if(run.contestCompletion)return original;
+    if(block!=="contest")throw new Error("The contest is no longer on the clock. Open the current block to continue.");
+    const remaining=run.blocks.contest.endsAt-now;
+    run.contestCompletion={finishedAt:now,scheduledEndsAt:run.blocks.contest.endsAt};
+    run.blocks.contest.endsAt=now;
+    // Keep the remaining teaching budgets intact without extending the day.
+    for(const id of ["review","core","leetcode"] as const){
+      run.blocks[id].startedAt-=remaining;
+      run.blocks[id].endsAt-=remaining;
+    }
+  } else if(action.type==="lesson") {
     if(block!=="core")throw new Error("The core lesson opens after the contest and review blocks");
     const check=run.snapshot.core.lesson.check;
     if(action.answers.length!==check.length)throw new Error("Answer every recall question");
@@ -214,7 +227,7 @@ export function reconcileCf(run:ProgramRun,submissions:CfSubmission[],now:number
   }
   out.verification.cfCheckedAt=now;delete out.verification.cfError;return out;
 }
-export function contestScore(run:ProgramRun){return run.snapshot.contest.problems.reduce((sum,p)=>{const a=run.attempts[`contest:${p.key}`];return sum+(a?.verification==="verified"&&a.solvedAt!==undefined?codeforcesProblemPoints(p.points,(a.solvedAt-run.blocks.contest.startedAt)/1000,(run.blocks.contest.endsAt-run.blocks.contest.startedAt)/1000,a.wrongAttempts??0):0);},0);}
+export function contestScore(run:ProgramRun){return run.snapshot.contest.problems.reduce((sum,p)=>{const a=run.attempts[`contest:${p.key}`];return sum+(a?.verification==="verified"&&a.solvedAt!==undefined?codeforcesProblemPoints(p.points,(a.solvedAt-run.blocks.contest.startedAt)/1000,((run.contestCompletion?.scheduledEndsAt??run.blocks.contest.endsAt)-run.blocks.contest.startedAt)/1000,a.wrongAttempts??0):0);},0);}
 
 /** Explicit allowlists keep authored answers out of responses, including extra fields. */
 export function publicProgram(p:Program,run:ProgramRun|null,selected:ProgramDay,now:number) {
@@ -233,7 +246,7 @@ export function publicProgram(p:Program,run:ProgramRun|null,selected:ProgramDay,
   return {
     program:{programId:p.programId,title:p.title,planVersion:run?.planVersion??p.planVersion,contentHash:run?.contentHash??p.contentHash,startDate:p.startDate,timezone:p.timezone,goals:p.goals,diagnosticBasics:p.topics.filter(t=>t.diagnosticEligible).map(t=>t.name),topics:p.topics.map(t=>({id:t.id,name:t.name,status:topicStatus(t,now),prerequisites:t.prerequisites})),curriculum:p.curriculum??[]},
     day:{programDay:d.programDay,date:d.date,focus:d.focus,contest:{title:d.contest.title,minutes:d.contest.minutes,count:d.contest.problems.length,problems:d.contest.problems.map(x=>safeProblem(x,"contest")).filter(Boolean)},review:{prompt:reveal?d.review.prompt:"Review unlocks after the contest",problems:reveal?d.contest.problems.map(x=>safeProblem(x,"review")).filter(Boolean):[]},core:{lesson:lessonOpen?{title:l.title,topic:l.topic,minutes:l.minutes,why:l.why,outcomes:l.outcomes,resources:l.resources,steps:l.steps,drill:l.drill,check:l.check.map((q,i)=>({q:q.q,...(run?.lessonEvidence?.recallPassed?{a:q.a,index:i}:{})}))}:null,problems:d.core.practice.blocks.flatMap(b=>b.problems).map(x=>safeProblem(x as ProgramProblem,"core")).filter(Boolean)},leetcode:{problems:d.leetcode.problems.map(x=>safeProblem(x,"leetcode")).filter(Boolean)}},
-    run:run?{sessionId:run.sessionId,programDay:run.programDay,actualDate:run.actualDate,revision:run.revision,blocks:run.blocks,attempts:run.attempts,lessonEvidence:run.lessonEvidence,review:run.review,verification:run.verification,score:contestScore(run),currentBlock:blockAt(run,now)}:null,
+    run:run?{sessionId:run.sessionId,programDay:run.programDay,actualDate:run.actualDate,revision:run.revision,blocks:run.blocks,attempts:run.attempts,lessonEvidence:run.lessonEvidence,review:run.review,contestCompletion:run.contestCompletion,verification:run.verification,score:contestScore(run),currentBlock:blockAt(run,now)}:null,
     blocks:dayBlocks(d),totalMinutes:dayMinutes(d),serverNow:now,startWindow:startWindow(d,now),
   };
 }

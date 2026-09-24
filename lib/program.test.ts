@@ -14,6 +14,34 @@ describe("published program",()=>{
  it("canonicalizes nested keys for the Python publisher",()=>{expect(canonicalJson({z:[{b:"é",a:1}],a:2})).toBe('{"a":2,"z":[{"a":1,"b":"é"}]}');});
 });
 describe("server-owned session",()=>{
+ it("finishes early without changing earned points or admitting later contest submissions",()=>{
+  const p=fixture(),d=p.days[0],at=NOW+600000;
+  const before=reconcileCf(createRun(p,d,NOW),[sub(1,120)],at);
+  const finished=applyAction(before,{type:"finish-contest"},"finish-12345",at);
+  expect(blockAt(finished,at)).toBe("review");
+  expect(finished.blocks.review.startedAt).toBe(at);
+  expect(finished.blocks.review.endsAt-at).toBe(60*60000);
+  expect(finished.blocks.leetcode.endsAt).toBe(before.blocks.leetcode.endsAt-(7200000-600000));
+  expect(finished.snapshot).toEqual(before.snapshot);
+  expect(finished.attempts).toEqual(before.attempts);
+  expect(contestScore(finished)).toBe(contestScore(before));
+  expect(publicProgram(p,finished,d,at).day.review.problems).toHaveLength(2);
+  expect(publicProgram(p,finished,d,at).day.core.lesson).toBeNull();
+  expect(applyAction(finished,{type:"finish-contest"},"finish-12345",at+1000)).toEqual(finished);
+  expect(applyAction(finished,{type:"finish-contest"},"finish-again",at+1000)).toEqual(finished);
+  expect(()=>applyAction(finished,{type:"attempt",block:"contest",key:"2-B",technique:"Scan"},"late-attempt",at+1000)).toThrow(/clock/);
+  const reviewed=applyAction(finished,{type:"attempt",block:"review",key:"2-B",technique:"Repair"},"review-start",at);
+  const checked=reconcileCf(reviewed,[sub(1,120),sub(2,700,"OK",2,"B")],NOW+800000);
+  expect(checked.attempts["contest:2-B"]).toBeUndefined();
+  expect(checked.attempts["review:2-B"].verification).toBe("verified");
+  expect(contestScore(checked)).toBe(contestScore(before));
+ });
+ it("only accepts early completion while the contest is active",()=>{
+  const p=fixture(),r=createRun(p,p.days[0],NOW);
+  for(const at of [NOW-1,NOW+7200000])expect(()=>applyAction(r,{type:"finish-contest"},"finish-invalid",at)).toThrow(/clock/);
+  const finished=applyAction(r,{type:"finish-contest"},"finish-empty",NOW+1000);
+  expect(finished.attempts).toEqual({});expect(contestScore(finished)).toBe(0);
+ });
  it("fixes a contiguous six-hour clock across reloads and sleep",()=>{const p=fixture(),r=createRun(p,p.days[0],NOW);expect(blockAt(r,NOW+7199999)).toBe("contest");expect(blockAt(r,NOW+7200000)).toBe("review");expect(blockAt(JSON.parse(JSON.stringify(r)),NOW+10800000)).toBe("core");expect(blockAt(r,NOW+18000000)).toBe("leetcode");expect(blockAt(r,NOW+21600000)).toBeNull();});
  it("keeps started contents unchanged on republish",()=>{const p=fixture(),r=createRun(p,p.days[0],NOW);p.days[0].contest.problems[0].name="changed";expect(r.snapshot.contest.problems[0].name).toBe("Secret name");});
  it("does not serialize protected content during the contest or before start",()=>{const p=fixture(),d=p.days[0],r=createRun(p,d,NOW);const before=JSON.stringify(publicProgram(p,null,d,NOW));expect(before).not.toContain("Secret name");for(const time of [NOW,NOW+7199999]){const text=JSON.stringify(publicProgram(p,r,d,time));for(const secret of ["SECRET TAG","SECRET HINT","SECRET NUDGE","SECRET ANSWER","SECRET SOLUTION","SECRET LESSON CODE","SECRET RECALL ANSWER"])expect(text).not.toContain(secret);}});

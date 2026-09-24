@@ -27,6 +27,26 @@ function publish(p=fixture()){const {contentHash,...payload}=p;void contentHash;
 function body(action:unknown,revision=0,eventId="event-123456"){return{programId:"expert-2026-09-23",programDay:1,eventId,revision,action};}
 beforeEach(()=>{state.rows.clear();state.accepts.clear();state.subs.mockReset();publish();vi.spyOn(Date,"now").mockReturnValue(NOW);});
 describe("program backend with isolated fake store",()=>{
+ it("persists early completion for an existing two-hour session and retries without shifting twice",async()=>{
+  const p=fixture(),d=p.days[0];
+  d.scheduleOverride={mode:"from-start",authorizedAt:new Date(NOW).toISOString(),reason:"Two-hour session",totalMinutes:120};
+  d.contest.minutes=40;d.review.minutes=20;d.core.minutes=40;d.leetcode.minutes=20;
+  d.core.lesson.minutes=30;d.core.practice.blocks[0].minutes=10;d.leetcode.problems.forEach(x=>x.capMinutes=8);
+  publish(p);
+  await mutateProgram("one","tester",body({type:"start",confirmedPrerequisites:true}));
+  const at=NOW+29*60000;vi.mocked(Date.now).mockReturnValue(at);
+  const finish=body({type:"finish-contest"},0,"finish-12345");
+  const view=await mutateProgram("one","tester",finish);
+  expect(view.run?.currentBlock).toBe("review");
+  expect(view.run?.blocks.review).toEqual({startedAt:at,endsAt:at+20*60000});
+  expect(view.run?.blocks.leetcode.endsAt).toBe(NOW+109*60000);
+  expect(view.run?.revision).toBe(1);
+  expect((await mutateProgram("one","tester",finish)).run).toEqual(view.run);
+  expect((await getProgramView("one","tester")).run).toEqual(view.run);
+  expect((await programExport("one",p.programId)).sessions[0].contestCompletion).toEqual({finishedAt:at,scheduledEndsAt:NOW+40*60000});
+  await expect(mutateProgram("one","tester",body({type:"review",rootCause:"clean",note:"Checked both solutions",upsolveKey:""},0,"stale-review"))).rejects.toThrow(/another tab/);
+  await expect(mutateProgram("two","tester",finish)).rejects.toThrow(/Start the day/);
+ });
  it("runs an approved two-hour evening session and releases each block at its real boundary",async()=>{
   const p=fixture(),d=p.days[0],at=Date.parse("2026-09-23T19:30:00+05:30");
   d.scheduleOverride={mode:"from-start",authorizedAt:new Date(at).toISOString(),reason:"Learner has two hours",totalMinutes:120};
