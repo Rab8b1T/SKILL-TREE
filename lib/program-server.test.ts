@@ -38,8 +38,9 @@ describe("program backend with isolated fake store",()=>{
   const finish=body({type:"finish-contest"},0,"finish-12345");
   const view=await mutateProgram("one","tester",finish);
   expect(view.run?.currentBlock).toBe("review");
-  expect(view.run?.blocks.review).toEqual({startedAt:at,endsAt:at+20*60000});
-  expect(view.run?.blocks.leetcode.endsAt).toBe(NOW+109*60000);
+  expect(view.run?.timing.phases.review.status).toBe("ready");
+  expect(view.run?.timing.phases.review.budgetMs).toBe(20*60000);
+  expect(view.run?.timing.phases.leetcode.elapsedMs).toBe(0);
   expect(view.run?.revision).toBe(1);
   expect((await mutateProgram("one","tester",finish)).run).toEqual(view.run);
   expect((await getProgramView("one","tester")).run).toEqual(view.run);
@@ -47,7 +48,7 @@ describe("program backend with isolated fake store",()=>{
   await expect(mutateProgram("one","tester",body({type:"review",rootCause:"clean",note:"Checked both solutions",upsolveKey:""},0,"stale-review"))).rejects.toThrow(/another tab/);
   await expect(mutateProgram("two","tester",finish)).rejects.toThrow(/Start the day/);
  });
- it("runs an approved two-hour evening session and releases each block at its real boundary",async()=>{
+ it("runs an approved two-hour evening session with explicit phase transitions",async()=>{
   const p=fixture(),d=p.days[0],at=Date.parse("2026-09-23T19:30:00+05:30");
   d.scheduleOverride={mode:"from-start",authorizedAt:new Date(at).toISOString(),reason:"Learner has two hours",totalMinutes:120};
   d.contest.minutes=40;d.review.minutes=20;d.core.minutes=40;d.leetcode.minutes=20;
@@ -56,17 +57,21 @@ describe("program backend with isolated fake store",()=>{
   publish(p);vi.mocked(Date.now).mockReturnValue(at);
   const before=await getProgramView("one","tester");
   expect(before.totalMinutes).toBe(120);expect(before.startWindow.canStart).toBe(true);expect(before.run).toBeNull();
-  const v=await mutateProgram("one","tester",body({type:"start",confirmedPrerequisites:true}));
+  let v=await mutateProgram("one","tester",body({type:"start",confirmedPrerequisites:true}));
   expect(v.blocks.map(b=>b.minutes)).toEqual([40,20,40,20]);
   expect(v.run?.blocks.leetcode.endsAt).toBe(at+120*60000);
-  for(const [minute,block] of [[39,"contest"],[40,"review"],[60,"core"],[100,"leetcode"],[120,null]] as const){
+  for(const minute of [39,40,60,100,120]){
    vi.mocked(Date.now).mockReturnValue(at+minute*60000);
-   expect((await getProgramView("one","tester")).run?.currentBlock).toBe(block);
+   v=await getProgramView("one","tester");
+   expect(v.run?.currentBlock).toBe("contest");
   }
-  vi.mocked(Date.now).mockReturnValue(at+39*60000);
-  expect((await getProgramView("one","tester")).day.review.problems).toEqual([]);
-  vi.mocked(Date.now).mockReturnValue(at+40*60000);
-  expect((await getProgramView("one","tester")).day.review.problems).toHaveLength(2);
+  expect(v.day.review.problems).toEqual([]);
+  v=await mutateProgram("one","tester",body({type:"phase-next",block:"contest"},v.run!.revision,"manual-next-review"));
+  expect(v.run!.timing.phases.review.status).toBe("ready");
+  expect(v.day.review.problems).toHaveLength(2);
+  expect(v.day.core.lesson).toBeNull();
+  v=await mutateProgram("one","tester",body({type:"phase-next",block:"review"},v.run!.revision,"manual-next-core"));
+  expect(v.day.core.lesson).not.toBeNull();
   d.scheduleOverride.totalMinutes=121;publish(p);
   await expect(loadProgram()).rejects.toThrow(/budget/);
  });
@@ -84,8 +89,9 @@ describe("program backend with isolated fake store",()=>{
   expect(view.day.core.lesson).toBeNull();expect(view.day.review.problems).toEqual([]);
   const snap=JSON.stringify(view.run?.blocks);
   vi.mocked(Date.now).mockReturnValue(at+3600000);
-  expect(JSON.stringify((await getProgramView("one","tester")).run?.blocks)).toBe(snap);
-  await expect(mutateProgram("one","tester",body({type:"hint",block:"review",key:"1-A"},0,"late-hint-12345"))).rejects.toThrow(/locked/);
+  const current=await getProgramView("one","tester");
+  expect(JSON.stringify(current.run?.blocks)).toBe(snap);
+  await expect(mutateProgram("one","tester",body({type:"hint",block:"review",key:"1-A"},current.run!.revision,"late-hint-12345"))).rejects.toThrow(/locked/);
   vi.mocked(Date.now).mockReturnValue(Date.parse("2026-09-23T18:00:00+05:30"));
   await expect(mutateProgram("other","tester",body({type:"start",confirmedPrerequisites:true}))).rejects.toThrow(/passed/);
   vi.mocked(Date.now).mockReturnValue(at+86400000);
@@ -135,11 +141,17 @@ describe("program backend with isolated fake store",()=>{
   await act({type:"start",confirmedPrerequisites:true},NOW);
   await act({type:"attempt",block:"contest",key:"1-A",technique:"Scan each value"},NOW+1000);
   await act({type:"report",block:"contest",key:"1-A",reported:"incomplete",note:"Could not prove it"},NOW+7000000);
+  await act({type:"phase-next",block:"contest"},NOW+7200000);
+  await act({type:"phase-start",block:"review"},NOW+7200000);
   await act({type:"review",rootCause:"proof",upsolveKey:"1-A",note:"Prove the invariant before coding"},NOW+7200000);
   await act({type:"attempt",block:"review",key:"1-A",technique:"Prove and scan"},NOW+7300000);
   await act({type:"hint",block:"review",key:"1-A"},NOW+7400000);
+  await act({type:"phase-next",block:"review"},NOW+10800000);
+  await act({type:"phase-start",block:"core"},NOW+10800000);
   await act({type:"lesson",teachBack:"Count how often each key occurs",answers:["A count per key"],primitiveCode:"counts[x] = counts.get(x, 0) + 1"},NOW+10900000);
   await act({type:"attempt",block:"core",key:"3-C",technique:"Frequency dictionary"},NOW+11000000);
+  await act({type:"phase-next",block:"core"},NOW+18000000);
+  await act({type:"phase-start",block:"leetcode"},NOW+18000000);
   await act({type:"attempt",block:"leetcode",key:"two-sum",technique:"Store seen keys"},NOW+18000000);
   const view=await act({type:"report",block:"leetcode",key:"two-sum",reported:"solved",note:"Local examples pass; await acceptance check"},NOW+19000000);
   expect(view.run?.score).toBe(0);expect(view.run?.lessonEvidence?.recallPassed).toBe(true);
@@ -151,6 +163,7 @@ describe("LeetCode evidence",()=>{
  it("ignores earlier accepts and preserves unavailable-window results",()=>{
   const p=fixture();let r=createRun(p,p.days[0],NOW);
   r.lessonEvidence={submittedAt:NOW+12000000,teachBack:"counts",answers:["count"],primitiveCode:"counts[x]=1",recallPassed:true,assessment:"recall_checked",topicIds:["basics","frequency"]};
+  for(const block of ["contest","review","core"] as const)r=applyAction(r,{type:"phase-next",block},`advance-${block}`,NOW+18000000);
   r=applyAction(r,{type:"attempt",block:"leetcode",key:"two-sum",technique:"dictionary"},"lc-attempt",NOW+18000000);
   const old={id:"1",titleSlug:"two-sum",timestamp:String(NOW/1000-100)};
   expect(reconcileLc(r,[old],NOW+18500000).attempts["leetcode:two-sum"].verification).toBe("pending");
