@@ -116,23 +116,22 @@ describe("manual phase clocks", () => {
     expect(() => act(run, { type: "phase-pause", block: "leetcode" })).toThrow();
   });
 
-  it("recovers skipped core recall from LeetCode without resetting timers or requiring a new day", () => {
+  it("saves optional notes during practice and after finishing without changing clocks", () => {
     let run = runAt("core");
     run = act(run, { type: "phase-next", block: "core" }, NOW + MINUTE);
-    expect(run.timing!.currentBlock).toBe("leetcode");
-    expect(() => act(run, { type: "phase-start", block: "leetcode" }, NOW + MINUTE)).toThrow(/recall|Teach/);
-    const lesson = { type: "lesson", teachBack: "Each dictionary key stores its count", answers: ["The count"], primitiveCode: "counts[x] = counts.get(x, 0) + 1" } as const;
-    run = act(run, { ...lesson, answers: [...lesson.answers] }, NOW + 2 * MINUTE);
-    expect(run.lessonEvidence?.recallPassed).toBe(true);
-    expect(run.timing!.currentBlock).toBe("leetcode");
-    expect(phase(run, "leetcode", NOW + 2 * MINUTE).elapsedMs).toBe(0);
-    run = act(run, { type: "phase-start", block: "leetcode" }, NOW + 2 * MINUTE);
-    expect(() => act(run, { ...lesson, answers: [...lesson.answers] }, NOW + 3 * MINUTE)).toThrow(/Pause/);
-    run = act(run, { type: "phase-pause", block: "leetcode" }, NOW + 3 * MINUTE);
-    run = act(run, { ...lesson, answers: [...lesson.answers] }, NOW + 4 * MINUTE);
-    expect(phase(run, "leetcode", NOW + 4 * MINUTE).elapsedMs).toBe(MINUTE);
-    expect(phase(run, "leetcode", NOW + 4 * MINUTE).status).toBe("paused");
-    expect(phase(run, "core", NOW + 4 * MINUTE).elapsedMs).toBe(MINUTE);
+    run = act(run, { type: "phase-start", block: "leetcode" }, NOW + MINUTE);
+    const before = phase(run, "leetcode", NOW + 2 * MINUTE);
+    run = act(run, { type: "lesson", teachBack: "", answers: [], primitiveCode: "" }, NOW + 2 * MINUTE);
+    expect(run.lessonEvidence?.assessment).toBe("unreviewed");
+    expect(run.lessonEvidence).not.toHaveProperty("recallPassed");
+    expect(phase(run, "leetcode", NOW + 2 * MINUTE)).toEqual(before);
+    run = act(run, { type: "phase-next", block: "leetcode" }, NOW + 3 * MINUTE);
+    const clocks = structuredClone(run.timing);
+    run = act(run, { type: "lesson", teachBack: "End of day thought", answers: [""], primitiveCode: "# optional scratch work" }, NOW + 4 * MINUTE);
+    expect(run.timing).toEqual(clocks);
+    expect(run.lessonEvidenceHistory).toHaveLength(1);
+    expect(run.lessonEvidenceHistory![0].answers).toEqual([]);
+    expect(run.lessonEvidence?.teachBack).toBe("End of day thought");
   });
 
   it("records a retry once without shifting any deadline twice", () => {

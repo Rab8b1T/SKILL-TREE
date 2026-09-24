@@ -91,7 +91,7 @@ export function SessionControls({data, timing, save, busy, offline, draftScope, 
         <Button variant="ghost" onClick={() => onSelect(current)}>Show current phase</Button>
       </div>
       <p className="mt-3 text-xs text-muted">You choose when to move to the next phase. It opens ready to start. Any unfinished attempts are saved as incomplete. {current === "contest" ? "Leaving the contest ends it permanently; later submissions count as review work." : "Unused time in a finished phase is not added to the next phase."}</p>
-      {current === "leetcode" && phase.status !== "running" && <div className="mt-4 rounded-xl border border-line p-3"><p className="text-sm text-muted">{data.run?.lessonEvidence&&!data.run.lessonEvidence.recallPassed&&data.run.recallFeedback?data.run.recallFeedback.message:"If a prerequisite check blocks Start, return to the core lesson, repair and save your recall, then come back here."}</p><Button className="mt-2" size="sm" onClick={() => onSelect("core")}>Return to core lesson</Button></div>}
+      {current === "leetcode" && <div className="mt-4 rounded-xl border border-line p-3"><p className="text-sm text-muted">Learning notes are optional and never block practice. The agent reviews saved inputs after you finish the day or at your next check-in.</p><Button className="mt-2" size="sm" onClick={() => onSelect("core")}>View lesson & optional notes</Button></div>}
 
       {active && problem && <div className="mt-5 rounded-xl border border-line bg-sunken p-4">
         <div className="flex flex-wrap items-start justify-between gap-3"><div><SectionLabel>{active.status === "guided" ? "Guided work · outside your practice budget" : "Current problem"}</SectionLabel><p className="mt-2 font-semibold text-ink">{problem.name}</p><p className="mt-1 text-xs text-muted">Allocated {Math.round(active.capMs / 6000) / 10}m · {duration(active.elapsedMs)} practice used{accepted ? " · AC verified" : ""}</p></div><p className="font-mono text-2xl tabular-nums text-ink">{duration(active.status === "guided" ? active.guidedElapsedMs : active.capMs - active.elapsedMs)}</p></div>
@@ -103,7 +103,7 @@ export function SessionControls({data, timing, save, busy, offline, draftScope, 
       </div>}
       {phaseExpired && !active && <p className="mt-4 text-sm text-warning" role="alert">This phase’s time is finished. Choose {next ? "Next" : "Finish day"} when you are ready.</p>}
     </>}
-    {!current && <p className="mt-4 text-sm text-muted">Every phase is closed. Your attempts, review and recall remain available below. Completion does not imply that every problem was solved.</p>}
+    {!current && <p className="mt-4 text-sm text-muted">Every phase is closed. Your attempts, review and optional notes remain available below. Completion does not imply that every problem was solved.</p>}
     {offline && <p className="mt-4 text-sm text-warning" role="status">Connection unavailable. The last acknowledged timers keep their saved behavior. Reconnect before starting, pausing or moving ahead; your written drafts stay on this device.</p>}
   </Card>;
 }

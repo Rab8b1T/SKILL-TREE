@@ -154,9 +154,9 @@ describe("program backend with isolated fake store",()=>{
   await act({type:"phase-start",block:"leetcode"},NOW+18000000);
   await act({type:"attempt",block:"leetcode",key:"two-sum",technique:"Store seen keys"},NOW+18000000);
   const view=await act({type:"report",block:"leetcode",key:"two-sum",reported:"solved",note:"Local examples pass; await acceptance check"},NOW+19000000);
-  expect(view.run?.score).toBe(0);expect(view.run?.lessonEvidence?.recallPassed).toBe(true);
+  expect(view.run?.score).toBe(0);expect(view.run?.lessonEvidence?.assessment).toBe("unreviewed");
   expect(view.run?.attempts["leetcode:two-sum"].verification).toBe("pending");
-  const exportData=await programExport("one","expert-2026-09-23");expect(exportData.sessions[0].review?.rootCause).toBe("proof");expect(exportData.topicEvidence[0].kind).toBe("taught");
+  const exportData=await programExport("one","expert-2026-09-23");expect(exportData.sessions[0].review?.rootCause).toBe("proof");expect(exportData.topicEvidence[0].kind).toBe("pending_assessment");
  });
 });
 describe("LeetCode evidence",()=>{

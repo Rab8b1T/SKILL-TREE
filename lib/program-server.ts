@@ -6,7 +6,7 @@ import type { Document } from "mongodb";
 import { addTimingNotice, duringProblemWork, ensureTiming } from "./program-timing";
 import { getAppDb, HttpError } from "./mongo";
 import { getUserStatusSince } from "./cf-server";
-import { actionSchema, applyAction, closeProblem, assertContestEligible, canonicalJson, createRun, localDate, parseProgram, publicProgram, reconcileCf, sessionId, startWindow, type Program, type ProgramDay, type ProgramRun } from "./program";
+import { actionSchema, lessonNotesEvidence, applyAction, closeProblem, assertContestEligible, canonicalJson, createRun, localDate, parseProgram, publicProgram, reconcileCf, sessionId, startWindow, type Program, type ProgramDay, type ProgramRun } from "./program";
 
 export async function loadProgram():Promise<Program> {
   let raw:unknown;
@@ -131,6 +131,6 @@ export async function programExport(userId:string,programId:string) {
     const {snapshot,topics,processed,...evidence}=run;void topics;void processed;
     return {...evidence,problemMetadata:{contest:snapshot.contest.problems.map(({hints,reveal,...p})=>{void hints;void reveal;return p;}),core:snapshot.core.practice.blocks.flatMap(b=>b.problems).map(({hints,reveal,...p})=>{void hints;void reveal;return p;}),leetcode:snapshot.leetcode.problems.map(({hints,reveal,...p})=>{void hints;void reveal;return p;})}};
   });
-  const topicEvidence=rows.flatMap(({run})=>run.lessonEvidence?[{eventId:`${run.sessionId}:lesson:${run.lessonEvidence.submittedAt}`,sessionId:run.sessionId,programId,kind:run.lessonEvidence.recallPassed?"taught":"pending_assessment",at:run.lessonEvidence.submittedAt,source:"saved teach-back, recall answers and primitive; keyword recall check only",...run.lessonEvidence}]:[]);
+  const topicEvidence=rows.flatMap(({run})=>lessonNotesEvidence(run));
   return {schemaVersion:1,programId,exportedAt:new Date().toISOString(),sessions,topicEvidence};
 }

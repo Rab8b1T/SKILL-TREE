@@ -28,6 +28,18 @@ return; no sound is promised while the browser is closed. Browser behavior refer
 [audio autoplay](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay) and
 [desktop notifications](https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API/Using_the_Notifications_API).
 
+## Optional notes and later review
+
+Teach-back, recall responses, Python scratch work and review notes are optional. Save partial or
+empty entries without keyword grading. Assigned core and LeetCode practice start without notes;
+legacy failed recall flags never block them. Notes can be saved after the lesson opens, while
+practicing, or after finishing the day. Edits preserve previous saved versions for later review.
+
+The agent reviews meaning and reasoning when the learner says the day is completed or at the
+next day’s check-in. Missing inputs are absence of evidence, not a failed answer. Notes exports
+remain pending assessment, including legacy machine-graded notes; they never establish taught
+or independent status automatically. Planning still uses actual reviewed prerequisite evidence.
+
 ## Verification
 
 Run `npm test` and `npx tsc --noEmit`. Manual-state and server tests cover expiry, phase transitions,

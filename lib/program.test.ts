@@ -1,5 +1,5 @@
 import { describe,it,expect } from "vitest";
-import { actionSchema,applyAction,assertContestEligible,blockAt,canonicalJson,contestScore,createRun,parseProgram,publicProgram,reconcileCf,sessionId } from "./program";
+import { actionSchema,applyAction,assertContestEligible,blockAt,canonicalJson,contestScore,createRun,parseProgram,publicProgram,reconcileCf,sessionId,lessonNotesEvidence } from "./program";
 import type { CfSubmission } from "./cf";
 import type { BlockId, ProgramRun } from "./program";
 
@@ -20,22 +20,18 @@ describe("published program",()=>{
  it("canonicalizes nested keys for the Python publisher",()=>{expect(canonicalJson({z:[{b:"é",a:1}],a:2})).toBe('{"a":2,"z":[{"a":1,"b":"é"}]}');});
 });
 describe("server-owned session",()=>{
- it("explains the failed saved recall question without exposing answer keys or consuming LeetCode time",()=>{
-  const p=fixture(),d=p.days[0];
-  d.core.lesson.check=[{q:"What is counted before the next item?",a:"SECRET EARLIER ANSWER",keywords:["earlier"]},{q:"Trace the previous counts",a:"SECRET TRACE ANSWER",keywords:["0","1","2"]},{q:"Why are the counts different?",a:"SECRET COUNT ANSWER",keywords:["count"]}];
-  let r=openPhase(createRun(p,d,NOW),"core",NOW+10800000);
-  r=applyAction(r,{type:"lesson",teachBack:"A dictionary stores counts by key",answers:["the number of times x has appeared until current element.","0,0,1,2","count of a and b is different"],primitiveCode:"pass # learner draft"},"save-recall-real-wording",NOW+10900000);
-  r=applyAction(r,{type:"phase-next",block:"core"},"open-lc-after-recall",NOW+11000000);
-  const feedback=publicProgram(p,r,d,NOW+11000000).run!.recallFeedback!;
-  expect(feedback.checks.map(c=>c.status)).toEqual(["needs-review","matched","matched"]);
-  expect(feedback.message).toContain("Core recall question 1");
-  expect(()=>applyAction(r,{type:"phase-start",block:"leetcode"},"blocked-lc-start",NOW+11100000)).toThrow(/Core recall question 1/);
-  expect(r.timing!.phases.leetcode.status).toBe("ready");expect(r.timing!.phases.leetcode.elapsedMs).toBe(0);
-  const view=JSON.stringify(publicProgram(p,r,d,NOW+11100000));
-  for(const secret of ["SECRET EARLIER ANSWER","SECRET TRACE ANSWER","SECRET COUNT ANSWER"])expect(view).not.toContain(secret);
-  r=applyAction(r,{type:"lesson",teachBack:"A dictionary stores counts by key",answers:["The count of earlier occurrences, excluding the current item.","0,0,1,2","count of a and b is different"],primitiveCode:"counts[x] = counts.get(x, 0) + 1"},"repair-recall-wording",NOW+11200000);
-  expect(publicProgram(p,r,d,NOW+11200000).run!.recallFeedback!.message).toContain("has not been executed");
-  expect(applyAction(r,{type:"phase-start",block:"leetcode"},"start-lc-after-repair",NOW+11300000).timing!.phases.leetcode.status).toBe("running");
+ it("keeps historical failed recall as notes without blocking LeetCode or auto-grading it",()=>{
+  const p=fixture(),d=p.days[0];let r=openPhase(createRun(p,d,NOW),"core",NOW+10800000);
+  r.lessonEvidence={submittedAt:NOW+10900000,teachBack:"My own wording",answers:["A different explanation"],primitiveCode:"",recallPassed:false,assessment:"recall_checked",topicIds:d.core.lesson.topicIds};
+  r=applyAction(r,{type:"phase-next",block:"core"},"open-lc-with-legacy-recall",NOW+11000000);
+  const started=applyAction(r,{type:"phase-start",block:"leetcode"},"start-lc-with-legacy-recall",NOW+11100000);
+  expect(started.timing!.phases.leetcode.status).toBe("running");
+  expect(started.lessonEvidence).toEqual(r.lessonEvidence);
+  expect(publicProgram(p,r,d,NOW+11100000).run).not.toHaveProperty("recallFeedback");
+  expect(lessonNotesEvidence(r)[0].kind).toBe("pending_assessment");
+  r.lessonEvidence!.recallPassed=true;
+  expect(lessonNotesEvidence(r)[0].kind).toBe("pending_assessment");
+  expect(lessonNotesEvidence(r)[0]).not.toHaveProperty("recallPassed");
  });
  it("finishes early without changing earned points or admitting later contest submissions",()=>{
   const p=fixture(),d=p.days[0],at=NOW+600000;
@@ -69,30 +65,32 @@ describe("server-owned session",()=>{
  it("keeps started contents unchanged on republish",()=>{const p=fixture(),r=createRun(p,p.days[0],NOW);p.days[0].contest.problems[0].name="changed";expect(r.snapshot.contest.problems[0].name).toBe("Secret name");});
  it("does not serialize protected content during the contest or before start",()=>{const p=fixture(),d=p.days[0],r=createRun(p,d,NOW);const before=JSON.stringify(publicProgram(p,null,d,NOW));expect(before).not.toContain("Secret name");for(const time of [NOW,NOW+7199999]){const text=JSON.stringify(publicProgram(p,r,d,time));for(const secret of ["SECRET TAG","SECRET HINT","SECRET NUDGE","SECRET ANSWER","SECRET SOLUTION","SECRET LESSON CODE","SECRET RECALL ANSWER"])expect(text).not.toContain(secret);}});
  it("releases only hints actually opened after an attempt",()=>{const p=fixture(),d=p.days[0];let r=createRun(p,d,NOW);expect(()=>applyAction(r,{type:"hint",block:"review",key:"1-A"},"hint-event",NOW+100)).toThrow();r=openPhase(r,"review",NOW+7200000);r=applyAction(r,{type:"attempt",block:"review",key:"1-A",technique:"Try counting"},"attempt-1",NOW+7200000);r=applyAction(r,{type:"hint",block:"review",key:"1-A"},"hint-123",NOW+7201000);const view=JSON.stringify(publicProgram(p,r,d,NOW+7201000));expect(view).toContain("SECRET HINT");expect(view).not.toContain("SECRET SOLUTION");});
- it("checks recall before a new-topic practice attempt and saves evidence",()=>{const p=fixture();let r=openPhase(createRun(p,p.days[0],NOW),"core",NOW+10800000);const action={type:"attempt",block:"core",key:"3-C",technique:"Frequency map"} as const;expect(()=>applyAction(r,action,"attempt-core",NOW+10800000)).toThrow(/Teach/);r=applyAction(r,{type:"lesson",teachBack:"A frequency count per key",answers:["A count per key"],primitiveCode:"counts[x] = counts.get(x, 0) + 1"},"lesson-save",NOW+10900000);expect(r.lessonEvidence?.recallPassed).toBe(true);expect(applyAction(r,action,"attempt-core",NOW+11000000).attempts["core:3-C"]).toBeDefined();});
- it("never treats diagnostic preflight as a core prerequisite check, including Day 2",()=>{
-  for(const day of [1,2]){
-   const p=fixture(),d=p.days[0];d.programDay=day;d.date=day===1?"2026-09-23":"2026-09-24";
-   const at=NOW+(day-1)*86400000;let r=createRun(p,d,at);
-   r.snapshot.core.lesson.topicIds=["frequency"];
-   r=openPhase(r,"core",at+10800000);
-   r=applyAction(r,{type:"lesson",teachBack:"A frequency count per key",answers:["A count per key"],primitiveCode:"counts[x] = counts.get(x, 0) + 1"},"lesson-save",at+10900000);
-   expect(()=>applyAction(r,{type:"attempt",block:"core",key:"3-C",technique:"Count values"},"core-attempt",at+11000000)).toThrow(/Teach/);
-   expect(()=>applyAction(r,{type:"attempt",block:"leetcode",key:"two-sum",technique:"Store seen keys"},"lc-attempt",at+18000000)).toThrow(/Teach/);
-  }
+ it("starts assigned core practice with no notes and saves partial input verbatim without a grade",()=>{
+  const p=fixture();let r=openPhase(createRun(p,p.days[0],NOW),"core",NOW+10800000);
+  r=applyAction(r,{type:"attempt",block:"core",key:"3-C",technique:""},"core-without-recall",NOW+10800000);
+  expect(r.attempts["core:3-C"]).toBeDefined();
+  const action=actionSchema.parse({type:"lesson",answers:["  my wording  "]});
+  r=applyAction(r,action,"save-partial-notes",NOW+10900000);
+  expect(r.lessonEvidence).toMatchObject({answers:["  my wording  "],teachBack:"",primitiveCode:"",assessment:"unreviewed"});
+  expect(r.lessonEvidence).not.toHaveProperty("recallPassed");
+  expect(r.topics).toEqual(p.topics);
  });
- it("allows assessed prior prerequisites but respects a later reopened assessment",()=>{
-  const p=fixture(),d=p.days[0];d.core.lesson.topicIds=["frequency"];
-  p.topics[0].evidence=[{kind:"taught",at:new Date(NOW-1000).toISOString(),source:"Coach checked the primitive"}];
-  let r=createRun(p,d,NOW);
-  r=openPhase(r,"core",NOW+10800000);
-  r=applyAction(r,{type:"lesson",teachBack:"A frequency count per key",answers:["A count per key"],primitiveCode:"counts[x] = counts.get(x, 0) + 1"},"lesson-save",NOW+10900000);
-  const attempt={type:"attempt",block:"core",key:"3-C",technique:"Count values"} as const;
-  expect(applyAction(r,attempt,"core-start",NOW+11000000).attempts["core:3-C"]).toBeDefined();
-  r.topics[0].evidence!.push({kind:"reopened",at:new Date(NOW+10950000).toISOString(),source:"The prerequisite recall failed"});
-  expect(()=>applyAction(r,attempt,"core-start",NOW+11000000)).toThrow(/Teach/);
+ it("lets a learner skip all optional notes and start both assigned LeetCode problems",()=>{
+  const p=fixture();let r=openPhase(createRun(p,p.days[0],NOW),"leetcode",NOW+18000000);
+  expect(r.lessonEvidence).toBeUndefined();
+  expect(r.timing!.phases.leetcode.problems[0].status).toBe("running");
+  r=applyAction(r,{type:"problem-complete",block:"leetcode",key:"two-sum",reported:"solved"},"complete-lc-without-notes",NOW+18001000);
+  expect(r.timing!.phases.leetcode.problems[1].status).toBe("running");
+  expect(r.lessonEvidence).toBeUndefined();
  });
- it("does not reveal the recall answer key after an unsuccessful check",()=>{const p=fixture();let r=openPhase(createRun(p,p.days[0],NOW),"core",NOW+10800000);r=applyAction(r,{type:"lesson",teachBack:"I am still confused",answers:["I do not know"],primitiveCode:"pass # unsure"},"lesson-failed",NOW+10900000);expect(JSON.stringify(publicProgram(p,r,p.days[0],NOW+10900000))).not.toContain("SECRET RECALL ANSWER");});
+ it("keeps coach assessments for planning without blocking an already assigned practice queue",()=>{
+  const p=fixture();p.topics[0].evidence=[{kind:"reopened",at:new Date(NOW-1000).toISOString(),source:"Coach review"}];
+  let r=openPhase(createRun(p,p.days[0],NOW),"core",NOW+10800000);
+  r=applyAction(r,{type:"attempt",block:"core",key:"3-C",technique:""},"practice-assigned-topic",NOW+10900000);
+  expect(r.attempts["core:3-C"]).toBeDefined();expect(r.topics).toEqual(p.topics);
+  expect(()=>assertContestEligible(p,p.days[0],NOW)).toThrow();
+ });
+ it("keeps reference answers private when saving optional notes",()=>{const p=fixture();let r=openPhase(createRun(p,p.days[0],NOW),"core",NOW+10800000);r=applyAction(r,{type:"lesson",teachBack:"I am still confused",answers:["I do not know"],primitiveCode:"pass # unsure"},"lesson-failed",NOW+10900000);expect(JSON.stringify(publicProgram(p,r,p.days[0],NOW+10900000))).not.toContain("SECRET RECALL ANSWER");});
  it("makes event retries idempotent",()=>{const p=fixture(),r=createRun(p,p.days[0],NOW);const a={type:"attempt",block:"contest",key:"1-A",technique:"Scan"} as const;const once=applyAction(r,a,"same-event",NOW);expect(applyAction(once,a,"same-event",NOW+1000)).toEqual(once);});
  it("never turns a self-reported solve into verified points",()=>{const p=fixture();let r=createRun(p,p.days[0],NOW);r=applyAction(r,{type:"attempt",block:"contest",key:"1-A",technique:"Scan"},"attempt-id",NOW);r=applyAction(r,{type:"report",block:"contest",key:"1-A",reported:"solved",note:"passed sample"},"report-id",NOW+1000);expect(contestScore(r)).toBe(0);});
  it("excludes old and post-clock AC while counting late-arriving in-window verdicts",()=>{const p=fixture(),r=createRun(p,p.days[0],NOW);const checked=reconcileCf(r,[sub(1,-1),sub(2,7200),sub(3,60,"WRONG_ANSWER"),sub(4,120)],NOW+8000000);expect(checked.attempts["contest:1-A"].submissions?.map(s=>s.id)).toEqual([3,4]);expect(checked.attempts["contest:1-A"].wrongAttempts).toBe(1);expect(contestScore(checked)).toBe(446);});

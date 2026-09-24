@@ -108,12 +108,12 @@ export function startWindow(d:ProgramDay,now:number) {
   return {startsAt,endsAt,fromStart:false,canStart:now>=startsAt&&now<endsAt,reason:now<startsAt?`Prepared for ${d.date}, 04:30 IST. The contest opens then.`:now>=endsAt?"The morning contest window has passed. Ask Mentor for the next actual day; this session cannot be backdated.":"The planned morning is 04:30–10:30 IST. Each phase uses manual Start, Pause and Next controls; breaks and guided time are tracked separately."};
 }
 export type Attempt = { key:string;block:BlockId;startedAt:number;finishedAt?:number;technique:string;note?:string;reported?:"incomplete"|"solved"|"aided";hintsUsed:number;solutionSeen:boolean;helpStartedAt?:number;verification:"pending"|"verified";submissions?:{id:number;at:number;verdict:NonNullable<CfSubmission["verdict"]>|"PENDING";passedTestCount?:number}[];solvedAt?:number;wrongAttempts?:number;lastCheckedAt?:number };
-export type LessonEvidence={submittedAt:number;teachBack:string;answers:string[];primitiveCode:string;recallPassed:boolean;assessment:"recall_checked"|"pending_coach";topicIds:string[]};
+export type LessonEvidence={submittedAt:number;eventId?:string;teachBack:string;answers:string[];primitiveCode:string;recallPassed?:boolean;assessment:"unreviewed"|"recall_checked"|"pending_coach";topicIds:string[]};
 export type ProgramRun={
   sessionId:string;programId:string;programDay:number;date:string;actualDate:string;planVersion:number;contentHash:string;revision:number;startedAt:number;
   timing?:ProgramTiming;
   snapshot:ProgramDay;topics:Topic[];blocks:Record<BlockId,{startedAt:number;endsAt:number}>;attempts:Record<string,Attempt>;
-  lessonEvidence?:LessonEvidence;review?:{rootCause:string;note:string;upsolveKey:string;submittedAt:number};
+  lessonEvidence?:LessonEvidence;lessonEvidenceHistory?:LessonEvidence[];review?:{rootCause:string;note:string;upsolveKey:string;submittedAt:number};
   contestCompletion?:{finishedAt:number;scheduledEndsAt:number};
   events:{id:string;type:string;at:number;block?:BlockId;key?:string}[];processed:string[];
   verification:{cfCheckedAt?:number;lcCheckedAt?:number;cfError?:string;lcError?:string};
@@ -128,24 +128,22 @@ export function createRun(p:Program,d:ProgramDay,now:number):ProgramRun {
 }
 export function blockAt(run:ProgramRun,now:number):BlockId|null{return run.timing ? run.timing.currentBlock : BLOCKS.find(b=>now>=run.blocks[b.id].startedAt && now<run.blocks[b.id].endsAt)?.id??null;}
 export function latestTopicEvidence(topic:Topic,at:number) {
-  return topic.evidence?.filter(e=>e.source?.trim()&&Number.isFinite(Date.parse(e.at))&&Date.parse(e.at)<=at).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))[0];
+  return topic.evidence?.filter(e=>!e.source?.includes("keyword recall check only")&&e.source?.trim()&&Number.isFinite(Date.parse(e.at))&&Date.parse(e.at)<=at).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))[0];
 }
 export function topicStatus(topic:Topic,at:number) {
   const evidence=latestTopicEvidence(topic,at);
   return evidence?.kind??"unknown";
 }
-export function topicEligible(topics:Topic[],key:string,kind:"contest"|"core",day:number,at:number,lessonEvidence?:LessonEvidence,diagnosticBootstrap=false,seen=new Set<string>()):boolean {
+export function topicEligible(topics:Topic[],key:string,kind:"contest"|"core",day:number,at:number,diagnosticBootstrap=false,seen=new Set<string>()):boolean {
   if(seen.has(key))return false;const t=topics.find(t=>t.id===key);if(!t)return false;
   const latest=latestTopicEvidence(t,at);
   const evidence=latest&&[...(kind==="contest"?["independent","retained"]:["taught","guided","independent","retained"])].includes(latest.kind);
-  const lesson=kind==="core"&&lessonEvidence?.recallPassed&&lessonEvidence.submittedAt<=at&&lessonEvidence.topicIds.includes(key)&&(!latest||lessonEvidence.submittedAt>Date.parse(latest.at));
-  // A return diagnostic is allowed to measure rusty basics, but that preflight
-  // is not learning evidence for either later practice block.
+  // A return diagnostic measures rusty basics without creating learning evidence.
   const diagnostic=kind==="contest"&&diagnosticBootstrap&&t.diagnosticEligible===true&&(!latest||!["unknown","reopened"].includes(latest.kind));
-  return Boolean((evidence||lesson||diagnostic)&&t.prerequisites.every(k=>topicEligible(topics,k,kind,day,at,lessonEvidence,diagnosticBootstrap,new Set([...seen,key]))));
+  return Boolean((evidence||diagnostic)&&t.prerequisites.every(k=>topicEligible(topics,k,kind,day,at,diagnosticBootstrap,new Set([...seen,key]))));
 }
 export function assertContestEligible(p:Program,d:ProgramDay,now:number) {
-  for(const problem of d.contest.problems)for(const topic of problem.topicIds)if(!topicEligible(p.topics,topic,"contest",d.programDay,now,undefined,d.diagnosticBootstrap===true))throw new Error(`Contest prerequisite has no independent evidence: ${topic}`);
+  for(const problem of d.contest.problems)for(const topic of problem.topicIds)if(!topicEligible(p.topics,topic,"contest",d.programDay,now,d.diagnosticBootstrap===true))throw new Error(`Contest prerequisite has no independent evidence: ${topic}`);
 }
 export function problemFor(d:ProgramDay,block:BlockId,key:string) {
   if(block==="leetcode")return d.leetcode.problems.find(p=>p.slug===key);
@@ -166,34 +164,26 @@ export const actionSchema=z.discriminatedUnion("type",[
   z.object({type:z.literal("attempt"),block:z.enum(["contest","review","core","leetcode"]),key:z.string(),technique:z.string().max(1000)}),
   z.object({type:z.literal("report"),block:z.enum(["contest","review","core","leetcode"]),key:z.string(),reported:z.enum(["incomplete","solved","aided"]),note:z.string().max(10000)}),
   z.object({type:z.literal("hint"),block:z.enum(["review","core","leetcode"]),key:z.string(),solution:z.boolean().optional()}),
-  z.object({type:z.literal("lesson"),teachBack:z.string().min(10).max(10000),answers:z.array(z.string().min(1).max(10000)),primitiveCode:z.string().min(5).max(30000)}),
-  z.object({type:z.literal("review"),rootCause:z.enum(causes as [string,...string[]]),note:z.string().min(5).max(10000),upsolveKey:z.string()}),
+  z.object({type:z.literal("lesson"),teachBack:z.string().max(10000).default(""),answers:z.array(z.string().max(10000)).max(100).default([]),primitiveCode:z.string().max(30000).default("")}),
+  z.object({type:z.literal("review"),rootCause:z.enum(causes as [string,...string[]]),note:z.string().max(10000).default(""),upsolveKey:z.string().default("")}),
   z.object({type:z.literal("sync"),source:z.enum(["cf","lc"])}),
 ]);
 export type ProgramAction=z.infer<typeof actionSchema>;
-function recallChecks(check:ProgramDay["core"]["lesson"]["check"],answers:string[]) {
-  return check.map((q,i)=>({question:i+1,status:!q.keywords?.length?"coach-review" as const:q.keywords.every(k=>(answers[i]??"").toLowerCase().includes(k.toLowerCase()))?"matched" as const:"needs-review" as const}));
-}
-function recallFeedback(run:ProgramRun) {
-  const evidence=run.lessonEvidence;
-  if(!evidence)return null;
-  const checks=recallChecks(run.snapshot.core.lesson.check,evidence.answers);
-  const failed=checks.filter(q=>q.status==="needs-review").map(q=>q.question);
-  const message=evidence.recallPassed?"Saved answers matched the automatic keyword checks. Your Python primitive is saved for Mentor review; it has not been executed or checked for correctness.":failed.length?`Core recall ${failed.length===1?"question":"questions"} ${failed.join(", ")} did not match the automatic keyword check. Review the marked saved answers, clarify the wording and save again, or ask Mentor to review them. This check can miss equivalent wording.`:"Core recall is saved and needs Mentor assessment before new-topic practice can start.";
-  return {checks,message};
+/** Notes are learner input, never an automatic assessment or practice gate. */
+export function lessonNotesEvidence(run:ProgramRun) {
+  const notes=[...(run.lessonEvidenceHistory??[]),...(run.lessonEvidence?[run.lessonEvidence]:[])];
+  return notes.map(({recallPassed,assessment,...entry})=>{
+    void recallPassed;void assessment;
+    return {...entry,eventId:`${run.sessionId}:lesson-notes:${entry.eventId??entry.submittedAt}`,sessionId:run.sessionId,programId:run.programId,kind:"pending_assessment",assessment:"unreviewed",at:entry.submittedAt,source:"optional learner notes; awaiting agent review after the day or at the next check-in"};
+  });
 }
 function recordAttempt(run:ProgramRun,block:BlockId,key:string,now:number,technique?:string) {
   const id=`${block}:${key}`,existing=run.attempts[id];
   if(existing){if(technique?.trim())existing.technique=technique.trim();return existing;}
   return run.attempts[id]={key,block,startedAt:now,technique:technique?.trim()||"Not recorded",hintsUsed:0,solutionSeen:false,verification:"pending"};
 }
-function assertProblemEligible(run:ProgramRun,block:BlockId,key:string,now:number) {
-  const p=problemFor(run.snapshot,block,key);if(!p)throw new Error("Problem not in this block");
-  if(block==="core"||block==="leetcode")for(const topic of p.topicIds)if(!topicEligible(run.topics,topic,"core",run.programDay,now,run.lessonEvidence,run.snapshot.diagnosticBootstrap===true)){
-    if(run.lessonEvidence&&!run.lessonEvidence.recallPassed)throw new Error(`${recallFeedback(run)!.message} Return to core lesson; this start attempt has not consumed any time.`);
-    const name=run.topics.find(t=>t.id===topic)?.name??topic;
-    throw new Error(`Teach and check ${name} before starting this problem.${block==="leetcode"?" Complete core recall, then return here.":""}`);
-  }
+function assertAssignedProblem(run:ProgramRun,block:BlockId,key:string) {
+  if(!problemFor(run.snapshot,block,key))throw new Error("Problem not in this block");
 }
 function syncLegacyBlock(run:ProgramRun,block:BlockId,now:number) {
   const phase=run.timing!.phases[block];
@@ -230,7 +220,7 @@ export function closeProblem(run:ProgramRun,block:BlockId,key:string,now:number,
     if(automatic&&wasManuallyPaused){delete phase.activeKey;return;}
     const next=nextQueuedProblem(run.timing!,block,now);
     if(next){
-      try{assertProblemEligible(run,block,next,now);recordAttempt(run,block,next,now);}
+      try{assertAssignedProblem(run,block,next);recordAttempt(run,block,next,now);}
       catch(error){pausePhase(run.timing!,block,now);phase.blockedReason=(error as Error).message;const queued=phase.problems.find(p=>p.key===next)!;queued.status="queued";delete queued.runningSince;delete phase.activeKey;}
     }
   }
@@ -249,7 +239,7 @@ export function applyAction(original:ProgramRun,action:ProgramAction,eventId:str
     const phase=timing.phases[action.block];
     if(!phase.activeKey&&action.block!=="core"){
       const next=phase.problems.find(p=>!p.optional&&(p.status==="queued"||p.status==="paused"));
-      if(next){assertProblemEligible(run,action.block,next.key,now);startProblem(timing,action.block,next.key,now);recordAttempt(run,action.block,next.key,now);}
+      if(next){assertAssignedProblem(run,action.block,next.key);startProblem(timing,action.block,next.key,now);recordAttempt(run,action.block,next.key,now);}
     }
     syncLegacyBlock(run,action.block,now);
   }else if(action.type==="phase-pause"){
@@ -257,15 +247,10 @@ export function applyAction(original:ProgramRun,action:ProgramAction,eventId:str
     if(timing.phases[action.block].status==="ready")throw new Error("Start this phase first.");
     pausePhase(timing,action.block,now);
   }else if(action.type==="lesson") {
-    const lc=timing.phases.leetcode,lcGuided=lc.problems.some(p=>p.guidedSince!==undefined);
-    const recovery=block==="leetcode"&&timing.phases.core.status==="completed"&&lc.status!=="running"&&!lcGuided;
-    if(block!=="core"&&!recovery)throw new Error(block==="leetcode"?"Pause the LeetCode timer before returning to core recall.":"The core lesson opens after the contest and review phases");
-    const check=run.snapshot.core.lesson.check;
-    if(action.answers.length!==check.length)throw new Error("Answer every recall question");
-    const results=recallChecks(check,action.answers);
-    const assessable=results.every(q=>q.status!=="coach-review");
-    const passed=results.every(q=>q.status==="matched");
-    run.lessonEvidence={submittedAt:now,teachBack:action.teachBack,answers:action.answers,primitiveCode:action.primitiveCode,recallPassed:Boolean(passed),assessment:assessable?"recall_checked":"pending_coach",topicIds:run.snapshot.core.lesson.topicIds};
+    if(timing.phases.review.status!=="completed")throw new Error("The core lesson opens after the contest and review phases");
+    if(action.answers.length>run.snapshot.core.lesson.check.length)throw new Error("More answers were supplied than this lesson has prompts");
+    if(run.lessonEvidence){run.lessonEvidenceHistory??=[];run.lessonEvidenceHistory.push(run.lessonEvidence);}
+    run.lessonEvidence={submittedAt:now,eventId,teachBack:action.teachBack,answers:action.answers,primitiveCode:action.primitiveCode,assessment:"unreviewed",topicIds:run.snapshot.core.lesson.topicIds};
   }else if(action.type==="review") {
     if(timing.phases.contest.status!=="completed")throw new Error("Review is locked during the contest");
     if(action.upsolveKey&&!problemFor(run.snapshot,"review",action.upsolveKey))throw new Error("Choose a problem from this contest");
@@ -274,7 +259,7 @@ export function applyAction(original:ProgramRun,action:ProgramAction,eventId:str
     const p=problemFor(run.snapshot,action.block,action.key);if(!p)throw new Error("Problem not in this block");
     const key=`${action.block}:${action.key}`;
     if(action.type==="attempt"||action.type==="problem-start") {
-      assertProblemEligible(run,action.block,action.key,now);
+      assertAssignedProblem(run,action.block,action.key);
       startProblem(timing,action.block,action.key,now);recordAttempt(run,action.block,action.key,now,action.technique);
       syncLegacyBlock(run,action.block,now);
     }else if(action.type==="problem-help"){
@@ -349,8 +334,8 @@ export function publicProgram(p:Program,run:ProgramRun|null,selected:ProgramDay,
   const l=d.core.lesson;
   return {
     program:{programId:p.programId,title:p.title,planVersion:run?.planVersion??p.planVersion,contentHash:run?.contentHash??p.contentHash,startDate:p.startDate,timezone:p.timezone,goals:p.goals,diagnosticBasics:p.topics.filter(t=>t.diagnosticEligible).map(t=>t.name),topics:p.topics.map(t=>({id:t.id,name:t.name,status:topicStatus(t,now),prerequisites:t.prerequisites})),curriculum:p.curriculum??[]},
-    day:{programDay:d.programDay,date:d.date,focus:d.focus,contest:{title:d.contest.title,minutes:d.contest.minutes,count:d.contest.problems.length,problems:d.contest.problems.map(x=>safeProblem(x,"contest")).filter(Boolean)},review:{prompt:reveal?d.review.prompt:"Review unlocks after the contest",problems:reveal?d.contest.problems.map(x=>safeProblem(x,"review")).filter(Boolean):[]},core:{lesson:lessonOpen?{title:l.title,topic:l.topic,minutes:l.minutes,why:l.why,outcomes:l.outcomes,resources:l.resources,steps:l.steps,drill:l.drill,check:l.check.map((q,i)=>({q:q.q,...(run?.lessonEvidence?.recallPassed?{a:q.a,index:i}:{})}))}:null,problems:d.core.practice.blocks.flatMap(b=>b.problems).map(x=>safeProblem(x as ProgramProblem,"core")).filter(Boolean)},leetcode:{problems:d.leetcode.problems.map(x=>safeProblem(x,"leetcode")).filter(Boolean)}},
-    run:run?{sessionId:run.sessionId,programDay:run.programDay,actualDate:run.actualDate,revision:run.revision,timing:publicTiming!,blocks:run.blocks,attempts:run.attempts,lessonEvidence:run.lessonEvidence,recallFeedback:recallFeedback(run),review:run.review,contestCompletion:run.contestCompletion,verification:run.verification,score:contestScore(run),currentBlock:blockAt(run,now)}:null,
+    day:{programDay:d.programDay,date:d.date,focus:d.focus,contest:{title:d.contest.title,minutes:d.contest.minutes,count:d.contest.problems.length,problems:d.contest.problems.map(x=>safeProblem(x,"contest")).filter(Boolean)},review:{prompt:reveal?d.review.prompt:"Review unlocks after the contest",problems:reveal?d.contest.problems.map(x=>safeProblem(x,"review")).filter(Boolean):[]},core:{lesson:lessonOpen?{title:l.title,topic:l.topic,minutes:l.minutes,why:l.why,outcomes:l.outcomes,resources:l.resources,steps:l.steps,drill:l.drill,check:l.check.map(q=>({q:q.q}))}:null,problems:d.core.practice.blocks.flatMap(b=>b.problems).map(x=>safeProblem(x as ProgramProblem,"core")).filter(Boolean)},leetcode:{problems:d.leetcode.problems.map(x=>safeProblem(x,"leetcode")).filter(Boolean)}},
+    run:run?{sessionId:run.sessionId,programDay:run.programDay,actualDate:run.actualDate,revision:run.revision,timing:publicTiming!,blocks:run.blocks,attempts:run.attempts,lessonEvidence:run.lessonEvidence,review:run.review,contestCompletion:run.contestCompletion,verification:run.verification,score:contestScore(run),currentBlock:blockAt(run,now)}:null,
     blocks:dayBlocks(d),totalMinutes:dayMinutes(d),serverNow:now,startWindow:startWindow(d,now),
   };
 }
