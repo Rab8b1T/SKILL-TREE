@@ -171,6 +171,17 @@ export const actionSchema=z.discriminatedUnion("type",[
   z.object({type:z.literal("sync"),source:z.enum(["cf","lc"])}),
 ]);
 export type ProgramAction=z.infer<typeof actionSchema>;
+function recallChecks(check:ProgramDay["core"]["lesson"]["check"],answers:string[]) {
+  return check.map((q,i)=>({question:i+1,status:!q.keywords?.length?"coach-review" as const:q.keywords.every(k=>(answers[i]??"").toLowerCase().includes(k.toLowerCase()))?"matched" as const:"needs-review" as const}));
+}
+function recallFeedback(run:ProgramRun) {
+  const evidence=run.lessonEvidence;
+  if(!evidence)return null;
+  const checks=recallChecks(run.snapshot.core.lesson.check,evidence.answers);
+  const failed=checks.filter(q=>q.status==="needs-review").map(q=>q.question);
+  const message=evidence.recallPassed?"Saved answers matched the automatic keyword checks. Your Python primitive is saved for Mentor review; it has not been executed or checked for correctness.":failed.length?`Core recall ${failed.length===1?"question":"questions"} ${failed.join(", ")} did not match the automatic keyword check. Review the marked saved answers, clarify the wording and save again, or ask Mentor to review them. This check can miss equivalent wording.`:"Core recall is saved and needs Mentor assessment before new-topic practice can start.";
+  return {checks,message};
+}
 function recordAttempt(run:ProgramRun,block:BlockId,key:string,now:number,technique?:string) {
   const id=`${block}:${key}`,existing=run.attempts[id];
   if(existing){if(technique?.trim())existing.technique=technique.trim();return existing;}
@@ -178,7 +189,11 @@ function recordAttempt(run:ProgramRun,block:BlockId,key:string,now:number,techni
 }
 function assertProblemEligible(run:ProgramRun,block:BlockId,key:string,now:number) {
   const p=problemFor(run.snapshot,block,key);if(!p)throw new Error("Problem not in this block");
-  if(block==="core"||block==="leetcode")for(const topic of p.topicIds)if(!topicEligible(run.topics,topic,"core",run.programDay,now,run.lessonEvidence,run.snapshot.diagnosticBootstrap===true))throw new Error(`Teach and check ${topic} before starting this problem.${block==="leetcode"?" Complete core recall, then return here.":""}`);
+  if(block==="core"||block==="leetcode")for(const topic of p.topicIds)if(!topicEligible(run.topics,topic,"core",run.programDay,now,run.lessonEvidence,run.snapshot.diagnosticBootstrap===true)){
+    if(run.lessonEvidence&&!run.lessonEvidence.recallPassed)throw new Error(`${recallFeedback(run)!.message} Return to core lesson; this start attempt has not consumed any time.`);
+    const name=run.topics.find(t=>t.id===topic)?.name??topic;
+    throw new Error(`Teach and check ${name} before starting this problem.${block==="leetcode"?" Complete core recall, then return here.":""}`);
+  }
 }
 function syncLegacyBlock(run:ProgramRun,block:BlockId,now:number) {
   const phase=run.timing!.phases[block];
@@ -247,8 +262,9 @@ export function applyAction(original:ProgramRun,action:ProgramAction,eventId:str
     if(block!=="core"&&!recovery)throw new Error(block==="leetcode"?"Pause the LeetCode timer before returning to core recall.":"The core lesson opens after the contest and review phases");
     const check=run.snapshot.core.lesson.check;
     if(action.answers.length!==check.length)throw new Error("Answer every recall question");
-    const assessable=check.every(q=>q.keywords?.length);
-    const passed=assessable&&check.every((q,i)=>q.keywords!.every(k=>action.answers[i].toLowerCase().includes(k.toLowerCase())));
+    const results=recallChecks(check,action.answers);
+    const assessable=results.every(q=>q.status!=="coach-review");
+    const passed=results.every(q=>q.status==="matched");
     run.lessonEvidence={submittedAt:now,teachBack:action.teachBack,answers:action.answers,primitiveCode:action.primitiveCode,recallPassed:Boolean(passed),assessment:assessable?"recall_checked":"pending_coach",topicIds:run.snapshot.core.lesson.topicIds};
   }else if(action.type==="review") {
     if(timing.phases.contest.status!=="completed")throw new Error("Review is locked during the contest");
@@ -334,7 +350,7 @@ export function publicProgram(p:Program,run:ProgramRun|null,selected:ProgramDay,
   return {
     program:{programId:p.programId,title:p.title,planVersion:run?.planVersion??p.planVersion,contentHash:run?.contentHash??p.contentHash,startDate:p.startDate,timezone:p.timezone,goals:p.goals,diagnosticBasics:p.topics.filter(t=>t.diagnosticEligible).map(t=>t.name),topics:p.topics.map(t=>({id:t.id,name:t.name,status:topicStatus(t,now),prerequisites:t.prerequisites})),curriculum:p.curriculum??[]},
     day:{programDay:d.programDay,date:d.date,focus:d.focus,contest:{title:d.contest.title,minutes:d.contest.minutes,count:d.contest.problems.length,problems:d.contest.problems.map(x=>safeProblem(x,"contest")).filter(Boolean)},review:{prompt:reveal?d.review.prompt:"Review unlocks after the contest",problems:reveal?d.contest.problems.map(x=>safeProblem(x,"review")).filter(Boolean):[]},core:{lesson:lessonOpen?{title:l.title,topic:l.topic,minutes:l.minutes,why:l.why,outcomes:l.outcomes,resources:l.resources,steps:l.steps,drill:l.drill,check:l.check.map((q,i)=>({q:q.q,...(run?.lessonEvidence?.recallPassed?{a:q.a,index:i}:{})}))}:null,problems:d.core.practice.blocks.flatMap(b=>b.problems).map(x=>safeProblem(x as ProgramProblem,"core")).filter(Boolean)},leetcode:{problems:d.leetcode.problems.map(x=>safeProblem(x,"leetcode")).filter(Boolean)}},
-    run:run?{sessionId:run.sessionId,programDay:run.programDay,actualDate:run.actualDate,revision:run.revision,timing:publicTiming!,blocks:run.blocks,attempts:run.attempts,lessonEvidence:run.lessonEvidence,review:run.review,contestCompletion:run.contestCompletion,verification:run.verification,score:contestScore(run),currentBlock:blockAt(run,now)}:null,
+    run:run?{sessionId:run.sessionId,programDay:run.programDay,actualDate:run.actualDate,revision:run.revision,timing:publicTiming!,blocks:run.blocks,attempts:run.attempts,lessonEvidence:run.lessonEvidence,recallFeedback:recallFeedback(run),review:run.review,contestCompletion:run.contestCompletion,verification:run.verification,score:contestScore(run),currentBlock:blockAt(run,now)}:null,
     blocks:dayBlocks(d),totalMinutes:dayMinutes(d),serverNow:now,startWindow:startWindow(d,now),
   };
 }

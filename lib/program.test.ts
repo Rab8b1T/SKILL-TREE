@@ -20,6 +20,23 @@ describe("published program",()=>{
  it("canonicalizes nested keys for the Python publisher",()=>{expect(canonicalJson({z:[{b:"é",a:1}],a:2})).toBe('{"a":2,"z":[{"a":1,"b":"é"}]}');});
 });
 describe("server-owned session",()=>{
+ it("explains the failed saved recall question without exposing answer keys or consuming LeetCode time",()=>{
+  const p=fixture(),d=p.days[0];
+  d.core.lesson.check=[{q:"What is counted before the next item?",a:"SECRET EARLIER ANSWER",keywords:["earlier"]},{q:"Trace the previous counts",a:"SECRET TRACE ANSWER",keywords:["0","1","2"]},{q:"Why are the counts different?",a:"SECRET COUNT ANSWER",keywords:["count"]}];
+  let r=openPhase(createRun(p,d,NOW),"core",NOW+10800000);
+  r=applyAction(r,{type:"lesson",teachBack:"A dictionary stores counts by key",answers:["the number of times x has appeared until current element.","0,0,1,2","count of a and b is different"],primitiveCode:"pass # learner draft"},"save-recall-real-wording",NOW+10900000);
+  r=applyAction(r,{type:"phase-next",block:"core"},"open-lc-after-recall",NOW+11000000);
+  const feedback=publicProgram(p,r,d,NOW+11000000).run!.recallFeedback!;
+  expect(feedback.checks.map(c=>c.status)).toEqual(["needs-review","matched","matched"]);
+  expect(feedback.message).toContain("Core recall question 1");
+  expect(()=>applyAction(r,{type:"phase-start",block:"leetcode"},"blocked-lc-start",NOW+11100000)).toThrow(/Core recall question 1/);
+  expect(r.timing!.phases.leetcode.status).toBe("ready");expect(r.timing!.phases.leetcode.elapsedMs).toBe(0);
+  const view=JSON.stringify(publicProgram(p,r,d,NOW+11100000));
+  for(const secret of ["SECRET EARLIER ANSWER","SECRET TRACE ANSWER","SECRET COUNT ANSWER"])expect(view).not.toContain(secret);
+  r=applyAction(r,{type:"lesson",teachBack:"A dictionary stores counts by key",answers:["The count of earlier occurrences, excluding the current item.","0,0,1,2","count of a and b is different"],primitiveCode:"counts[x] = counts.get(x, 0) + 1"},"repair-recall-wording",NOW+11200000);
+  expect(publicProgram(p,r,d,NOW+11200000).run!.recallFeedback!.message).toContain("has not been executed");
+  expect(applyAction(r,{type:"phase-start",block:"leetcode"},"start-lc-after-repair",NOW+11300000).timing!.phases.leetcode.status).toBe("running");
+ });
  it("finishes early without changing earned points or admitting later contest submissions",()=>{
   const p=fixture(),d=p.days[0],at=NOW+600000;
   const before=reconcileCf(createRun(p,d,NOW),[sub(1,120)],at);
