@@ -15,9 +15,10 @@ export type ProgramProblem = CoachProblem & { topicIds: string[] };
 export type ProgramDay = {
   programDay: number; date: string; focus: string;
   diagnosticBootstrap?: boolean; diagnosticReason?: string;
+  scheduleOverride?: { mode: "from-start"; authorizedAt: string; reason: string; totalMinutes?: number };
   contest: Omit<CoachContest,"problems"> & { problems: (ProgramProblem & { slot: string; points: number })[] };
-  review: { minutes: 60; prompt: string };
-  core: { minutes: 120; lesson: Omit<CoachLesson,"check"> & { topicIds: string[]; check: { q: string; a: string; keywords?: string[] }[] }; practice: CoachPractice };
+  review: { minutes: number; prompt: string };
+  core: { minutes: number; lesson: Omit<CoachLesson,"check"> & { topicIds: string[]; check: { q: string; a: string; keywords?: string[] }[] }; practice: CoachPractice };
   leetcode: Omit<CoachLeetCode,"problems"> & { problems: (CoachLeetCode["problems"][number] & { topicIds: string[] })[] };
 };
 export type Program = {
@@ -26,6 +27,15 @@ export type Program = {
   goals: { day: number; date: string; rating: number }[]; topics: Topic[]; days: ProgramDay[];
   curriculum?: { programDay?: number; day?: number; date: string; focus: string }[];
 };
+export function dayBlocks(d:ProgramDay) {
+  let offsetMinutes=0;
+  return BLOCKS.map(b=>{
+    const minutes=d[b.id].minutes,block={...b,minutes,offsetMinutes};
+    offsetMinutes+=minutes;
+    return block;
+  });
+}
+export function dayMinutes(d:ProgramDay){return dayBlocks(d).reduce((sum,b)=>sum+b.minutes,0);}
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/);
 const cfProblem = z.object({ key: z.string().regex(/^\d+-[A-Za-z]\d*$/), contestId: z.number().int().positive(), index: z.string(), name: z.string().min(1), rating: z.number().nonnegative(), tags: z.array(z.string()), topicIds: z.array(id).min(1), capMinutes: z.number().positive(), role: z.string(), }).passthrough();
 const lesson = z.object({ title: z.string().min(1), topic: z.string(), topicIds: z.array(id).min(1), minutes: z.number().positive().max(120), why: z.string(), outcomes: z.array(z.string()), resources: z.array(z.object({ kind: z.enum(["book","video","article","docs"]), title: z.string(), url: z.string(), minutes: z.number().positive(), watchFor: z.string(), segment: z.string().optional() }).passthrough()), steps: z.array(z.object({ title:z.string(),body:z.string() }).passthrough()).min(1), drill:z.object({prompt:z.string()}).passthrough(), check:z.array(z.object({q:z.string(),a:z.string(),keywords:z.array(z.string().min(1)).optional()}).passthrough()).min(1) }).passthrough();
@@ -33,7 +43,7 @@ const programSchema = z.object({
   schemaVersion:z.literal(1),programId:id,planVersion:z.number().int().positive(),contentHash:z.string(),title:z.string(),startDate:z.string(),timezone:z.literal("Asia/Kolkata"),handle:z.string().min(1),leetcodeHandle:z.string().min(1),
   goals:z.array(z.object({day:z.number(),date:z.string(),rating:z.number()})),
   topics:z.array(z.object({id,name:z.string(),prerequisites:z.array(id),diagnosticEligible:z.boolean().optional()}).passthrough()),
-  days:z.array(z.object({programDay:z.number().int().positive(),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),focus:z.string(),contest:z.object({title:z.string(),minutes:z.literal(120),mirrors:z.string(),problems:z.array(cfProblem.extend({slot:z.string(),points:z.number().positive()})).min(2)}).passthrough(),review:z.object({minutes:z.literal(60),prompt:z.string()}),core:z.object({minutes:z.literal(120),lesson,practice:z.object({title:z.string(),blocks:z.array(z.object({id:z.string(),label:z.string(),minutes:z.number().positive(),problems:z.array(cfProblem)}).passthrough())})}),leetcode:z.object({title:z.string(),minutes:z.literal(60),problems:z.array(z.object({slug:z.string().regex(/^[a-z0-9-]+$/),title:z.string(),difficulty:z.enum(["Easy","Medium","Hard"]),url:z.string().url(),capMinutes:z.number().positive(),mirrors:z.string(),topicIds:z.array(id).min(1)}).passthrough()).length(2)})}).passthrough()),
+  days:z.array(z.object({programDay:z.number().int().positive(),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),focus:z.string(),contest:z.object({title:z.string(),minutes:z.number().int().positive().max(360),mirrors:z.string(),problems:z.array(cfProblem.extend({slot:z.string(),points:z.number().positive()})).min(2)}).passthrough(),review:z.object({minutes:z.number().int().positive().max(360),prompt:z.string()}),core:z.object({minutes:z.number().int().positive().max(360),lesson,practice:z.object({title:z.string(),blocks:z.array(z.object({id:z.string(),label:z.string(),minutes:z.number().positive(),problems:z.array(cfProblem)}).passthrough())})}),leetcode:z.object({title:z.string(),minutes:z.number().int().positive().max(360),problems:z.array(z.object({slug:z.string().regex(/^[a-z0-9-]+$/),title:z.string(),difficulty:z.enum(["Easy","Medium","Hard"]),url:z.string().url(),capMinutes:z.number().positive(),mirrors:z.string(),topicIds:z.array(id).min(1)}).passthrough()).length(2)})}).passthrough()),
 }).passthrough();
 
 export function parseProgram(value: unknown): Program {
@@ -51,6 +61,18 @@ export function parseProgram(value: unknown): Program {
   for(const t of p.topics) visit(t.id,new Set());
   const days = new Set<number>();
   for(const d of p.days) {
+    if(d.scheduleOverride){
+      const o=d.scheduleOverride,at=Date.parse(o.authorizedAt);
+      if(o.mode!=="from-start"||!o.reason?.trim()||!Number.isFinite(at)||localDate(at)!==d.date)
+        throw new Error("A late-start exception needs same-day authorization and a reason");
+    }
+    const budget=d.scheduleOverride?.totalMinutes;
+    if(budget!==undefined){
+      if(!Number.isInteger(budget)||budget<=0||budget>360||dayMinutes(d)!==budget)
+        throw new Error("The approved session budget must equal its block durations");
+    }else if(BLOCKS.some(b=>d[b.id].minutes!==b.minutes)){
+      throw new Error("Changed block durations require an approved session budget");
+    }
     if(d.diagnosticBootstrap!==undefined&&typeof d.diagnosticBootstrap!=="boolean")throw new Error("Diagnostic bootstrap must be explicitly true or false");
     if(d.diagnosticBootstrap&&!d.diagnosticReason?.trim())throw new Error("Diagnostic bootstrap needs the coach's reason");
     if(days.has(d.programDay)) throw new Error("Duplicate program day"); days.add(d.programDay);
@@ -61,8 +83,8 @@ export function parseProgram(value: unknown): Program {
       for(const x of b) for(const t of (x as ProgramProblem).topicIds) if(!topics.has(t))throw new Error(`Unknown problem prerequisite ${t}`);
     }
     const practiceMinutes=d.core.practice.blocks.reduce((sum,b)=>sum+b.minutes,0);
-    if(d.core.lesson.minutes+practiceMinutes>120)throw new Error("Lesson and practice exceed 120-minute core block");
-    if(d.leetcode.problems.reduce((sum,x)=>sum+x.capMinutes,0)>60)throw new Error("LeetCode caps exceed 60 minutes");
+    if(d.core.lesson.minutes+practiceMinutes!==d.core.minutes)throw new Error("Lesson and practice must fill the core block");
+    if(d.leetcode.problems.reduce((sum,x)=>sum+x.capMinutes,0)>d.leetcode.minutes)throw new Error("LeetCode caps exceed the block");
   }
   return p;
 }
@@ -76,8 +98,13 @@ export function sessionId(programId:string,day:number) {return `${programId}:day
 export function localDate(now:number,timezone="Asia/Kolkata") {return new Intl.DateTimeFormat("en-CA",{timeZone:timezone,year:"numeric",month:"2-digit",day:"2-digit"}).format(now);}
 export function morningStart(date:string) {return Date.parse(`${date}T04:30:00+05:30`);}
 export function startWindow(d:ProgramDay,now:number) {
+  if(d.scheduleOverride?.mode==="from-start"){
+    const startsAt=Math.max(morningStart(d.date),Date.parse(d.scheduleOverride.authorizedAt));
+    const endsAt=Date.parse(`${d.date}T00:00:00+05:30`)+(1440-dayMinutes(d))*60000;
+    return {startsAt,endsAt,fromStart:true,canStart:now>=startsAt&&now<endsAt,reason:now<startsAt?"Today's late-start exception is not open yet.":now>=endsAt?"Today's late-start window has passed. Ask Mentor to prepare the next day.":`Today's ${dayMinutes(d)}-minute session begins when you press Start. The blocks follow automatically and finish before midnight.`};
+  }
   const startsAt=morningStart(d.date),endsAt=startsAt+120*60000;
-  return {startsAt,endsAt,canStart:now>=startsAt&&now<endsAt,reason:now<startsAt?`Prepared for ${d.date}, 04:30 IST. The contest opens then.`:now>=endsAt?"The morning contest window has passed. Ask Mentor for the next actual day; this session cannot be backdated.":"The clock is anchored to 04:30–10:30 IST. A late start uses the remaining time."};
+  return {startsAt,endsAt,fromStart:false,canStart:now>=startsAt&&now<endsAt,reason:now<startsAt?`Prepared for ${d.date}, 04:30 IST. The contest opens then.`:now>=endsAt?"The morning contest window has passed. Ask Mentor for the next actual day; this session cannot be backdated.":"The clock is anchored to 04:30–10:30 IST. A late start uses the remaining time."};
 }
 export type Attempt = { key:string;block:BlockId;startedAt:number;finishedAt?:number;technique:string;note?:string;reported?:"incomplete"|"solved"|"aided";hintsUsed:number;solutionSeen:boolean;verification:"pending"|"verified";submissions?:{id:number;at:number;verdict:string}[];solvedAt?:number;wrongAttempts?:number;lastCheckedAt?:number };
 export type LessonEvidence={submittedAt:number;teachBack:string;answers:string[];primitiveCode:string;recallPassed:boolean;assessment:"recall_checked"|"pending_coach";topicIds:string[]};
@@ -89,8 +116,8 @@ export type ProgramRun={
   verification:{cfCheckedAt?:number;lcCheckedAt?:number;cfError?:string;lcError?:string};
 };
 export function createRun(p:Program,d:ProgramDay,now:number):ProgramRun {
-  let offset=0;const blocks={} as ProgramRun["blocks"],anchor=morningStart(d.date);
-  for(const b of BLOCKS){blocks[b.id]={startedAt:anchor+offset*60000,endsAt:anchor+(offset+b.minutes)*60000};offset+=b.minutes;}
+  let offset=0;const blocks={} as ProgramRun["blocks"],anchor=d.scheduleOverride?.mode==="from-start"?now:morningStart(d.date);
+  for(const b of dayBlocks(d)){blocks[b.id]={startedAt:anchor+offset*60000,endsAt:anchor+(offset+b.minutes)*60000};offset+=b.minutes;}
   return {sessionId:sessionId(p.programId,d.programDay),programId:p.programId,programDay:d.programDay,date:d.date,actualDate:localDate(now),planVersion:p.planVersion,contentHash:p.contentHash,revision:0,startedAt:now,snapshot:structuredClone(d),topics:structuredClone(p.topics),blocks,attempts:{},events:[],processed:[],verification:{}};
 }
 export function blockAt(run:ProgramRun,now:number):BlockId|null{return BLOCKS.find(b=>now>=run.blocks[b.id].startedAt && now<run.blocks[b.id].endsAt)?.id??null;}
@@ -187,7 +214,7 @@ export function reconcileCf(run:ProgramRun,submissions:CfSubmission[],now:number
   }
   out.verification.cfCheckedAt=now;delete out.verification.cfError;return out;
 }
-export function contestScore(run:ProgramRun){return run.snapshot.contest.problems.reduce((sum,p)=>{const a=run.attempts[`contest:${p.key}`];return sum+(a?.verification==="verified"&&a.solvedAt!==undefined?codeforcesProblemPoints(p.points,(a.solvedAt-run.blocks.contest.startedAt)/1000,7200,a.wrongAttempts??0):0);},0);}
+export function contestScore(run:ProgramRun){return run.snapshot.contest.problems.reduce((sum,p)=>{const a=run.attempts[`contest:${p.key}`];return sum+(a?.verification==="verified"&&a.solvedAt!==undefined?codeforcesProblemPoints(p.points,(a.solvedAt-run.blocks.contest.startedAt)/1000,(run.blocks.contest.endsAt-run.blocks.contest.startedAt)/1000,a.wrongAttempts??0):0);},0);}
 
 /** Explicit allowlists keep authored answers out of responses, including extra fields. */
 export function publicProgram(p:Program,run:ProgramRun|null,selected:ProgramDay,now:number) {
@@ -205,9 +232,9 @@ export function publicProgram(p:Program,run:ProgramRun|null,selected:ProgramDay,
   const l=d.core.lesson;
   return {
     program:{programId:p.programId,title:p.title,planVersion:run?.planVersion??p.planVersion,contentHash:run?.contentHash??p.contentHash,startDate:p.startDate,timezone:p.timezone,goals:p.goals,diagnosticBasics:p.topics.filter(t=>t.diagnosticEligible).map(t=>t.name),topics:p.topics.map(t=>({id:t.id,name:t.name,status:topicStatus(t,now),prerequisites:t.prerequisites})),curriculum:p.curriculum??[]},
-    day:{programDay:d.programDay,date:d.date,focus:d.focus,contest:{title:d.contest.title,minutes:120,count:d.contest.problems.length,problems:d.contest.problems.map(x=>safeProblem(x,"contest")).filter(Boolean)},review:{prompt:reveal?d.review.prompt:"Review unlocks after the contest",problems:reveal?d.contest.problems.map(x=>safeProblem(x,"review")).filter(Boolean):[]},core:{lesson:lessonOpen?{title:l.title,topic:l.topic,minutes:l.minutes,why:l.why,outcomes:l.outcomes,resources:l.resources,steps:l.steps,drill:l.drill,check:l.check.map((q,i)=>({q:q.q,...(run?.lessonEvidence?.recallPassed?{a:q.a,index:i}:{})}))}:null,problems:d.core.practice.blocks.flatMap(b=>b.problems).map(x=>safeProblem(x as ProgramProblem,"core")).filter(Boolean)},leetcode:{problems:d.leetcode.problems.map(x=>safeProblem(x,"leetcode")).filter(Boolean)}},
+    day:{programDay:d.programDay,date:d.date,focus:d.focus,contest:{title:d.contest.title,minutes:d.contest.minutes,count:d.contest.problems.length,problems:d.contest.problems.map(x=>safeProblem(x,"contest")).filter(Boolean)},review:{prompt:reveal?d.review.prompt:"Review unlocks after the contest",problems:reveal?d.contest.problems.map(x=>safeProblem(x,"review")).filter(Boolean):[]},core:{lesson:lessonOpen?{title:l.title,topic:l.topic,minutes:l.minutes,why:l.why,outcomes:l.outcomes,resources:l.resources,steps:l.steps,drill:l.drill,check:l.check.map((q,i)=>({q:q.q,...(run?.lessonEvidence?.recallPassed?{a:q.a,index:i}:{})}))}:null,problems:d.core.practice.blocks.flatMap(b=>b.problems).map(x=>safeProblem(x as ProgramProblem,"core")).filter(Boolean)},leetcode:{problems:d.leetcode.problems.map(x=>safeProblem(x,"leetcode")).filter(Boolean)}},
     run:run?{sessionId:run.sessionId,programDay:run.programDay,actualDate:run.actualDate,revision:run.revision,blocks:run.blocks,attempts:run.attempts,lessonEvidence:run.lessonEvidence,review:run.review,verification:run.verification,score:contestScore(run),currentBlock:blockAt(run,now)}:null,
-    serverNow:now,startWindow:startWindow(d,now),
+    blocks:dayBlocks(d),totalMinutes:dayMinutes(d),serverNow:now,startWindow:startWindow(d,now),
   };
 }
 export type ProgramView=ReturnType<typeof publicProgram>;

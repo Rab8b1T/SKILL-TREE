@@ -27,6 +27,50 @@ function publish(p=fixture()){const {contentHash,...payload}=p;void contentHash;
 function body(action:unknown,revision=0,eventId="event-123456"){return{programId:"expert-2026-09-23",programDay:1,eventId,revision,action};}
 beforeEach(()=>{state.rows.clear();state.accepts.clear();state.subs.mockReset();publish();vi.spyOn(Date,"now").mockReturnValue(NOW);});
 describe("program backend with isolated fake store",()=>{
+ it("runs an approved two-hour evening session and releases each block at its real boundary",async()=>{
+  const p=fixture(),d=p.days[0],at=Date.parse("2026-09-23T19:30:00+05:30");
+  d.scheduleOverride={mode:"from-start",authorizedAt:new Date(at).toISOString(),reason:"Learner has two hours",totalMinutes:120};
+  d.contest.minutes=40;d.review.minutes=20;d.core.minutes=40;d.leetcode.minutes=20;
+  d.core.lesson.minutes=30;d.core.practice.blocks[0].minutes=10;
+  d.leetcode.problems.forEach(x=>x.capMinutes=8);
+  publish(p);vi.mocked(Date.now).mockReturnValue(at);
+  const before=await getProgramView("one","tester");
+  expect(before.totalMinutes).toBe(120);expect(before.startWindow.canStart).toBe(true);expect(before.run).toBeNull();
+  const v=await mutateProgram("one","tester",body({type:"start",confirmedPrerequisites:true}));
+  expect(v.blocks.map(b=>b.minutes)).toEqual([40,20,40,20]);
+  expect(v.run?.blocks.leetcode.endsAt).toBe(at+120*60000);
+  for(const [minute,block] of [[39,"contest"],[40,"review"],[60,"core"],[100,"leetcode"],[120,null]] as const){
+   vi.mocked(Date.now).mockReturnValue(at+minute*60000);
+   expect((await getProgramView("one","tester")).run?.currentBlock).toBe(block);
+  }
+  vi.mocked(Date.now).mockReturnValue(at+39*60000);
+  expect((await getProgramView("one","tester")).day.review.problems).toEqual([]);
+  vi.mocked(Date.now).mockReturnValue(at+40*60000);
+  expect((await getProgramView("one","tester")).day.review.problems).toHaveLength(2);
+  d.scheduleOverride.totalMinutes=121;publish(p);
+  await expect(loadProgram()).rejects.toThrow(/budget/);
+ });
+ it("allows an authorized one-day late start with full durations and protected content",async()=>{
+  const p=fixture(),at=NOW+6*3600000;
+  p.days[0].scheduleOverride={mode:"from-start",authorizedAt:new Date(at).toISOString(),reason:"Learner requested a late start today"};publish(p);
+  vi.mocked(Date.now).mockReturnValue(at-1);
+  await expect(mutateProgram("one","tester",body({type:"start",confirmedPrerequisites:true}))).rejects.toThrow(/not open/);
+  vi.mocked(Date.now).mockReturnValue(at);
+  const before=await getProgramView("one","tester");
+  expect(before.startWindow.canStart).toBe(true);expect(before.run).toBeNull();expect(state.rows.size).toBe(0);
+  const view=await mutateProgram("one","tester",body({type:"start",confirmedPrerequisites:true}));
+  expect(view.run?.blocks.contest).toEqual({startedAt:at,endsAt:at+7200000});
+  expect(view.run?.blocks.leetcode.endsAt).toBe(at+21600000);
+  expect(view.day.core.lesson).toBeNull();expect(view.day.review.problems).toEqual([]);
+  const snap=JSON.stringify(view.run?.blocks);
+  vi.mocked(Date.now).mockReturnValue(at+3600000);
+  expect(JSON.stringify((await getProgramView("one","tester")).run?.blocks)).toBe(snap);
+  await expect(mutateProgram("one","tester",body({type:"hint",block:"review",key:"1-A"},0,"late-hint-12345"))).rejects.toThrow(/locked/);
+  vi.mocked(Date.now).mockReturnValue(Date.parse("2026-09-23T18:00:00+05:30"));
+  await expect(mutateProgram("other","tester",body({type:"start",confirmedPrerequisites:true}))).rejects.toThrow(/passed/);
+  vi.mocked(Date.now).mockReturnValue(at+86400000);
+  await expect(mutateProgram("other","tester",body({type:"start",confirmedPrerequisites:true}))).rejects.toThrow(/passed/);
+ });
  it("rejects a start before the morning or at and after 06:30",async()=>{
   for(const time of [NOW-1,NOW+7200000,NOW+21600000]){
    vi.mocked(Date.now).mockReturnValue(time);
