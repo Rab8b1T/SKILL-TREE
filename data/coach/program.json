@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "programId": "expert-2026-09-23",
-  "planVersion": 6,
+  "planVersion": 7,
   "title": "Expert in 100 days",
   "startDate": "2026-09-24",
   "timezone": "Asia/Kolkata",
@@ -2090,13 +2090,16 @@
           },
           "check": [
             {
-              "q": "What does pre[i] mean in words, and why does pre have n+1 cells for n elements?"
+              "q": "What does pre[i] mean in words, and why does pre have n+1 cells for n elements?",
+              "a": "pre[i] is the sum of the first i elements, so pre[0] = 0 is the empty prefix. The extra cell exists so that every left endpoint, including 0, has a prefix available to subtract, which is exactly what removes the special case that crashed the first Fence submission."
             },
             {
-              "q": "n is 10^6 and you read the array with a loop calling input() every iteration. Name the two separate costs that creates, and the one-line replacement."
+              "q": "n is 10^6 and you read the array with a loop calling input() every iteration. Name the two separate costs that creates, and the one-line replacement.",
+              "a": "One cost is a Python-level function call and a separate line read per element; the other is decoding bytes to text and stripping the newline, also per element. Both disappear with data = sys.stdin.buffer.read().split() once, after which you walk a cursor over the tokens."
             },
             {
-              "q": "In count_subarrays_with_sum, why is the dictionary seeded with {0: 1}, and which subarrays would you lose without it?"
+              "q": "In count_subarrays_with_sum, why is the dictionary seeded with {0: 1}, and which subarrays would you lose without it?",
+              "a": "Because pre[0] = 0 is a legal left endpoint. Without the seed you silently lose every subarray that starts at index 0, that is, each prefix whose own sum already equals k. It is the same boundary as the leading zero cell in the array version."
             }
           ]
         },
@@ -2203,7 +2206,7 @@
       }
     }
   ],
-  "contentHash": "0217d96a8f297305312008c775e984811e5e8f45b1cbafa2fc23e11d9c148ad2",
+  "contentHash": "6ed86963bb9e493a222905b863f3445c986d448a9258716d1f4ab79699ce086a",
   "calendarCorrection": {
     "recordedAt": "2026-09-24T13:53:00.393490+00:00",
     "previousStartDate": "2026-09-23",
