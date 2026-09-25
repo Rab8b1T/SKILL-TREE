@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "programId": "expert-2026-09-23",
-  "planVersion": 9,
+  "planVersion": 10,
   "title": "Expert in 100 days",
   "startDate": "2026-09-24",
   "timezone": "Asia/Kolkata",
@@ -2223,8 +2223,8 @@
         "prompt": "Today's contest uses only the three topics your Day 1 diagnostic evidenced as independent: loops and indexing, integer arithmetic, and prefix sums. Confirm you have not seen these exact problems before starting. Nothing you learn in today's core block is required by the contest."
       },
       "contest": {
-        "title": "Day 2 calibration set · 45 minutes",
-        "minutes": 45,
+        "title": "Day 2 calibration set · 100 minutes",
+        "minutes": 100,
         "mirrors": "Only implementation, integer arithmetic and prefix sums, all evidenced independent on Day 1. No counting, sorting or greedy prerequisite is required.",
         "problems": [
           {
@@ -2238,7 +2238,7 @@
               "implementation",
               "basic-math"
             ],
-            "capMinutes": 10,
+            "capMinutes": 12,
             "role": "execution check",
             "hints": {
               "ladder": [
@@ -2262,6 +2262,40 @@
             "points": 500
           },
           {
+            "key": "1327-A",
+            "contestId": 1327,
+            "index": "A",
+            "name": "Sum of Odd Integers",
+            "rating": 1100,
+            "tags": [],
+            "topicIds": [
+              "basic-math",
+              "implementation"
+            ],
+            "capMinutes": 18,
+            "role": "current band",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "What is the smallest total you can make from k distinct positive odd integers? Write it out for k = 1, 2, 3, 4 before generalising."
+                },
+                {
+                  "ask": "Every odd number is odd, so what does adding k of them force about the parity of the total compared with k?"
+                },
+                {
+                  "ask": "The minimum is 1 + 3 + 5 + ... + (2k-1) = k squared. If the parity matches and n is at least that, the surplus is even and can be pushed onto the largest term without breaking distinctness."
+                }
+              ],
+              "solution": {
+                "say": "The k smallest distinct positive odd integers are 1, 3, ..., 2k-1, and they sum to k*k. A sum of k odd numbers has the same parity as k, so n and k must agree mod 2. If they agree and n >= k*k, the surplus n - k*k is even and can be added to the largest term, which keeps every term odd and distinct. So print YES exactly when n % 2 == k % 2 and n >= k * k. Two traps: k reaches 10^7 so k*k reaches 10^14, which Python handles natively but which breaks any 32-bit instinct; and t reaches 10^5, so read the whole input at once and join the answers into a single write rather than printing in a loop."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/1327/A",
+            "slot": "B",
+            "points": 1000
+          },
+          {
             "key": "1619-C",
             "contestId": 1619,
             "index": "C",
@@ -2272,7 +2306,7 @@
               "implementation",
               "basic-math"
             ],
-            "capMinutes": 15,
+            "capMinutes": 30,
             "role": "current band",
             "hints": {
               "ladder": [
@@ -2292,8 +2326,8 @@
             },
             "sealed": true,
             "source": "https://codeforces.com/problemset/problem/1619/C",
-            "slot": "B",
-            "points": 1000
+            "slot": "C",
+            "points": 1500
           },
           {
             "key": "1373-C",
@@ -2307,7 +2341,7 @@
               "prefix-sums",
               "basic-math"
             ],
-            "capMinutes": 20,
+            "capMinutes": 40,
             "role": "reachable stretch",
             "hints": {
               "ladder": [
@@ -2327,17 +2361,17 @@
             },
             "sealed": true,
             "source": "https://codeforces.com/problemset/problem/1373/C",
-            "slot": "C",
-            "points": 1500
+            "slot": "D",
+            "points": 2000
           }
         ]
       },
       "review": {
-        "minutes": 20,
-        "prompt": "Two named priorities, in order, and stop at 20 minutes. (1) Eight minutes on yesterday's loose end: open your 363B Fence solution and reconstruct the input that made your FIRST submission crash with a runtime error, then write one sentence naming the exact line and the exact boundary. If you genuinely cannot reproduce it, say so and instead write down what you changed between the two submissions. (2) Ten minutes on the nearest useful miss from today's contest: reproduce the failing input, then name the cause as exactly one of reading, prerequisite, observation, proof, implementation, complexity or time allocation. Hints are open now that the contest clock has ended, so ask for them rather than restarting from scratch. (3) Two minutes to record problem, approach, counterexample, cause and one corrective action. Yesterday this block ran 57 seconds and the note said 'no issue' while an unexplained runtime error sat in the log; an unfinished repair recorded honestly is worth more than a clean-looking note."
+        "minutes": 50,
+        "prompt": "Three named priorities, in order, and stop at 50 minutes. (1) Twelve minutes on yesterday's loose end: open your 363B Fence solution, reconstruct the input that made your FIRST submission crash with a runtime error, and write one sentence naming the exact line and the exact boundary. If you genuinely cannot reproduce it, say what you changed between the two submissions. (2) Thirty minutes on the contest's nearest useful misses, most reachable first: reproduce the failing input, then name the cause as exactly one of reading, prerequisite, observation, proof, implementation, complexity or time allocation. Hints are open now that the clock has ended, so ask for the next rung instead of restarting from scratch; an upsolve you finish on the third hint still counts and is recorded as assisted. (3) Eight minutes to write, for each miss, the problem, your approach, the counterexample, the cause and one corrective action. Yesterday this block ran 57 seconds and the note said 'no issue' while an unexplained runtime error sat in the log; an unfinished repair recorded honestly is worth more than a clean-looking note."
       },
       "core": {
-        "minutes": 35,
+        "minutes": 100,
         "lesson": {
           "title": "Budget first, index second: constraints, complexity and Python I/O",
           "topic": "implementation",
@@ -2347,7 +2381,7 @@
             "prefix-sums",
             "frequency"
           ],
-          "minutes": 20,
+          "minutes": 30,
           "why": "Yesterday both problems were solved unaided, and the only technical defect was a runtime error on a prefix-array boundary. Today turns that into a habit: read the constraint line as an operation budget, read input in a way that survives 10^6 tokens, and use the one prefix layout that has no special case at the edges.",
           "outcomes": [
             "Convert a constraint line into an operation budget and reject an approach before writing it.",
@@ -2445,35 +2479,106 @@
           ]
         },
         "practice": {
-          "title": "Two from-memory rebuilds, no new Codeforces problem",
+          "title": "Two from-memory rebuilds, then two Codeforces applications",
           "blocks": [
             {
               "id": "primitive-repair",
               "label": "Day 1 repair: the counting primitive",
-              "minutes": 5,
-              "note": "Yesterday's teach-back and all three recall answers were right, but earlier_counts was never written and the scratch code contained dict(a:1,b:1), which is not valid Python. Spend five minutes writing earlier_counts and frequency from memory and running them on the three checks. This is the only thing standing between frequency being taught and being independent.",
+              "minutes": 10,
+              "note": "Yesterday's teach-back and all three recall answers were right, but earlier_counts was never written and the scratch code contained dict(a:1,b:1), which is not valid Python. Write earlier_counts and frequency from memory and run them on the three checks. This is the only thing standing between frequency being taught and being independent.",
               "problems": []
             },
             {
               "id": "prefix-primitive",
               "label": "Prefix array and fast reader from memory",
-              "minutes": 10,
-              "note": "Write prefix_sums, range_sum and the sys.stdin.buffer reader without looking, then re-derive the Fence answer with the leading-zero layout and confirm it needs no special case at i = 0. Finish by testing n = 1 and k = n. No additional full Codeforces problem today; the two LeetCode questions are the application.",
+              "minutes": 15,
+              "note": "Write prefix_sums, range_sum and the sys.stdin.buffer reader without looking, then re-derive the Fence answer with the leading-zero layout and confirm it needs no special case at i = 0. Finish by testing n = 1 and k = n. Do this before opening the two applications; they are the transfer, not the practice.",
               "problems": []
+            },
+            {
+              "id": "application",
+              "label": "Apply the primitive to real constraints",
+              "minutes": 45,
+              "note": "Two problems, in this order. The first is the same fixed-window minimum that crashed on Day 1, rebuilt with today's layout. The second cannot be solved per test case at all: its limit forces you to precompute once and answer every query by lookup. Hints are available here; this is guided application, not a contest, so ask rather than stall.",
+              "problems": [
+                {
+                  "key": "1690-D",
+                  "contestId": 1690,
+                  "index": "D",
+                  "name": "Black and White Stripe",
+                  "rating": 1000,
+                  "tags": [],
+                  "topicIds": [
+                    "implementation",
+                    "prefix-sums"
+                  ],
+                  "capMinutes": 20,
+                  "role": "direct transfer of today's primitive",
+                  "hints": {
+                    "ladder": [
+                      {
+                        "ask": "You may only repaint white into black. For one fixed window of length k, how many repaints does it cost?"
+                      },
+                      {
+                        "ask": "So you need the minimum number of W over all windows of length k. Where have you solved that exact shape before?"
+                      },
+                      {
+                        "ask": "Build pre of length n+1 counting W among the first i characters, then the window starting at i costs pre[i+k] - pre[i]. Minimise over i in range(n-k+1)."
+                      }
+                    ],
+                    "solution": {
+                      "say": "Map W to 1 and B to 0. Build pre with pre[0] = 0 and pre[i+1] = pre[i] + w[i], then the window starting at i costs pre[i+k] - pre[i], and the answer is the minimum over i in range(n - k + 1). This is Day 1's Fence primitive with today's leading-zero layout, so there is no special case at i = 0 and no negative index anywhere. Sum of n is 2*10^5 across up to 10^4 tests, so read the whole input once. Check k = n and k = 1 by hand before submitting; those are the two boundaries that produced the original runtime error."
+                    }
+                  },
+                  "source": "https://codeforces.com/problemset/problem/1690/D"
+                },
+                {
+                  "key": "1926-C",
+                  "contestId": 1926,
+                  "index": "C",
+                  "name": "Vlad and a Sum of Sum of Digits",
+                  "rating": 1200,
+                  "tags": [],
+                  "topicIds": [
+                    "implementation",
+                    "basic-math",
+                    "prefix-sums"
+                  ],
+                  "capMinutes": 25,
+                  "role": "precompute once, answer many queries",
+                  "hints": {
+                    "ladder": [
+                      {
+                        "ask": "t reaches 10^4, n reaches 2*10^5, and the limit is 0.5 seconds. Count the work if you answer each test case from scratch."
+                      },
+                      {
+                        "ask": "The answer depends only on n, and n never exceeds 2*10^5. What could you compute before reading a single query?"
+                      },
+                      {
+                        "ask": "Build digit_sum[i] and then pre[i] = pre[i-1] + digit_sum[i] once up to 200000. Each query is then the single lookup pre[n]."
+                      }
+                    ],
+                    "solution": {
+                      "say": "Precompute once for the whole run, not per test. digit_sum[i] = digit_sum[i // 10] + i % 10 builds each value from an already-computed smaller one, which is the same build-on-the-previous-cell idea as the prefix array itself. Then pre[i] = pre[i-1] + digit_sum[i], and every query is the lookup pre[n] in O(1). Total work is 2*10^5 no matter how large t is. Answering each test independently is up to 10^4 * 2*10^5 = 2*10^9 operations and cannot pass, least of all at a 0.5 second limit. Read all input at once and emit the answers with a single joined write; at 10^4 lines, printing in a loop is itself a measurable cost."
+                    }
+                  },
+                  "source": "https://codeforces.com/problemset/problem/1926/C"
+                }
+              ]
             }
           ]
         }
       },
       "leetcode": {
         "title": "Prefix sums as a class, then prefix sums joined to a dictionary",
-        "minutes": 20,
+        "minutes": 50,
         "problems": [
           {
             "slug": "range-sum-query-immutable",
             "title": "Range Sum Query - Immutable",
             "difficulty": "Easy",
             "url": "https://leetcode.com/problems/range-sum-query-immutable/",
-            "capMinutes": 7,
+            "capMinutes": 15,
             "mirrors": "Today's leading-zero prefix array, packaged as a constructor plus an O(1) query",
             "topicIds": [
               "implementation",
@@ -2503,7 +2608,7 @@
             "title": "Subarray Sum Equals K",
             "difficulty": "Medium",
             "url": "https://leetcode.com/problems/subarray-sum-equals-k/",
-            "capMinutes": 13,
+            "capMinutes": 33,
             "mirrors": "Day 1's frequency dictionary joined to today's prefix array; the transfer target of lesson step 5",
             "topicIds": [
               "implementation",
@@ -2533,24 +2638,24 @@
       },
       "selectionNote": {
         "checkedAt": "2026-09-26",
-        "codeforces": "Refreshed user.status for rab8bit (637 submissions, 308 problems touched). None of 1985D, 1619C or 1373C has any prior submission, so all three are genuinely unspoiled. Statements re-read to confirm constraints and intended solutions; Codeforces exposes no prefix-sums tag, so 1373C was classified by its intended technique rather than by its 'math' tag.",
+        "codeforces": "Refreshed user.status for rab8bit. None of 1985D, 1327A, 1619C, 1373C, 1690D or 1926C has any prior submission, so all six are genuinely unspoiled; re-verified after midnight, when the most recent submissions were still Day 1's 363B and 313A. Statements re-read for constraints and intended solutions. Codeforces exposes no prefix-sums tag, so 1373C, 1690D and 1926C were classified by intended technique rather than by tag. No contest problem shares a Codeforces round with a practice problem, so opening one cannot reveal another.",
         "leetcode": "Recent 20 accepts for rab8it checked: neither range-sum-query-immutable nor subarray-sum-equals-k appears. The feed does confirm yesterday's contains-duplicate and valid-anagram accepts. Lifetime exposure remains unconfirmed.",
-        "band": "Day 1 cleared 900 and 1100 unaided inside 34 of 40 minutes, so the set steps to 900 / 1200 / 1300 with the 1300 explicitly labelled a reachable stretch rather than an expectation. Sample size is one session, so this is a probe, not a band increase.",
+        "band": "Day 1 cleared 900 and 1100 unaided in 34 of 40 minutes. The contest steps to 900 / 1100 / 1200 / 1300 with the 1300 labelled a reachable stretch. Sample size is still one session, so this is a probe and not a band increase; practice stays at 1000-1200 deliberately.",
         "gates": "frequency is recorded taught, not independent, so no contest problem depends on counting. It appears only in the core lesson and the second LeetCode question, where hints are available.",
-        "timeBudget": "120 minutes total: 45 contest, 20 review, 35 core (20 lesson + 5 primitive repair + 10 prefix rebuild), 20 LeetCode (7 + 13). Contest caps 10 + 15 + 20.",
+        "timeBudget": "300 minutes: 100 contest (caps 12 + 18 + 30 + 40), 50 review, 100 core (30 lesson + 10 primitive repair + 15 prefix rebuild + 45 application), 50 LeetCode (15 + 33). The extra three hours over last night's plan go to the three blocks Day 1 skipped, not to a longer contest alone.",
         "calendar": "Displayed as Day 2 because this is the learner's SECOND actual training session. The program day index stays 3, derived from the calendar date 2026-09-26. Program day 2 (2026-09-25) was prepared but never started and is preserved unrun; no work, failure or absence is inferred from it. The three contest problems were never revealed, because the published plan failed the app's schema check and the coach page never rendered them, so they remain genuinely unspoiled.",
         "curriculumShift": "Curriculum row 3 reads 'Frequency maps, sets and counting invariants'. That focus moves to the next session; this one keeps the constraints, complexity, indexing and Python I/O content, which is the repair target from Day 1's runtime error."
       },
       "scheduleOverride": {
         "mode": "from-start",
         "authorizedAt": "2026-09-26T07:00:00+05:30",
-        "totalMinutes": 120,
-        "reason": "Learner asked for a two-hour session late on 25 September, but the Day 2 late-start window had already closed at 22:00 IST, so nothing ran. They chose to sit the same session from 07:00 IST on 26 September. Authorized 120-minute exception split 45/20/35/20, startable from 07:00 until 22:00. The planned 04:30-10:30 morning is unchanged for later days."
+        "totalMinutes": 300,
+        "reason": "Learner is starting in the morning on 26 September and has five hours, not the two they had last night. Authorized 300-minute session split 100/50/100/50, proportional to the canonical 360-minute day, startable from 07:00 and open until 19:00. The standing 04:30-10:30 morning is unchanged for later days."
       },
       "label": "Day 2"
     }
   ],
-  "contentHash": "1ed555334a28e27075dadbdddf32f2126764e6f906ce3d16d7ffe2156a26774b",
+  "contentHash": "4af8862e9a49bfda493a2f1793ae085547a48532203f6f723fcdaba93c1ac19a",
   "calendarCorrection": {
     "recordedAt": "2026-09-24T13:53:00.393490+00:00",
     "previousStartDate": "2026-09-23",
