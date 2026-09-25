@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "programId": "expert-2026-09-23",
-  "planVersion": 7,
+  "planVersion": 8,
   "title": "Expert in 100 days",
   "startDate": "2026-09-24",
   "timezone": "Asia/Kolkata",
@@ -2203,10 +2203,353 @@
         "authorizedAt": "2026-09-25T17:26:47.047195+00:00",
         "totalMinutes": 120,
         "reason": "Learner explicitly has two hours and asked to start Day 2 late on 25 September. The 04:30-10:30 morning did not run; this is an authorized one-day 45/20/35/20 exception, not a change to the program schedule."
+      },
+      "notRun": {
+        "recordedAt": "2026-09-25T19:05:28.021588+00:00",
+        "reason": "Prepared at 22:56 IST on 2026-09-25, after this day's from-start window had already closed at 22:00 IST, so the session was never startable and never began. Preserved as a prepared row only. Its content was re-homed to program day 3 on 2026-09-26."
+      }
+    },
+    {
+      "programDay": 3,
+      "date": "2026-09-26",
+      "focus": "Constraints, complexity, loop accuracy, indexing and Python I/O",
+      "preflight": {
+        "required": true,
+        "topicIds": [
+          "implementation",
+          "basic-math",
+          "prefix-sums"
+        ],
+        "prompt": "Today's contest uses only the three topics your Day 1 diagnostic evidenced as independent: loops and indexing, integer arithmetic, and prefix sums. Confirm you have not seen these exact problems before starting. Nothing you learn in today's core block is required by the contest."
+      },
+      "contest": {
+        "title": "Day 3 calibration set · 45 minutes",
+        "minutes": 45,
+        "mirrors": "Only implementation, integer arithmetic and prefix sums, all evidenced independent on Day 1. No counting, sorting or greedy prerequisite is required.",
+        "problems": [
+          {
+            "key": "1985-D",
+            "contestId": 1985,
+            "index": "D",
+            "name": "Manhattan Circle",
+            "rating": 900,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "basic-math"
+            ],
+            "capMinutes": 10,
+            "role": "execution check",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "Which rows contain at least one marked cell, and what does the set of marked rows look like?"
+                },
+                {
+                  "ask": "The shape is symmetric about both its centre row and its centre column. Which two rows and which two columns pin that symmetry down?"
+                },
+                {
+                  "ask": "Average the first and last marked row, and average the first and last marked column. Then convert to the 1-indexed coordinates the output asks for."
+                }
+              ],
+              "solution": {
+                "say": "Scan every cell once, tracking rmin/rmax over rows containing a marked cell and cmin/cmax over marked columns. A Manhattan ball is symmetric in both axes, so the centre is ((rmin+rmax)//2, (cmin+cmax)//2) in 0-indexed terms; print each plus one because the statement is 1-indexed. Sum of n*m is 2*10^5 across all tests, so one pass is comfortable, but t is up to 1000, so read the whole input once and index the row strings instead of calling input() per row."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/1985/D",
+            "slot": "A",
+            "points": 500
+          },
+          {
+            "key": "1619-C",
+            "contestId": 1619,
+            "index": "C",
+            "name": "Wrong Addition",
+            "rating": 1200,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "basic-math"
+            ],
+            "capMinutes": 15,
+            "role": "current band",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "Tanya never carries. So each digit of a produced its own piece of s, side by side. Which end should you read from?"
+                },
+                {
+                  "ask": "Take the rightmost unused digit of a and the rightmost unused digit of s. When is one digit of s enough to explain it, and when must two digits of s belong to this single column?"
+                },
+                {
+                  "ask": "If the s digit is at least the a digit, the b digit is their difference and you consume one digit of s. Otherwise the column wrote a two-digit sum, so the pair must read 1 then that digit: consume two digits of s and set the b digit to 10 plus the difference."
+                }
+              ],
+              "solution": {
+                "say": "Treat a and s as strings and walk them from the right with two independent cursors. While a still has digits: let x be a's digit and y be s's digit. If y >= x, append y-x to b and step the s cursor back by one. Otherwise the column produced a two-digit number, so the digit to the left of y must exist and must be '1'; if not, print -1. Otherwise append 10+y-x and step the s cursor back by two. When a is exhausted, whatever remains of s is a prefix of b. Reverse b, strip leading zeros, and print -1 if nothing survives or if s ran out early. Each test is at most 19 digits, but t is 10^4, so read all input at once. The whole difficulty is cursor bookkeeping: the two cursors move at different speeds and must be independent."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/1619/C",
+            "slot": "B",
+            "points": 1000
+          },
+          {
+            "key": "1373-C",
+            "contestId": 1373,
+            "index": "C",
+            "name": "Pluses and Minuses",
+            "rating": 1300,
+            "tags": [],
+            "topicIds": [
+              "implementation",
+              "prefix-sums",
+              "basic-math"
+            ],
+            "capMinutes": 20,
+            "role": "reachable stretch",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "Do not simulate the outer loop. Define p(i) as the running value after reading i characters with cur starting at 0. What exactly makes a pass abort?"
+                },
+                {
+                  "ask": "A pass that starts at init = k aborts at the first position where p(i) equals -(k+1). So each pass is described by one index. Which index?"
+                },
+                {
+                  "ask": "Sum the 1-based index of the first time the running balance reaches -1, then -2, then -3, and so on, and add the full length for the final pass that never breaks."
+                }
+              ],
+              "solution": {
+                "say": "Let p(i) be the balance after i characters, counting + as +1 and - as -1. The pass with init = k reads until cur = k + p(i) goes negative, that is until p(i) first equals -(k+1), and it performs exactly that many iterations. So res is the sum over k = 0, 1, 2, ... of the 1-based index where the balance first reaches -(k+1), plus |s| for the last pass that finishes. One scan: keep cur and record, and whenever cur drops below the previous record low, add the current 1-based index to the answer and update the record. O(|s|) time and O(1) extra space. The answer can reach roughly 10^12, which Python handles, but |s| sums to 10^6, so sys.stdin.buffer.read().split() is required and per-character input() is not."
+              }
+            },
+            "sealed": true,
+            "source": "https://codeforces.com/problemset/problem/1373/C",
+            "slot": "C",
+            "points": 1500
+          }
+        ]
+      },
+      "review": {
+        "minutes": 20,
+        "prompt": "Two named priorities, in order, and stop at 20 minutes. (1) Eight minutes on yesterday's loose end: open your 363B Fence solution and reconstruct the input that made your FIRST submission crash with a runtime error, then write one sentence naming the exact line and the exact boundary. If you genuinely cannot reproduce it, say so and instead write down what you changed between the two submissions. (2) Ten minutes on the nearest useful miss from today's contest: reproduce the failing input, then name the cause as exactly one of reading, prerequisite, observation, proof, implementation, complexity or time allocation. Hints are open now that the contest clock has ended, so ask for them rather than restarting from scratch. (3) Two minutes to record problem, approach, counterexample, cause and one corrective action. Yesterday this block ran 57 seconds and the note said 'no issue' while an unexplained runtime error sat in the log; an unfinished repair recorded honestly is worth more than a clean-looking note."
+      },
+      "core": {
+        "minutes": 35,
+        "lesson": {
+          "title": "Budget first, index second: constraints, complexity and Python I/O",
+          "topic": "implementation",
+          "topicIds": [
+            "implementation",
+            "basic-math",
+            "prefix-sums",
+            "frequency"
+          ],
+          "minutes": 20,
+          "why": "Yesterday both problems were solved unaided, and the only technical defect was a runtime error on a prefix-array boundary. Today turns that into a habit: read the constraint line as an operation budget, read input in a way that survives 10^6 tokens, and use the one prefix layout that has no special case at the edges.",
+          "outcomes": [
+            "Convert a constraint line into an operation budget and reject an approach before writing it.",
+            "Write the read-everything-once input reader from memory and say why input() in a loop is itself a complexity term.",
+            "Build a length n+1 prefix array, state what pre[i] means in words, and get every window sum with no boundary special case.",
+            "Explain why a prefix-count dictionary seeded with {0: 1} is the same off-by-one as the leading zero cell."
+          ],
+          "resources": [
+            {
+              "kind": "docs",
+              "title": "Python standard library — sys.stdin",
+              "url": "https://docs.python.org/3/library/sys.html#sys.stdin",
+              "minutes": 4,
+              "segment": "The sys.stdin / sys.stdout entry only: the paragraph defining the three standard streams, and the following paragraph describing the underlying binary .buffer. Stop before sys.stdin.__stdin__.",
+              "watchFor": "stdin is a text wrapper around a binary buffer. Reading the buffer once skips per-line decoding and newline handling, which is exactly the cost that shows up at 10^6 tokens."
+            }
+          ],
+          "steps": [
+            {
+              "title": "Turn the constraint line into an operation budget",
+              "body": "Before choosing a method, read n and decide what you can afford. A rough Codeforces rule for a 1-second limit: CPython manages about 10^7 interpreted steps, PyPy about 10^8. So n <= 2000 leaves room for an n^2 double loop, n <= 2*10^5 demands n log n or better, and n = 10^6 demands a single pass with nothing allocated per element. Do this arithmetic out loud before typing, because the cost of discovering it after a TLE is the whole problem's time budget. Concretely: an input with 10^6 characters and an O(n^2) restart simulation is 10^12 steps, which is not slow, it is impossible."
+            },
+            {
+              "title": "Reading input is part of the complexity",
+              "body": "input() is sys.stdin.readline plus decoding plus stripping, per line. At 10^6 lines that alone can exceed the limit before your algorithm runs. The habit is to read everything once, split once, and walk a cursor. Note two Python details: split() on a bytes object yields bytes tokens, and int(b'12') works fine, but indexing a bytes object gives an integer, not a character, so decode a row before you index it.",
+              "code": "import sys\n\ndata = sys.stdin.buffer.read().split()\npos = 0\n\n\ndef nxt():\n    global pos\n    pos += 1\n    return data[pos - 1]\n\n\nt = int(nxt())\nfor _ in range(t):\n    n = int(nxt())\n    a = [int(nxt()) for _ in range(n)]\n    grid = [nxt().decode() for _ in range(n)]   # decode, then grid[i][j] is a character"
+            },
+            {
+              "title": "The leading-zero prefix array removes the off-by-one",
+              "body": "Yesterday's Fence solution built prefix[0] = a[0], so a window starting at i needed prefix[i+k-1] - prefix[i-1] and a separate case for i = 0. That special case is exactly the kind of boundary that produces a runtime error. Use a prefix array of length n+1 instead: pre[i] means the sum of the FIRST i elements, which is a sentence you can say out loud, and pre[0] = 0 is the empty prefix. Then the sum of the half-open slice a[l:r] is pre[r] - pre[l], every window of length k is pre[i+k] - pre[i] for i in range(n-k+1), and no index is ever negative. Before submitting anything with an index expression, run the two boundaries by hand: n = 1, and k = n. Three runtime errors cost submissions in Python: IndexError from a boundary like prefix[i-1] at i = 0 or range(n-k+1) when k > n, ValueError from int() on a blank or stray token when parsing line by line, and RecursionError because the default recursion limit is 1000.",
+              "code": "pre = [0] * (n + 1)\nfor i in range(n):\n    pre[i + 1] = pre[i] + a[i]\n\n\ndef range_sum(l, r):        # half-open a[l:r], 0-indexed\n    return pre[r] - pre[l]\n\n\nbest = min(range(n - k + 1), key=lambda i: pre[i + k] - pre[i])\nprint(best + 1)             # the statement is 1-indexed",
+              "figure": {
+                "kind": "array",
+                "cells": [
+                  "0",
+                  "1",
+                  "3",
+                  "6",
+                  "10"
+                ],
+                "indexed": true,
+                "pointers": [
+                  {
+                    "at": 1,
+                    "label": "pre[1]",
+                    "tone": "accent"
+                  },
+                  {
+                    "at": 4,
+                    "label": "pre[4]",
+                    "tone": "accent"
+                  }
+                ],
+                "marks": [
+                  {
+                    "at": [
+                      1,
+                      4
+                    ],
+                    "tone": "good",
+                    "label": "pre[4] - pre[1] = 9 = a[1] + a[2] + a[3]"
+                  }
+                ],
+                "caption": "a = [1, 2, 3, 4] gives pre = [0, 1, 3, 6, 10]. pre has five cells for four elements; pre[i] is the sum of the first i of them."
+              }
+            },
+            {
+              "title": "A running balance is a prefix sum you never store",
+              "body": "You often do not need the array, only one running value and the fact you are actually asked about, such as a minimum or the first index where something happens. For a string of + and -, the balance after i characters is the prefix sum with +1 and -1. Trace '--+-': the balance goes -1, -2, -1, -2, so the record lows are -1 first reached at 1-based index 1, and -2 first reached at index 2, and nothing later sets a new record. Storing a million-element list here would be correct and wasteful; storing two integers is the same information.",
+              "code": "cur = 0\nrecord = 0\nfor i, ch in enumerate(s, start=1):\n    cur += 1 if ch == '+' else -1\n    if cur < record:\n        record = cur\n        # first time the balance ever reaches this value, at 1-based index i\n        print('new record low', cur, 'at', i)"
+            },
+            {
+              "title": "Prefix plus dictionary: counting pairs instead of scanning them",
+              "body": "This joins yesterday's dictionary to today's prefix array, and it is the step that turns an O(n^2) scan into one pass. The sum of a[l:r] equals k exactly when pre[r] - pre[l] = k, so fix the right end r and ask how many earlier left ends had pre[l] = pre[r] - k. A dictionary of previously seen prefix values answers that in expected constant time. Seed it with {0: 1}, because the empty prefix pre[0] = 0 is a legal left end; that seed is the same boundary as the leading zero cell in the array version, and forgetting it silently loses every subarray that starts at index 0. Note this also works with negative numbers, which is why a sliding window would not.",
+              "code": "from collections import defaultdict\n\n\ndef count_subarrays_with_sum(a, k):\n    seen = defaultdict(int)\n    seen[0] = 1          # the empty prefix is a valid left endpoint\n    cur = 0\n    total = 0\n    for x in a:\n        cur += x\n        total += seen[cur - k]\n        seen[cur] += 1\n    return total"
+            }
+          ],
+          "drill": {
+            "prompt": "Close the notes and rebuild four things from memory. (1) prefix_sums(a) returning a list of length len(a)+1, and range_sum(pre, l, r) for the half-open range; use them to print the 1-based start of the minimum-sum window of length k and check it on the Fence sample a = [1, 2, 3, 1, 2], k = 3, which answers 3. (2) The sys.stdin.buffer.read().split() reader, then use it to read t and then t arrays. (3) Yesterday's missing piece: earlier_counts(items), checked on [] -> [], ['a'] -> [0], ['a', 'b', 'a', 'a'] -> [0, 0, 1, 2]. (4) Say out loud what pre[i] means and why seen[0] = 1 in the counting version is the same boundary as pre[0] = 0.",
+            "starter": "def prefix_sums(a):\n    # Length len(a) + 1, pre[0] = 0.\n    pass\n\n\ndef range_sum(pre, l, r):\n    # Half-open [l, r).\n    pass\n\n\ndef earlier_counts(items):\n    # Day 1 repair: reconstruct from memory, no peeking.\n    pass"
+          },
+          "check": [
+            {
+              "q": "What does pre[i] mean in words, and why does pre have n+1 cells for n elements?",
+              "a": "pre[i] is the sum of the first i elements, so pre[0] = 0 is the empty prefix. The extra cell exists so that every left endpoint, including 0, has a prefix available to subtract, which is exactly what removes the special case that crashed the first Fence submission."
+            },
+            {
+              "q": "n is 10^6 and you read the array with a loop calling input() every iteration. Name the two separate costs that creates, and the one-line replacement.",
+              "a": "One cost is a Python-level function call and a separate line read per element; the other is decoding bytes to text and stripping the newline, also per element. Both disappear with data = sys.stdin.buffer.read().split() once, after which you walk a cursor over the tokens."
+            },
+            {
+              "q": "In count_subarrays_with_sum, why is the dictionary seeded with {0: 1}, and which subarrays would you lose without it?",
+              "a": "Because pre[0] = 0 is a legal left endpoint. Without the seed you silently lose every subarray that starts at index 0, that is, each prefix whose own sum already equals k. It is the same boundary as the leading zero cell in the array version."
+            }
+          ]
+        },
+        "practice": {
+          "title": "Two from-memory rebuilds, no new Codeforces problem",
+          "blocks": [
+            {
+              "id": "primitive-repair",
+              "label": "Day 1 repair: the counting primitive",
+              "minutes": 5,
+              "note": "Yesterday's teach-back and all three recall answers were right, but earlier_counts was never written and the scratch code contained dict(a:1,b:1), which is not valid Python. Spend five minutes writing earlier_counts and frequency from memory and running them on the three checks. This is the only thing standing between frequency being taught and being independent.",
+              "problems": []
+            },
+            {
+              "id": "prefix-primitive",
+              "label": "Prefix array and fast reader from memory",
+              "minutes": 10,
+              "note": "Write prefix_sums, range_sum and the sys.stdin.buffer reader without looking, then re-derive the Fence answer with the leading-zero layout and confirm it needs no special case at i = 0. Finish by testing n = 1 and k = n. No additional full Codeforces problem today; the two LeetCode questions are the application.",
+              "problems": []
+            }
+          ]
+        }
+      },
+      "leetcode": {
+        "title": "Prefix sums as a class, then prefix sums joined to a dictionary",
+        "minutes": 20,
+        "problems": [
+          {
+            "slug": "range-sum-query-immutable",
+            "title": "Range Sum Query - Immutable",
+            "difficulty": "Easy",
+            "url": "https://leetcode.com/problems/range-sum-query-immutable/",
+            "capMinutes": 7,
+            "mirrors": "Today's leading-zero prefix array, packaged as a constructor plus an O(1) query",
+            "topicIds": [
+              "implementation",
+              "prefix-sums"
+            ],
+            "sealed": false,
+            "exposure": "not present in the recent LeetCode accept feed; lifetime exposure unconfirmed, so record a known solution as a deliberate cold re-solve",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "sumRange is called many times on the same array. What belongs in the constructor so each query costs nothing?"
+                },
+                {
+                  "ask": "Build pre with pre[0] = 0 and pre[i+1] = pre[i] + nums[i], exactly the layout from the lesson."
+                },
+                {
+                  "ask": "LeetCode's range is inclusive but the prefix identity is half-open. Which end needs a +1?"
+                }
+              ],
+              "solution": {
+                "say": "In __init__ build pre of length n+1 with pre[0] = 0 and pre[i+1] = pre[i] + nums[i], which is O(n) once. sumRange(left, right) is inclusive, so the matching half-open slice is [left, right+1) and the answer is pre[right+1] - pre[left] in O(1). The single trap is that +1 on the right end, which is the same inclusive-versus-half-open boundary the lesson insists you say out loud."
+              }
+            }
+          },
+          {
+            "slug": "subarray-sum-equals-k",
+            "title": "Subarray Sum Equals K",
+            "difficulty": "Medium",
+            "url": "https://leetcode.com/problems/subarray-sum-equals-k/",
+            "capMinutes": 13,
+            "mirrors": "Day 1's frequency dictionary joined to today's prefix array; the transfer target of lesson step 5",
+            "topicIds": [
+              "implementation",
+              "prefix-sums",
+              "frequency"
+            ],
+            "sealed": false,
+            "exposure": "not present in the recent LeetCode accept feed; lifetime exposure unconfirmed, so record a known solution as a deliberate cold re-solve",
+            "hints": {
+              "ladder": [
+                {
+                  "ask": "Rewrite 'the sum of nums[l:r] equals k' using two prefix values instead of a sum."
+                },
+                {
+                  "ask": "Fix the right end and scan once. For this right end, what single property must every valid left end satisfy?"
+                },
+                {
+                  "ask": "Keep a dictionary counting how many times each prefix value has already occurred; at each step add seen[cur - k] before recording cur, and seed the dictionary with {0: 1}."
+                }
+              ],
+              "solution": {
+                "say": "sum(nums[l:r]) = pre[r] - pre[l], so a subarray ending at r counts exactly when pre[l] = pre[r] - k. Walk the array with a running cur and a dictionary of counts of prefix values already seen, seeded with {0: 1} for the empty prefix. At each element add seen[cur - k] to the total, then increment seen[cur]. Expected O(n) time and O(n) space. Two things worth naming: the plain double loop over l and r is O(n^2) and is the version that dies at n = 2*10^4, and a sliding window is wrong here because nums may contain negatives, so the running sum is not monotonic."
+              }
+            }
+          }
+        ]
+      },
+      "selectionNote": {
+        "checkedAt": "2026-09-26",
+        "codeforces": "Refreshed user.status for rab8bit (637 submissions, 308 problems touched). None of 1985D, 1619C or 1373C has any prior submission, so all three are genuinely unspoiled. Statements re-read to confirm constraints and intended solutions; Codeforces exposes no prefix-sums tag, so 1373C was classified by its intended technique rather than by its 'math' tag.",
+        "leetcode": "Recent 20 accepts for rab8it checked: neither range-sum-query-immutable nor subarray-sum-equals-k appears. The feed does confirm yesterday's contains-duplicate and valid-anagram accepts. Lifetime exposure remains unconfirmed.",
+        "band": "Day 1 cleared 900 and 1100 unaided inside 34 of 40 minutes, so the set steps to 900 / 1200 / 1300 with the 1300 explicitly labelled a reachable stretch rather than an expectation. Sample size is one session, so this is a probe, not a band increase.",
+        "gates": "frequency is recorded taught, not independent, so no contest problem depends on counting. It appears only in the core lesson and the second LeetCode question, where hints are available.",
+        "timeBudget": "120 minutes total: 45 contest, 20 review, 35 core (20 lesson + 5 primitive repair + 10 prefix rebuild), 20 LeetCode (7 + 13). Contest caps 10 + 15 + 20.",
+        "calendar": "This is the learner's SECOND actual training session, on program day 3. Program day 2 (2026-09-25) was prepared but never started and is preserved unrun; no work, failure or absence is inferred from it. The three contest problems were never revealed, because the published plan failed the app's schema check and the coach page never rendered them, so they remain genuinely unspoiled.",
+        "curriculumShift": "Curriculum row 3 reads 'Frequency maps, sets and counting invariants'. That focus moves to the next session; this one keeps the constraints, complexity, indexing and Python I/O content, which is the repair target from Day 1's runtime error."
+      },
+      "scheduleOverride": {
+        "mode": "from-start",
+        "authorizedAt": "2026-09-25T19:05:28.021588+00:00",
+        "totalMinutes": 120,
+        "reason": "Learner asked for a two-hour session late on 25 September, but the Day 2 late-start window had already closed at 22:00 IST, so nothing ran. The same prepared session is re-homed to 26 September as an authorized 120-minute exception split 45/20/35/20. The planned 04:30-10:30 morning is unchanged for later days."
       }
     }
   ],
-  "contentHash": "6ed86963bb9e493a222905b863f3445c986d448a9258716d1f4ab79699ce086a",
+  "contentHash": "447cd993b58d6b11993a7ae22b3f836cfe2a162898b23b7a9e66bd9c445b6e3f",
   "calendarCorrection": {
     "recordedAt": "2026-09-24T13:53:00.393490+00:00",
     "previousStartDate": "2026-09-23",
