@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "programId": "expert-2026-09-23",
-  "planVersion": 8,
+  "planVersion": 9,
   "title": "Expert in 100 days",
   "startDate": "2026-09-24",
   "timezone": "Asia/Kolkata",
@@ -2223,7 +2223,7 @@
         "prompt": "Today's contest uses only the three topics your Day 1 diagnostic evidenced as independent: loops and indexing, integer arithmetic, and prefix sums. Confirm you have not seen these exact problems before starting. Nothing you learn in today's core block is required by the contest."
       },
       "contest": {
-        "title": "Day 3 calibration set · 45 minutes",
+        "title": "Day 2 calibration set · 45 minutes",
         "minutes": 45,
         "mirrors": "Only implementation, integer arithmetic and prefix sums, all evidenced independent on Day 1. No counting, sorting or greedy prerequisite is required.",
         "problems": [
@@ -2538,18 +2538,19 @@
         "band": "Day 1 cleared 900 and 1100 unaided inside 34 of 40 minutes, so the set steps to 900 / 1200 / 1300 with the 1300 explicitly labelled a reachable stretch rather than an expectation. Sample size is one session, so this is a probe, not a band increase.",
         "gates": "frequency is recorded taught, not independent, so no contest problem depends on counting. It appears only in the core lesson and the second LeetCode question, where hints are available.",
         "timeBudget": "120 minutes total: 45 contest, 20 review, 35 core (20 lesson + 5 primitive repair + 10 prefix rebuild), 20 LeetCode (7 + 13). Contest caps 10 + 15 + 20.",
-        "calendar": "This is the learner's SECOND actual training session, on program day 3. Program day 2 (2026-09-25) was prepared but never started and is preserved unrun; no work, failure or absence is inferred from it. The three contest problems were never revealed, because the published plan failed the app's schema check and the coach page never rendered them, so they remain genuinely unspoiled.",
+        "calendar": "Displayed as Day 2 because this is the learner's SECOND actual training session. The program day index stays 3, derived from the calendar date 2026-09-26. Program day 2 (2026-09-25) was prepared but never started and is preserved unrun; no work, failure or absence is inferred from it. The three contest problems were never revealed, because the published plan failed the app's schema check and the coach page never rendered them, so they remain genuinely unspoiled.",
         "curriculumShift": "Curriculum row 3 reads 'Frequency maps, sets and counting invariants'. That focus moves to the next session; this one keeps the constraints, complexity, indexing and Python I/O content, which is the repair target from Day 1's runtime error."
       },
       "scheduleOverride": {
         "mode": "from-start",
-        "authorizedAt": "2026-09-25T19:05:28.021588+00:00",
+        "authorizedAt": "2026-09-26T07:00:00+05:30",
         "totalMinutes": 120,
-        "reason": "Learner asked for a two-hour session late on 25 September, but the Day 2 late-start window had already closed at 22:00 IST, so nothing ran. The same prepared session is re-homed to 26 September as an authorized 120-minute exception split 45/20/35/20. The planned 04:30-10:30 morning is unchanged for later days."
-      }
+        "reason": "Learner asked for a two-hour session late on 25 September, but the Day 2 late-start window had already closed at 22:00 IST, so nothing ran. They chose to sit the same session from 07:00 IST on 26 September. Authorized 120-minute exception split 45/20/35/20, startable from 07:00 until 22:00. The planned 04:30-10:30 morning is unchanged for later days."
+      },
+      "label": "Day 2"
     }
   ],
-  "contentHash": "447cd993b58d6b11993a7ae22b3f836cfe2a162898b23b7a9e66bd9c445b6e3f",
+  "contentHash": "1ed555334a28e27075dadbdddf32f2126764e6f906ce3d16d7ffe2156a26774b",
   "calendarCorrection": {
     "recordedAt": "2026-09-24T13:53:00.393490+00:00",
     "previousStartDate": "2026-09-23",

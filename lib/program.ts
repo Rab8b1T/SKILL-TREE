@@ -16,6 +16,10 @@ export type ProgramProblem = CoachProblem & { topicIds: string[] };
 export type ProgramDay = {
   programDay: number; date: string; focus: string;
   diagnosticBootstrap?: boolean; diagnosticReason?: string;
+  // programDay is the calendar index and stays derived from the date. label
+  // names the session the learner is actually sitting, which drifts apart
+  // whenever a prepared day never runs.
+  label?: string;
   scheduleOverride?: { mode: "from-start"; authorizedAt: string; reason: string; totalMinutes?: number };
   contest: Omit<CoachContest,"problems"> & { problems: (ProgramProblem & { slot: string; points: number })[] };
   review: { minutes: number; prompt: string };
@@ -334,7 +338,7 @@ export function publicProgram(p:Program,run:ProgramRun|null,selected:ProgramDay,
   const l=d.core.lesson;
   return {
     program:{programId:p.programId,title:p.title,planVersion:run?.planVersion??p.planVersion,contentHash:run?.contentHash??p.contentHash,startDate:p.startDate,timezone:p.timezone,goals:p.goals,diagnosticBasics:p.topics.filter(t=>t.diagnosticEligible).map(t=>t.name),topics:p.topics.map(t=>({id:t.id,name:t.name,status:topicStatus(t,now),prerequisites:t.prerequisites})),curriculum:p.curriculum??[]},
-    day:{programDay:d.programDay,date:d.date,focus:d.focus,contest:{title:d.contest.title,minutes:d.contest.minutes,count:d.contest.problems.length,problems:d.contest.problems.map(x=>safeProblem(x,"contest")).filter(Boolean)},review:{prompt:reveal?d.review.prompt:"Review unlocks after the contest",problems:reveal?d.contest.problems.map(x=>safeProblem(x,"review")).filter(Boolean):[]},core:{lesson:lessonOpen?{title:l.title,topic:l.topic,minutes:l.minutes,why:l.why,outcomes:l.outcomes,resources:l.resources,steps:l.steps,drill:l.drill,check:l.check.map(q=>({q:q.q}))}:null,problems:d.core.practice.blocks.flatMap(b=>b.problems).map(x=>safeProblem(x as ProgramProblem,"core")).filter(Boolean)},leetcode:{problems:d.leetcode.problems.map(x=>safeProblem(x,"leetcode")).filter(Boolean)}},
+    day:{programDay:d.programDay,label:d.label,date:d.date,focus:d.focus,contest:{title:d.contest.title,minutes:d.contest.minutes,count:d.contest.problems.length,problems:d.contest.problems.map(x=>safeProblem(x,"contest")).filter(Boolean)},review:{prompt:reveal?d.review.prompt:"Review unlocks after the contest",problems:reveal?d.contest.problems.map(x=>safeProblem(x,"review")).filter(Boolean):[]},core:{lesson:lessonOpen?{title:l.title,topic:l.topic,minutes:l.minutes,why:l.why,outcomes:l.outcomes,resources:l.resources,steps:l.steps,drill:l.drill,check:l.check.map(q=>({q:q.q}))}:null,problems:d.core.practice.blocks.flatMap(b=>b.problems).map(x=>safeProblem(x as ProgramProblem,"core")).filter(Boolean)},leetcode:{problems:d.leetcode.problems.map(x=>safeProblem(x,"leetcode")).filter(Boolean)}},
     run:run?{sessionId:run.sessionId,programDay:run.programDay,actualDate:run.actualDate,revision:run.revision,timing:publicTiming!,blocks:run.blocks,attempts:run.attempts,lessonEvidence:run.lessonEvidence,review:run.review,contestCompletion:run.contestCompletion,verification:run.verification,score:contestScore(run),currentBlock:blockAt(run,now)}:null,
     blocks:dayBlocks(d),totalMinutes:dayMinutes(d),serverNow:now,startWindow:startWindow(d,now),
   };

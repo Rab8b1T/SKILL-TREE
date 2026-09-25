@@ -217,7 +217,7 @@ export function ProgramMorning({initialBlock,initialDay}:{initialBlock?:BlockId;
   const active=selected??current??(data.run?"leetcode":"contest");
   const busy=mutation.isPending||pending||offline;
   return <PageShell>
-    <PageHeader title={`Day ${data.day.programDay} · ${data.day.focus}`} description={`${data.day.date} · ${data.program.title}`} actions={<Button size="sm" disabled={query.isFetching} onClick={()=>void query.refetch()}><RefreshCw/>Refresh</Button>}/>
+    <PageHeader title={`${data.day.label??`Day ${data.day.programDay}`} · ${data.day.focus}`} description={`${data.day.date} · program day ${data.day.programDay} · ${data.program.title}`} actions={<Button size="sm" disabled={query.isFetching} onClick={()=>void query.refetch()}><RefreshCw/>Refresh</Button>}/>
     <div className="mb-4 flex flex-wrap items-center gap-2"><Badge variant="accent">Python / PyPy</Badge><Badge>{data.totalMinutes} minutes of planned work</Badge><Badge variant="outline">Plan v{data.program.planVersion}</Badge>{data.program.goals.map(g=><Badge key={g.day} variant="outline">{g.rating} by {g.date}</Badge>)}</div>
     <div className="mb-5 grid gap-2 sm:grid-cols-4">{data.blocks.map((b,i)=>{
       const phase=timing?.phases[b.id],unlocked=Boolean(phase&&(phase.startedAt!==undefined||phase.status!=="ready"||current===b.id));
