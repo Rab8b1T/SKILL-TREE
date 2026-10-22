@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "programId": "practice-2026-10-21",
   "mode": "untimed-mixed-practice",
-  "planVersion": 1,
+  "planVersion": 2,
   "title": "100 days / 500 Codeforces problems",
   "startDate": "2026-10-21",
   "endDate": "2027-01-28",
@@ -584,7 +584,31 @@
       "dailyTarget": 5,
       "minutes": 180,
       "timed": false,
-      "status": "prepared"
+      "status": "prepared",
+      "sessionPreparation": {
+        "practiceDate": "2026-10-22",
+        "daySelection": "Learner explicitly requested to start Day 1 on this date; original planned date retained.",
+        "learnerReportedStarting": true,
+        "evidence": "reviews/2026-10-22-day-01-preparation.md",
+        "lessonSource": "lessons/day-01-learning-2026-10-22.md",
+        "lessonPdf": "output/pdf/day-01-learning-2026-10-22.pdf",
+        "lessonStatus": "prepared; reading and understanding not yet confirmed",
+        "allocation": [
+          {
+            "activity": "Read the focused learning sheet",
+            "minutes": 15
+          },
+          {
+            "activity": "Five mixed problem slots; distribute time freely",
+            "minutes": 145
+          },
+          {
+            "activity": "Review the most useful miss and save available evidence",
+            "minutes": 20
+          }
+        ],
+        "nextCheckIn": "Review actual Day 1 progress before advancing; do not infer completion from calendar date."
+      }
     },
     {
       "day": 2,
@@ -11378,5 +11402,5 @@
     "counting": "A new AC is accepted evidence. Meaningful completion additionally requires learner implementation and an explicit coach reasoning review; independence requires the learner to confirm no hints/editorial/AI solution.",
     "adaptation": "Use Sunday evidence; preserve 180 minutes, at most three priorities; revise unopened candidates instead of manufacturing success."
   },
-  "contentHash": "5af8959596d5ea4c1fd880299c4a78a8a9351803bb3d77556d90f6b71e29bb6e"
+  "contentHash": "550efa1752d4bb18c4b8a3ae2bde8d01c6f00dd2a17608ab40df5ee0c452ec47"
 }
