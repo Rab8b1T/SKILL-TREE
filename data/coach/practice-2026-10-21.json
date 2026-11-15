@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "programId": "practice-2026-10-21",
   "mode": "untimed-mixed-practice",
-  "planVersion": 2,
+  "planVersion": 3,
   "title": "100 days / 500 Codeforces problems",
   "startDate": "2026-10-21",
   "endDate": "2027-01-28",
@@ -219,6 +219,25 @@
         "prefix": 6,
         "math": 7,
         "trees": 2
+      },
+      "reviewAdjustment": {
+        "review": "reviews/2026-11-15.md",
+        "earlyAcceptance": {
+          "eventId": "cf:396398799:OK",
+          "calendarDate": "2026-11-17",
+          "handling": "Keep the original slot. Optional recall in that slot earns no further unique credit."
+        },
+        "recall": {
+          "problemId": "474D",
+          "dates": [
+            "2026-11-22",
+            "2026-12-06"
+          ],
+          "status": "suggested",
+          "time": "existing recall allocation"
+        },
+        "unopenedCandidateCheck": "reviews/coach/2026-11-15-week-05.md",
+        "substitutions": []
       }
     },
     {
@@ -11402,5 +11421,5 @@
     "counting": "A new AC is accepted evidence. Meaningful completion additionally requires learner implementation and an explicit coach reasoning review; independence requires the learner to confirm no hints/editorial/AI solution.",
     "adaptation": "Use Sunday evidence; preserve 180 minutes, at most three priorities; revise unopened candidates instead of manufacturing success."
   },
-  "contentHash": "550efa1752d4bb18c4b8a3ae2bde8d01c6f00dd2a17608ab40df5ee0c452ec47"
+  "contentHash": "f90c3349deee07535b389d0d47386dba01f02ce86f3b0f199957d66db5ab000a"
 }
